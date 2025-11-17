@@ -93,7 +93,7 @@ pub trait Graph {
     ///
     /// let graph = DirectedGraph::new(
     ///     vec![Node::new("A".to_string()), Node::new("B".to_string())],
-    ///     vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string())]
+    ///     vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()))]
     /// );
     ///
     /// let node = Node::new("A".to_string());

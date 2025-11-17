@@ -11,7 +11,7 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 /// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
 /// let graph = DirectedGraph {
 ///     nodes: vec![Node::new("A".to_string()), Node::new("B".to_string())],
-///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()))],
+///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()), 4)],
 /// };
 /// ```
 #[derive(Debug)]
