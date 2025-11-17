@@ -1,3 +1,5 @@
+<!-- TODO: Udjust the README.md for GitHub -->
+
 # PathFinder
 
 Contains implementations of various shortest path algorithms like Dijkstra, etc.! You can calculate the best route from one point 'A' to point 'B'.

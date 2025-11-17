@@ -57,6 +57,8 @@ pub trait Graph {
     ///
     /// # Example
     /// ```
+    /// use pathfinder::graphs::graph::Node;
+    ///
     /// #[derive(Clone, PartialEq)]
     /// struct Edge {
     ///     from: Node,
@@ -75,13 +77,23 @@ pub trait Graph {
     /// edges.
     ///
     /// # Arguments
+    ///
     /// * `u`: A reference to the node whose neighbors are to be retrieved.
     ///
     /// # Returns
+    ///
     /// An iterator over tuples containing references to neighboring nodes and the weights of the
     /// edges connecting them.
+    ///
     /// # Example
+    ///
     /// ```
+    /// use crate::graphs::{directed::DirectedGraph, graph::Node};
+    ///
+    /// let graph = DirectedGraph::new();
+    ///
+    /// let node = Node::new("A".to_string());
+    ///
     /// let neighbors = graph.neighbors(&node);
     /// for (neighbor, weight) in neighbors {
     ///     println!("Neighbor: {:?}, Weight: {}", neighbor, weight);
@@ -110,6 +122,9 @@ pub trait Graph {
     /// * `false` if the graph is undirected.
     /// # Example
     /// ```
+    /// use crate::graphs::directed::DirectedGraph;
+    ///
+    /// let graph = DirectedGraph::new();
     /// if graph.is_directed() {
     ///     println!("The graph is directed.");
     /// } else {
