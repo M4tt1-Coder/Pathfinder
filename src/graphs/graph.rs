@@ -88,9 +88,13 @@ pub trait Graph {
     /// # Example
     ///
     /// ```
-    /// use pathfinder::graphs::{directed::DirectedGraph, graph::Node};
+    /// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
+    /// use crate::pathfinder::graphs::graph::Graph;
     ///
-    /// let graph = DirectedGraph::new();
+    /// let graph = DirectedGraph::new(
+    ///     vec![Node::new("A".to_string()), Node::new("B".to_string())],
+    ///     vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string())]
+    /// );
     ///
     /// let node = Node::new("A".to_string());
     ///
@@ -122,9 +126,10 @@ pub trait Graph {
     /// * `false` if the graph is undirected.
     /// # Example
     /// ```
+    /// use crate::pathfinder::graphs::graph::Graph;
     /// use pathfinder::graphs::directed::DirectedGraph;
     ///
-    /// let graph = DirectedGraph::new();
+    /// let graph = DirectedGraph::new(vec![], vec![]);
     /// if graph.is_directed() {
     ///     println!("The graph is directed.");
     /// } else {

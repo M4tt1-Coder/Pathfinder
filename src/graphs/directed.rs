@@ -8,10 +8,10 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 ///
 /// # Example
 /// ```
-/// use pathfinder::graphs::directed::DirectedGraph;
+/// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
 /// let graph = DirectedGraph {
-///     nodes: vec![0, 1, 2],
-///     edges: vec![(0, 1), (1, 2)],
+///     nodes: vec![Node::new("A".to_string()), Node::new("B".to_string())],
+///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()))],
 /// };
 /// ```
 #[derive(Debug)]
