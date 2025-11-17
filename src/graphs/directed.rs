@@ -8,7 +8,7 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 ///
 /// # Example
 /// ```
-/// use crate::graphs::directed::DirectedGraph;
+/// use pathfinder::graphs::directed::DirectedGraph;
 /// let graph = DirectedGraph {
 ///     nodes: vec![0, 1, 2],
 ///     edges: vec![(0, 1), (1, 2)],

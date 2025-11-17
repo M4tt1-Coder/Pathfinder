@@ -88,7 +88,7 @@ pub trait Graph {
     /// # Example
     ///
     /// ```
-    /// use crate::graphs::{directed::DirectedGraph, graph::Node};
+    /// use pathfinder::graphs::{directed::DirectedGraph, graph::Node};
     ///
     /// let graph = DirectedGraph::new();
     ///
@@ -122,7 +122,7 @@ pub trait Graph {
     /// * `false` if the graph is undirected.
     /// # Example
     /// ```
-    /// use crate::graphs::directed::DirectedGraph;
+    /// use pathfinder::graphs::directed::DirectedGraph;
     ///
     /// let graph = DirectedGraph::new();
     /// if graph.is_directed() {
