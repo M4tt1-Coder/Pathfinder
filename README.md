@@ -63,7 +63,7 @@ Now, run this command in a terminal in the _root-directory_:
 For running the `binary`, type this into the terminal!
 
 ```sh
-    ./target/release/pathfind --start A --end B
+    ./target/release/pathfinder --start A --end B
 ```
 
 The syntax for the usage of the executable is:
