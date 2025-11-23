@@ -11,7 +11,7 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 ///
 /// * 'nodes' -> The nodes of the graph.
 /// * 'edges' -> The edges of the graph.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UndirectedGraph {
     pub nodes: Vec<Node>,
     pub edges: Vec<UndirectedEdge>,

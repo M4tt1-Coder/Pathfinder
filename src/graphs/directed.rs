@@ -14,7 +14,7 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 ///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()), 4)],
 /// };
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DirectedGraph {
     pub nodes: Vec<Node>,
     pub edges: Vec<DirectedEdge>,
