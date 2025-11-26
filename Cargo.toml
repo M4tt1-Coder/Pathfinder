@@ -32,3 +32,10 @@ harness = false
 name = "pathfinder_undirected_graph"
 harness = false
 
+[[bench]]
+name = "pathfinder_cmd_line"
+harness = false
+
+[[bench]]
+name = "pathfinder_data_input"
+harness = false

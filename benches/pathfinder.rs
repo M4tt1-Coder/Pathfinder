@@ -1,5 +1,3 @@
-// TODO: Add logical benchmarks
-
 use divan::{Bencher, bench};
 use pathfinder::{
     algorithms::{algorithm::Algorithm, dijkstra::DijkstraAlgorithm},
@@ -18,6 +16,24 @@ fn main() {
 
 // Example constant (uncomment and adapt as needed)
 // const GRAPHS: &[&str] = &[];
+
+#[bench]
+fn create_dijkstra_algorithm_instance(bencher: Bencher) {
+    bencher
+        .with_inputs(|| {
+            DirectedGraph::new(
+                vec![Node::new("A".into()), Node::new("B".into())],
+                vec![DirectedEdge::new(
+                    Node::new("A".into()),
+                    Node::new("B".into()),
+                    3,
+                )],
+            )
+        })
+        .bench_refs(|dg| {
+            let _algo_d = DijkstraAlgorithm::new(dg.clone());
+        });
+}
 
 #[bench]
 fn find_shortest_path_in_directed_graph_with_dijkstra(bencher: Bencher) {
