@@ -1,3 +1,3 @@
-pub mod a_asterisk;
+pub mod a_star;
 pub mod algorithm;
 pub mod dijkstra;

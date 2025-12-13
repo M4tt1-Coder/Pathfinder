@@ -1,7 +1,10 @@
 use std::{
     error::Error,
     fmt::{Debug, Display},
+    iter,
 };
+
+use log::warn;
 
 /// Makes sure that every edge has its own id (mostly UUID).
 ///
@@ -116,8 +119,11 @@ pub trait Graph {
     /// => Converted iterator with 'Item = (&'a Node, u16)'
     fn neighbours_as_standard_output<'a>(
         &'a self,
-        u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a>;
+        _u: &Node,
+    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
+        warn!("'neighbours_as_standard_output' method not implemented for the used graph!");
+        Box::new(iter::empty())
+    }
 
     /// Indicates whether the graph is directed.
     ///
