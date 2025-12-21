@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     algorithms::algorithm::{Algorithm, SearchResult},
-    graphs::graph::{Graph, Node},
+    graphs::graph::{Graph, GraphNode, Node},
 };
 
 // ----- Implementation of the 'ShortestDistance' struct -----
@@ -52,7 +52,7 @@ pub struct DijkstraAlgorithm<G: Graph + Display> {
     graph: G,
 }
 
-impl<G: Graph + Display> Algorithm for DijkstraAlgorithm<G> {
+impl<G: Graph<Node = Node> + Display> Algorithm for DijkstraAlgorithm<G> {
     type StepExecutionResult = ShortestDistance;
     type ExecutionError = DijkstraError;
     fn shortest_path(&self, start: Node, end: Node) -> Result<SearchResult, DijkstraError> {
@@ -91,7 +91,7 @@ impl<G: Graph + Display> Algorithm for DijkstraAlgorithm<G> {
         let mut current_node = end.clone();
         let mut output_distance = 0;
 
-        while let Some(distance) = distances.get(&current_node.id) {
+        while let Some(distance) = distances.get(&current_node.get_id().to_string()) {
             if current_node.id == end.id {
                 output_distance = distance.distance;
             }
@@ -129,7 +129,7 @@ impl<G: Graph + Display> Algorithm for DijkstraAlgorithm<G> {
     }
 }
 
-impl<G: Graph + Display> DijkstraAlgorithm<G> {
+impl<G: Graph<Node = Node> + Display> DijkstraAlgorithm<G> {
     /// Creates a new instance of the 'DijkstraAlgorithm' struct.
     ///
     /// # Arguments

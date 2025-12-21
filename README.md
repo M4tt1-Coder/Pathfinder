@@ -1,4 +1,4 @@
-<!-- TODO: Udjust the README.md for GitHub -->
+<!-- TODO: Adjust the README.md for GitHub -->
 
 # PathFinder
 

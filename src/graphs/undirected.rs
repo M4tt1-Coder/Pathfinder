@@ -100,18 +100,18 @@ impl Graph for UndirectedGraph {
         None
     }
 
-    fn get_node_by_id(&self, id: &str) -> Option<Self::Node> {
+    fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
         for n in &self.nodes {
             if n.id == id {
-                return Some(n.clone());
+                return Some(n);
             }
         }
         None
     }
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<Self::Edge> {
+    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
         for e in &self.edges {
             if &e.id == id {
-                return Some(e.clone());
+                return Some(e);
             }
         }
         None

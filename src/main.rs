@@ -7,6 +7,9 @@ use pathfinder::{
     data_input::file_input::retrieve_graph_data_from_file,
 };
 
+// TODO: Refactor code -> check if in some cases references are better then cloning (if possible)
+// etc.
+
 fn main() {
     // enable logging to the terminal
     env_logger::init();

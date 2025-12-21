@@ -158,6 +158,9 @@ pub trait Graph {
     /// - 'edge' -> The 'Self::Edge' to be added to the graph.
     fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError>;
 
+    // TODO: The implementation of the 'does_..._exists' methods of the current graphs can be false
+    // -> check them
+
     /// When attempting to mutate the graph in some cases there needs to be checked if an
     /// 'Self::Edge' already exists.
     ///
@@ -184,8 +187,8 @@ pub trait Graph {
     ///
     /// # Returns
     ///
-    /// => Option<Self::Node> if there is a Node with the specified id.
-    fn get_node_by_id(&self, id: &str) -> Option<Self::Node>;
+    /// => Option<&Self::Node> if there is a Node with the specified id.
+    fn get_node_by_id(&self, id: &str) -> Option<&Self::Node>;
 
     /// Attempts to retrieve a 'Self::Edge' from the graph.
     ///
@@ -195,15 +198,15 @@ pub trait Graph {
     ///
     /// # Returns
     ///
-    /// => Option<Self::Edge>
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<Self::Edge>;
+    /// => Option<&Self::Edge>
+    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge>;
 
     /// Retrieve all 'Self::Node's in a 'Graph'.
     ///
     /// # Returns
     ///
     /// => &Vec<Node> with all nodes in a graph.
-    fn get_all_nodes(&self) -> &Vec<Node>;
+    fn get_all_nodes(&self) -> &Vec<Self::Node>;
 
     /// States if a graph has weighed edges.
     ///
@@ -219,10 +222,13 @@ pub trait GraphNode {
     /// # Returns
     ///
     /// => A 'Node' instance from a custom generic node.
-    fn get_self_as_standard_node(&self) -> Node;
+    fn get_self_as_standard_node(&self) -> Node {
+        warn!("'get_self_as_standard_node' method has not been implemented yet!");
+        Node::new("Dummy Node".to_string())
+    }
 
     /// Provide the own ID of a 'GraphNode' struct.
-    fn get_id(&self) -> String;
+    fn get_id<'a>(&'a self) -> &'a str;
 }
 
 // ----- Implementation of the 'Node' struct -----
@@ -258,7 +264,7 @@ impl GraphNode for Node {
         self.clone()
     }
 
-    fn get_id(&self) -> String {
-        self.id.clone()
+    fn get_id<'a>(&'a self) -> &'a str {
+        &self.id
     }
 }
