@@ -141,7 +141,10 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
     fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
         for e in &self.edges {
-            if e == edge {
+            if e.id == edge.id
+                || (e.node_one == edge.node_one && e.node_two == edge.node_two)
+                || (e.node_one == edge.node_two && e.node_two == edge.node_one)
+            {
                 return true;
             }
         }
@@ -149,7 +152,7 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         for n in &self.nodes {
-            if n == node {
+            if n.get_y() == node.get_y() && n.get_x() == node.get_x() || node.id == n.id {
                 return true;
             }
         }
@@ -160,6 +163,23 @@ impl Graph for TwoDimensionalCoordinateGraph {
 impl Display for TwoDimensionalCoordinateGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // use template strings to display the nodes and edges in a clear manner
+        // nodes
+        let mut nodes_string = String::from("Nodes: \n");
+        for n in &self.nodes {
+            nodes_string
+                .push_str(format!("{}: ( X: {}, Y: {} )\n", n.id, n.get_x(), n.get_y()).as_str());
+        }
+        let mut edges_string = String::from("Edges: \n");
+        for e in &self.edges {
+            edges_string.push_str(
+                format!(
+                    "( ID: {}, Node A: {}, Node B: {}, Weight: {} )\n",
+                    e.id, e.node_one, e.node_two, e.weight
+                )
+                .as_str(),
+            );
+        }
+        write!(f, "{}{}", nodes_string, edges_string)
     }
 }
 

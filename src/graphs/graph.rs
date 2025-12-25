@@ -158,9 +158,6 @@ pub trait Graph {
     /// - 'edge' -> The 'Self::Edge' to be added to the graph.
     fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError>;
 
-    // TODO: The implementation of the 'does_..._exists' methods of the current graphs can be false
-    // -> check them
-
     /// When attempting to mutate the graph in some cases there needs to be checked if an
     /// 'Self::Edge' already exists.
     ///
