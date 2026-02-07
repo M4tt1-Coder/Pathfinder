@@ -223,6 +223,7 @@ impl TwoDimensionalNode {
     /// - 'x' -> X-ordinate of the node
     /// - 'y' -> Y-ordinate of the node
     /// - 'id' -> unique identifier of the node, which can't be null or a duplicate in the graph
+    ///
     /// (external check)
     ///
     /// # Returns
@@ -230,7 +231,7 @@ impl TwoDimensionalNode {
     /// => Validated fresh 'TwoDimensionalNode'
     pub fn new(x: u16, y: u16, id: String) -> Option<Self> {
         // id must be longer then 0
-        if id.len() == 0 {
+        if id.is_empty() {
             return None;
         };
         Some(Self { x, y, id })
@@ -248,7 +249,7 @@ impl TwoDimensionalNode {
 }
 
 impl GraphNode for TwoDimensionalNode {
-    fn get_id<'a>(&'a self) -> &'a str {
+    fn get_id(&self) -> &str {
         &self.id
     }
 }
@@ -396,7 +397,7 @@ impl TwoDimensionalGraphInsertionError {
     /// - 'message' -> Descriptive message about what caused the error! Can refer to provided data
     /// - 'cause_edge' -> An 'TwoDimensionalEdge' object relevant for the cause of the error!
     /// - 'cause_nodes' -> Array of two 'TwoDimensionalNode' also important to explain why the
-    ///                    error occured.
+    ///   error occured.
     ///
     /// # Returns
     ///

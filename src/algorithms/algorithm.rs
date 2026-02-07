@@ -3,7 +3,7 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use crate::graphs::graph::Node;
+use crate::graphs::graph::GraphNode;
 
 // ----- Enumeration over all implemented algorithms -----
 
@@ -13,6 +13,7 @@ use crate::graphs::graph::Node;
 #[derive(Debug)]
 pub enum Algorithms {
     Dijkstra,
+    AStar,
 }
 
 impl Algorithms {
@@ -28,6 +29,7 @@ impl Algorithms {
     pub fn get_from_string(src: &str) -> Self {
         match src {
             "Dijkstra" => Self::Dijkstra,
+            "A*" => Self::AStar,
             _ => Self::Dijkstra,
         }
     }
@@ -37,15 +39,21 @@ impl Algorithms {
 ///
 /// Implementing algorithms should support directed and undirected graphs.
 pub trait Algorithm {
-    /// In each algorithm single steps will need to be executed.
-    ///
-    /// Represents the temporary result of the step execution.
-    type StepExecutionResult: PartialEq;
-
     /// Error type to directly describe when an error occured during the process.
     ///
     /// Needs to implement basic behaviour of a an Rust error.
     type ExecutionError: Error + Display + Debug;
+
+    /// The end result containing the determined path from the node A to node B.
+    ///
+    /// Needs to have a 'distance' in case the used graph is weighted and
+    /// always has a path, which is a list of nodes in the order of the nodes to go from the starting node to the destination.
+    type AlgorithmSearchResult: SearchResult;
+
+    /// Represents the used node in the graph implementing the *Graph* trait.
+    ///
+    /// Is a *GraphNode* trait implementation.
+    type NodeOfUsedGraph: GraphNode;
 
     /// Method to find the shortest path between two nodes.
     ///
@@ -57,66 +65,69 @@ pub trait Algorithm {
     /// # Returns
     ///
     /// => The 'SearchResult' of the execution.
-    fn shortest_path(&self, start: Node, end: Node) -> Result<SearchResult, Self::ExecutionError>;
+    fn shortest_path(
+        &self,
+        start: &Self::NodeOfUsedGraph,
+        end: &Self::NodeOfUsedGraph,
+    ) -> Result<Self::AlgorithmSearchResult, Self::ExecutionError>;
+}
 
-    /// Executes a step in the path finding algorithm.
+// ----- Implementation of the 'SearchResult' trait
+
+/// **Trait**
+///
+/// A trait that represents the behaviour that of a returned object from an algorithm that has
+/// finished running.
+///
+/// It specifies that they have implemented a distance type that also implements all mandatory
+/// traits for mathimatical operations. (Ord, Eq, ...).
+pub trait SearchResult: Display + Debug {
+    /// The total distance stored in a data type like u8, i16 and f64.
+    ///
+    /// Sum of all edges from A to B.
+    type Distance: PartialEq + PartialOrd + Display;
+
+    /// Can be any struct or data type which impersonates the required functions etc from the
+    /// **GraphNode** trait
+    ///
+    /// Should be any NODE.
+    type Node: GraphNode;
+
+    /// **Method**
+    ///
+    /// Returns the total distance from one node X to Y.
+    ///
+    /// # Arguments
+    ///
+    /// - '&self' -> Instance of a struct implementing the *SearchResult* trait.
     ///
     /// # Returns
     ///
-    /// => An individual 'Option<StepExecutionResult>'.
-    fn execute_step() -> Option<Self::StepExecutionResult>;
-}
-
-// ----- Implementation of the 'SearchResult' struct -----
-
-/// Search result of all algorithms which implement the 'Algorithm' trait.
-///
-/// # Fields
-///
-/// - 'path' -> All nodes we need to go through to reach the destination.
-/// - 'distance' -> Sum of all edges.
-#[derive(Debug, Clone)]
-pub struct SearchResult {
-    /// List of the nodes starting from the start to the final node.
+    /// => Total distance (u16, ...)
     ///
-    /// Must have atleast 2 elements.
-    pub path: Vec<Node>,
-    /// All weighted edges combined and added together.
-    pub distance: u16,
-}
+    /// # Example
+    ///
+    /// ```rust
+    /// use pathfinder::algorithms::dijkstra::DijkstraSearchResult;
+    ///
+    /// // create a search which shouldn't be instanciated manually like this
+    /// let artificial_search_result = DijkstraSearchResult::new(vec![], 0);
+    ///
+    /// println!("{}", artificial_search_result.get_total_distance()); // 0
+    /// ```
+    fn get_total_distance(&self) -> Self::Distance;
 
-impl SearchResult {
-    /// Create a new 'SearchResult' instance.
+    /// **Method**
     ///
-    /// # FAILS
+    /// Provides the list of all nodes in the path which the individual algorithm visited to get
+    /// from A to B.
     ///
-    /// ... if there are less then 2 nodes in the 'path' vector.
+    /// # Arguments
+    ///
+    /// - '&self' -> Instance of a struct implementing the *SearchResult* trait.
     ///
     /// # Returns
     ///
-    /// => Ok(SearchResult), if a valid result has been created.
-    pub fn new(path: Vec<Node>, distance: u16) -> Result<Self, String> {
-        if path.len() < 2 {
-            return Err("There need to be at least 2 nodes in the path from one node A to another node B! Couldn't create a 'SearchResult'!".to_string());
-        }
-
-        Ok(Self { path, distance })
-    }
-}
-
-impl Display for SearchResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut path_string = String::new();
-        for n in &self.path {
-            path_string = format!("{} -> {}", path_string, n.id);
-        }
-        write!(
-            f,
-            "
-            Path: {},
-            Distance: {}
-            ",
-            path_string, self.distance
-        )
-    }
+    /// => Vector of nodes implementing the *GraphNode* trait. (Self::Node type)
+    fn get_path(&self) -> &Vec<Self::Node>;
 }

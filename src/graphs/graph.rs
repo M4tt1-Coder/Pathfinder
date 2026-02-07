@@ -2,18 +2,10 @@ use std::{
     error::Error,
     fmt::{Debug, Display},
     iter,
+    ops::Add,
 };
 
 use log::warn;
-
-/// Makes sure that every edge has its own id (mostly UUID).
-///
-/// The 'getter' is there since the ID will be private.
-pub trait GraphEdge {
-    type ID: Eq + PartialEq + Copy;
-
-    fn get_id(&self) -> Self::ID;
-}
 
 /// A trait representing a weighted graph structure.
 ///
@@ -36,13 +28,21 @@ pub trait Graph {
     /// Must support equality comparison, hashing, and cloning.
     ///
     /// # Example
-    /// ```
+    /// ```rust
+    /// use pathfinder::graphs::graph::GraphNode;
+    ///
     /// #[derive(Clone, PartialEq, Eq, Hash)]
     /// struct Node {
     ///     id: String,
     /// }
+    ///
+    /// impl GraphNode for Node {
+    ///     fn get_id<'a>(&'a self) -> &'a str {
+    ///         &self.id
+    ///     }
+    /// }
     /// ```
-    type Node: Eq + std::hash::Hash + Clone + GraphNode;
+    type Node: GraphNode;
 
     /// The type representing the weights of the edges in the graph.
     ///
@@ -52,7 +52,7 @@ pub trait Graph {
     /// ```
     /// type Weight = u32;
     /// ```
-    type Weight: Copy + PartialOrd + std::ops::Add<Output = Self::Weight>;
+    type Weight: GraphWeight;
 
     /// The type representing the edges in the graph.
     ///
@@ -69,7 +69,7 @@ pub trait Graph {
     ///     weight: u16,
     /// }
     /// ```
-    type Edge: Clone + PartialEq + GraphEdge;
+    type Edge: GraphEdge;
 
     /// The error occurs when a node or an edge couldn't be added to the graph.
     ///
@@ -211,22 +211,89 @@ pub trait Graph {
     fn is_weighted(&self) -> bool;
 }
 
-// ----- Definition of the 'GraphNode' trait -----
-pub trait GraphNode {
-    /// There can be implemented other customized node types but need to return and create from
-    /// themself so that algorithm can work with standardized nodes
+// ----- Definition of the 'GraphTrait' trait -----
+
+/// A trait representing a type suitable for use as a weight in graph algorithms.
+///
+/// # Requirements
+/// This trait is implemented for types that:
+/// - are `Copy`, allowing for inexpensive duplication,
+/// - implement `PartialOrd`, enabling comparison of weights,
+/// - and support addition with `Add<Output = Self>`, allowing weights to be combined.
+///
+/// # Usage
+/// Use `GraphWeight` as a trait bound for generic types in graph algorithms,
+/// such as shortest path or minimum spanning tree implementations,
+/// where weights need to be comparable, clonable, and combinable via addition.
+///
+/// # Example
+/// ```rust
+/// use std::ops::Add;
+///
+/// fn total_weight<W: GraphWeight>(weights: &[W]) -> W {
+///     weights.iter().cloned().fold(W::zero(), |acc, w| acc + w)
+/// }
+///
+/// // Assuming W implements `Zero` trait or similar for W::zero()
+/// ```
+pub trait GraphWeight: Copy + PartialOrd + Add<Output = Self> + Display + Debug + Ord {
+    /// Returns the maximum possible value for the weight type.
+    ///
+    /// This value is typically used to initialize distances or weights that need
+    /// to be replaced with smaller values during algorithm execution.
+    ///
+    /// # Returns
+    /// The maximum value of the implementing type.
+    fn max_value() -> Self;
+
+    /// Returns the zero value (additive identity) for the weight type.
+    ///
+    /// This value is used as the default or starting weight in graph algorithms,
+    /// representing no cost or distance.
+    ///
+    /// # Returns
+    /// The zero value of the implementing type.
+    fn zero() -> Self;
+}
+
+// ----- Definition of the 'GraphEdge' trait -----
+
+/// Makes sure that every edge has its own id (mostly UUID).
+///
+/// The 'getter' is there since the ID will be private.
+pub trait GraphEdge: Clone + PartialEq {
+    /// **Type**
+    ///
+    /// Identifier of the edge.
+    type ID: Eq + PartialEq + Copy;
+
+    /// **Method**
+    ///
+    /// Returns the identifier of the edge.
+    ///
+    /// # Arguments
+    ///
+    /// - *&self* -> Individual instance of an *GraphEdge* implementation.
     ///
     /// # Returns
     ///
-    /// => A 'Node' instance from a custom generic node.
-    fn get_self_as_standard_node(&self) -> Node {
-        warn!("'get_self_as_standard_node' method has not been implemented yet!");
-        Node::new("Dummy Node".to_string())
-    }
+    /// => *Self::ID*, the ID of the edge as ```String``` for example.
+    fn get_id(&self) -> Self::ID;
+}
 
+// ----- Definition of the 'GraphNode' trait -----
+
+/// **Trait**
+///
+/// Global trait that is required by every graph to implement individually.
+///
+/// Represents a node in any kind of graph
+pub trait GraphNode: Display + Debug + Eq + std::hash::Hash + Clone + Ord {
     /// Provide the own ID of a 'GraphNode' struct.
     fn get_id<'a>(&'a self) -> &'a str;
 }
+
+// TODO: Move 'Node' to a graph and rename it
 
 // ----- Implementation of the 'Node' struct -----
 
@@ -257,10 +324,6 @@ impl Display for Node {
 }
 
 impl GraphNode for Node {
-    fn get_self_as_standard_node(&self) -> Node {
-        self.clone()
-    }
-
     fn get_id<'a>(&'a self) -> &'a str {
         &self.id
     }
