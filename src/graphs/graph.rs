@@ -1,11 +1,8 @@
 use std::{
     error::Error,
     fmt::{Debug, Display},
-    iter,
     ops::Add,
 };
-
-use log::warn;
 
 /// A trait representing a weighted graph structure.
 ///
@@ -110,20 +107,6 @@ pub trait Graph {
         &'a self,
         u: &Self::Node,
     ) -> Box<dyn Iterator<Item = (&'a Self::Node, Self::Weight)> + 'a>;
-
-    /// Converts the generic iterator over the neighbours of a "Self::Node" to a iterator of the
-    /// 'Node' struct.
-    ///
-    /// # Returns
-    ///
-    /// => Converted iterator with 'Item = (&'a Node, u16)'
-    fn neighbours_as_standard_output<'a>(
-        &'a self,
-        _u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
-        warn!("'neighbours_as_standard_output' method not implemented for the used graph!");
-        Box::new(iter::empty())
-    }
 
     /// Indicates whether the graph is directed.
     ///
@@ -236,7 +219,9 @@ pub trait Graph {
 ///
 /// // Assuming W implements `Zero` trait or similar for W::zero()
 /// ```
-pub trait GraphWeight: Copy + PartialOrd + Add<Output = Self> + Display + Debug + Ord {
+pub trait GraphWeight:
+    Copy + PartialOrd + Add<Output = Self> + Display + Debug + PartialOrd + PartialEq
+{
     /// Returns the maximum possible value for the weight type.
     ///
     /// This value is typically used to initialize distances or weights that need
@@ -291,40 +276,4 @@ pub trait GraphEdge: Clone + PartialEq {
 pub trait GraphNode: Display + Debug + Eq + std::hash::Hash + Clone + Ord {
     /// Provide the own ID of a 'GraphNode' struct.
     fn get_id<'a>(&'a self) -> &'a str;
-}
-
-// TODO: Move 'Node' to a graph and rename it
-
-// ----- Implementation of the 'Node' struct -----
-
-/// A general node in a graph structure (directed & undirected).
-///
-/// # Fields
-///
-/// - 'id' -> name of the node like "A" or "B", "Ulm"
-/// - 'number_of_edges' -> In how many edges the node is in.
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Ord, PartialOrd)]
-pub struct Node {
-    /// Key or Identifier of a 'Node' in a graph
-    pub id: String,
-    // pub number_of_edges: u8,
-}
-
-impl Node {
-    /// Returns a new 'Node' object.
-    pub fn new(id: String) -> Self {
-        Self { id }
-    }
-}
-
-impl Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.id)
-    }
-}
-
-impl GraphNode for Node {
-    fn get_id<'a>(&'a self) -> &'a str {
-        &self.id
-    }
 }

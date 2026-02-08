@@ -9,8 +9,6 @@ use crate::{
     graphs::graph::{Graph, GraphNode, GraphWeight},
 };
 
-// TODO: edges shoulf not to have a negative value
-
 // ----- Implementation of the 'ShortestDistance' struct -----
 
 /// Represents the result of a shortest distance from 'Node' A to B.
@@ -19,13 +17,13 @@ use crate::{
 ///
 /// - 'distance' -> Minimum distance to a specific 'Node'.
 /// - 'previous_node' -> The last 'Node' that was visited before reaching the specific 'Node'.
-#[derive(PartialEq, PartialOrd, Eq, Ord)]
-pub struct ShortestDistance<N: GraphNode, W: GraphWeight> {
+#[derive(Debug)]
+pub struct ShortestDistance<N: GraphNode, W: GraphWeight + Ord> {
     distance: W,
     previous_node: Option<N>,
 }
 
-impl<N: GraphNode, W: GraphWeight> ShortestDistance<N, W> {
+impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
     /// Creates a new instance of `YourStruct` with the specified previous node and distance.
     ///
     /// # Parameters
@@ -50,19 +48,32 @@ impl<N: GraphNode, W: GraphWeight> ShortestDistance<N, W> {
     }
 }
 
+impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[ PrevNode: {:?}, Distance: {} ]",
+            self.previous_node, self.distance
+        )
+    }
+}
+
 // ----- Implementation of the 'DijkstraAlgorithm' struct -----
 
 /// Implements the "Dijkstra" for weighted graphs.
 ///
 /// The graphs need to have weighted edges!
 #[derive(Debug)]
-pub struct DijkstraAlgorithm<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display>
-{
+pub struct DijkstraAlgorithm<
+    N: GraphNode,
+    W: GraphWeight + Ord,
+    G: Graph<Node = N, Weight = W> + Display,
+> {
     /// Can be every (type) implementation of the 'Graph' trait.
     graph: G,
 }
 
-impl<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display> Algorithm
+impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display> Algorithm
     for DijkstraAlgorithm<N, W, G>
 {
     type AlgorithmSearchResult = DijkstraSearchResult<N, W>;
@@ -146,7 +157,7 @@ impl<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display> Alg
     }
 }
 
-impl<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display>
+impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display>
     DijkstraAlgorithm<N, W, G>
 {
     /// Creates a new instance of the 'DijkstraAlgorithm' struct.
@@ -233,6 +244,14 @@ impl<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display>
             }
 
             for (neighbour, weight) in self.graph.neighbors(&position) {
+                // for Dijkstra an edges weight can't be smaller then 0
+                if weight < W::zero() {
+                    return Err(DijkstraError::new(format!(
+                        "In the 'Dijkstra' algorithm only positive edge weights are allowed! Edge: [ from: {}, to: {}, weight: {} ]",
+                        position, neighbour, weight
+                    )));
+                }
+
                 let updated_distance = distance + weight;
 
                 if updated_distance
@@ -263,7 +282,7 @@ impl<N: GraphNode, W: GraphWeight, G: Graph<Node = N, Weight = W> + Display>
 // ----- Implementation of the 'QueueItem' struct -----
 
 /// Temporary item in the step queue.
-#[derive(Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Eq, PartialEq)]
 struct QueueItem<N: GraphNode, W: GraphWeight> {
     /// Temporary distance during the process.
     ///
@@ -273,7 +292,7 @@ struct QueueItem<N: GraphNode, W: GraphWeight> {
     position: N,
 }
 
-impl<N: GraphNode, W: GraphWeight> QueueItem<N, W> {
+impl<N: GraphNode, W: GraphWeight + Ord + Eq> QueueItem<N, W> {
     /// Creates a new instance of the 'QueueItem' struct.
     ///
     /// # Arguments
@@ -286,6 +305,18 @@ impl<N: GraphNode, W: GraphWeight> QueueItem<N, W> {
     /// => 'QueueItem' object.
     fn new(distance: W, position: N) -> Self {
         Self { distance, position }
+    }
+}
+
+impl<N: GraphNode, W: GraphWeight + Ord + Eq> PartialOrd for QueueItem<N, W> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.distance.cmp(&other.distance)
     }
 }
 

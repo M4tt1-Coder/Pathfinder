@@ -196,7 +196,7 @@ impl Display for TwoDimensionalCoordinateGraph {
 /// - 'id' -> Identifier
 /// - 'x' -> X - ordinate
 /// - 'y' -> Y - ordinate
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub struct TwoDimensionalNode {
     /// -- Private Field --
     ///

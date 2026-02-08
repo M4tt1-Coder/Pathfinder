@@ -25,8 +25,9 @@ use std::{error::Error, fmt::Display, fs, path::Path};
 use regex::Regex;
 
 use crate::graphs::{
+    default_node::DefaultNode,
     directed::{DirectedEdge, DirectedGraph},
-    graph::{Graph, Node},
+    graph::Graph,
     undirected::{UndirectedEdge, UndirectedGraph},
 };
 
@@ -165,7 +166,10 @@ fn validate_line_syntax(line: &str) -> bool {
 /// # Returns
 ///
 /// => Tuble which holds both nodes and the edge weight.
-fn convert_line_to_graph_data(line: &str, directed: bool) -> Option<(Node, Node, u16)> {
+fn convert_line_to_graph_data(
+    line: &str,
+    directed: bool,
+) -> Option<(DefaultNode, DefaultNode, u16)> {
     // first split by '-' OR '->'
     let first_split_results: Vec<&str> = if directed {
         line.split("->").collect()
@@ -173,11 +177,11 @@ fn convert_line_to_graph_data(line: &str, directed: bool) -> Option<(Node, Node,
         line.split('-').collect()
     };
 
-    let first_node = Node::new(first_split_results[0].to_string());
+    let first_node = DefaultNode::new(first_split_results[0].to_string());
 
     let second_split_results: Vec<&str> = first_split_results[1].split(':').collect();
 
-    let second_node = Node::new(second_split_results[0].to_string());
+    let second_node = DefaultNode::new(second_split_results[0].to_string());
 
     let weight: u16 = match second_split_results[1].parse() {
         Ok(w) => w,

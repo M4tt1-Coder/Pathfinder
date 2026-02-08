@@ -6,7 +6,7 @@
 
 // ----- Implementation of the 'AppConfig' struct -----
 
-use crate::{algorithms::algorithm::Algorithms, graphs::graph::Node};
+use crate::{algorithms::algorithm::Algorithms, graphs::default_node::DefaultNode};
 
 /// Represents the data input method used to gather the information to generate the graph.
 ///
@@ -53,8 +53,8 @@ impl InputOrigin {
 #[derive(Debug)]
 pub struct AppConfig {
     pub file_path: String,
-    pub start_node: Node,
-    pub end_node: Node,
+    pub start_node: DefaultNode,
+    pub end_node: DefaultNode,
     pub algorithm: Algorithms,
     pub data_input: InputOrigin,
 }
@@ -138,7 +138,7 @@ impl AppConfig {
     /// # Returns
     ///
     /// => The requested 'Node'
-    fn retrieve_node(args: &[String], is_start_node_requested: bool) -> Option<Node> {
+    fn retrieve_node(args: &[String], is_start_node_requested: bool) -> Option<DefaultNode> {
         let flag = if is_start_node_requested {
             "--start"
         } else {
@@ -146,7 +146,7 @@ impl AppConfig {
         };
         for (i, arg) in args.iter().enumerate() {
             if arg == flag && !args[i + 1].is_empty() {
-                return Some(Node::new(args[i + 1].clone()));
+                return Some(DefaultNode::new(args[i + 1].clone()));
             }
         }
         None

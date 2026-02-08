@@ -2,7 +2,10 @@ use std::{error::Error, fmt::Display};
 
 use uuid::Uuid;
 
-use crate::graphs::graph::{Graph, GraphEdge, Node};
+use crate::graphs::{
+    default_node::DefaultNode,
+    graph::{Graph, GraphEdge},
+};
 
 /// Undirected graphs don't have the restriction that you can't go along some edges from a specific
 /// direction. Here you go along all ways.
@@ -13,12 +16,12 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 /// * 'edges' -> The edges of the graph.
 #[derive(Debug, Clone)]
 pub struct UndirectedGraph {
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<DefaultNode>,
     pub edges: Vec<UndirectedEdge>,
 }
 
 impl Graph for UndirectedGraph {
-    type Node = Node;
+    type Node = DefaultNode;
     type Edge = UndirectedEdge;
     type Weight = u16;
     type InsertionError = UndirectedGraphInsertionError;
@@ -60,12 +63,6 @@ impl Graph for UndirectedGraph {
         Box::new(neighbors.into_iter())
     }
 
-    fn neighbours_as_standard_output<'a>(
-        &'a self,
-        u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
-        self.neighbors(u)
-    }
     fn is_directed(&self) -> bool {
         false
     }
@@ -116,7 +113,7 @@ impl Graph for UndirectedGraph {
         }
         None
     }
-    fn get_all_nodes(&self) -> &Vec<Node> {
+    fn get_all_nodes(&self) -> &Vec<DefaultNode> {
         &self.nodes
     }
     fn is_weighted(&self) -> bool {
@@ -135,7 +132,7 @@ impl UndirectedGraph {
     /// # Returns
     ///
     /// => A new instance of the 'UndirectedGraph'.
-    pub fn new(nodes: Vec<Node>, edges: Vec<UndirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<UndirectedEdge>) -> Self {
         Self { nodes, edges }
     }
 }
@@ -163,15 +160,15 @@ impl Default for UndirectedGraph {
 /// * 'weight' -> Fictional 'length' of the edge
 #[derive(Clone, PartialEq, Debug)]
 pub struct UndirectedEdge {
-    pub a_node: Node,
-    pub b_node: Node,
+    pub a_node: DefaultNode,
+    pub b_node: DefaultNode,
     pub weight: u16,
     id: Uuid,
 }
 
 impl UndirectedEdge {
     /// Create a new instance of the 'UndirectedEdge' struct.
-    pub fn new(a_node: Node, b_node: Node, weight: u16) -> Self {
+    pub fn new(a_node: DefaultNode, b_node: DefaultNode, weight: u16) -> Self {
         Self {
             a_node,
             b_node,

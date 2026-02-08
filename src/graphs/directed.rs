@@ -2,7 +2,10 @@ use std::{error::Error, fmt::Display};
 
 use log::info;
 
-use crate::graphs::graph::{Graph, GraphEdge, Node};
+use crate::graphs::{
+    default_node::DefaultNode,
+    graph::{Graph, GraphEdge},
+};
 
 /// A directed graph implementation.
 ///
@@ -16,12 +19,12 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 /// ```
 #[derive(Debug, Clone)]
 pub struct DirectedGraph {
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<DefaultNode>,
     pub edges: Vec<DirectedEdge>,
 }
 
 impl Graph for DirectedGraph {
-    type Node = Node;
+    type Node = DefaultNode;
     type Weight = u16;
     type Edge = DirectedEdge;
     type InsertionError = DirectedGraphInsertionError;
@@ -41,12 +44,6 @@ impl Graph for DirectedGraph {
         }
 
         Box::new(neighbors.into_iter())
-    }
-    fn neighbours_as_standard_output<'a>(
-        &'a self,
-        u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
-        self.neighbors(u)
     }
     fn insert_node(&mut self, new_node: Self::Node) {
         if self.does_node_already_exist(&new_node) {
@@ -108,7 +105,7 @@ impl Graph for DirectedGraph {
         }
         None
     }
-    fn get_all_nodes(&self) -> &Vec<Node> {
+    fn get_all_nodes(&self) -> &Vec<Self::Node> {
         &self.nodes
     }
     fn is_weighted(&self) -> bool {
@@ -118,7 +115,7 @@ impl Graph for DirectedGraph {
 
 impl DirectedGraph {
     /// Create new 'DirectedGraph' instance.
-    pub fn new(nodes: Vec<Node>, edges: Vec<DirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<DirectedEdge>) -> Self {
         Self { nodes, edges }
     }
 }
@@ -147,15 +144,15 @@ impl Default for DirectedGraph {
 /// - 'weight' -> The abstract "distance" between the two nodes.
 #[derive(Clone, PartialEq, Debug)]
 pub struct DirectedEdge {
-    pub from: Node,
-    pub to: Node,
+    pub from: DefaultNode,
+    pub to: DefaultNode,
     pub weight: u16,
     id: uuid::Uuid,
 }
 
 impl DirectedEdge {
     /// Create a new 'DirectedEdge' instance.
-    pub fn new(from: Node, to: Node, weight: u16) -> Self {
+    pub fn new(from: DefaultNode, to: DefaultNode, weight: u16) -> Self {
         Self {
             from,
             to,
