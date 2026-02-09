@@ -40,7 +40,9 @@ fn generate_graphs_from_source_files(file_path: &str) {
     };
 }
 
+// TODO: Check if this benchmark makes sense
+
 // ----- Benchmarks for the 'validate_line_syntax' function -----
 
 #[bench(args = ["ABCDEFGHIJKLMNOPQRSTOVWXYZ-WOW:4", "A->B:46", "SourceNode-DestinationNode:456"])]
-fn check_few_lines_for_syntax(line: &str) {}
+fn check_few_lines_for_syntax(_line: &str) {}

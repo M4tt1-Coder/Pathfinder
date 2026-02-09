@@ -3,9 +3,9 @@ use pathfinder::{
     algorithms::{algorithm::Algorithm, dijkstra::DijkstraAlgorithm},
     graphs::{
         directed::{DirectedEdge, DirectedGraph},
-        graph::Node,
         undirected::{UndirectedEdge, UndirectedGraph},
     },
+    nodes::default_node::DefaultNode,
 };
 
 fn main() {
@@ -22,10 +22,10 @@ fn create_dijkstra_algorithm_instance(bencher: Bencher) {
     bencher
         .with_inputs(|| {
             DirectedGraph::new(
-                vec![Node::new("A".into()), Node::new("B".into())],
+                vec![DefaultNode::new("A".into()), DefaultNode::new("B".into())],
                 vec![DirectedEdge::new(
-                    Node::new("A".into()),
-                    Node::new("B".into()),
+                    DefaultNode::new("A".into()),
+                    DefaultNode::new("B".into()),
                     3,
                 )],
             )
@@ -40,19 +40,20 @@ fn find_shortest_path_in_directed_graph_with_dijkstra(bencher: Bencher) {
     bencher
         .with_inputs(|| {
             DirectedGraph::new(
-                vec![Node::new("A".into()), Node::new("B".into())],
+                vec![DefaultNode::new("A".into()), DefaultNode::new("B".into())],
                 vec![DirectedEdge::new(
-                    Node::new("A".into()),
-                    Node::new("B".into()),
+                    DefaultNode::new("A".into()),
+                    DefaultNode::new("B".into()),
                     3,
                 )],
             )
         })
         .bench_refs(|dg| {
             let algo_d = DijkstraAlgorithm::new(dg.clone());
-            let _result = match algo_d
-                .shortest_path(Node::new("A".to_string()), Node::new("B".to_string()))
-            {
+            let _result = match algo_d.shortest_path(
+                &DefaultNode::new("A".to_string()),
+                &DefaultNode::new("B".to_string()),
+            ) {
                 Ok(path) => path,
                 Err(_) => return,
             };
@@ -64,19 +65,20 @@ fn find_shortest_path_in_undirected_graph_with_dijkstra(bencher: Bencher) {
     bencher
         .with_inputs(|| {
             UndirectedGraph::new(
-                vec![Node::new("A".into()), Node::new("B".into())],
+                vec![DefaultNode::new("A".into()), DefaultNode::new("B".into())],
                 vec![UndirectedEdge::new(
-                    Node::new("A".into()),
-                    Node::new("B".into()),
+                    DefaultNode::new("A".into()),
+                    DefaultNode::new("B".into()),
                     3,
                 )],
             )
         })
         .bench_refs(|dg| {
             let algo_d = DijkstraAlgorithm::new(dg.clone());
-            let _result = match algo_d
-                .shortest_path(Node::new("A".to_string()), Node::new("B".to_string()))
-            {
+            let _result = match algo_d.shortest_path(
+                &DefaultNode::new("A".to_string()),
+                &DefaultNode::new("B".to_string()),
+            ) {
                 Ok(path) => path,
                 Err(_) => return,
             };
