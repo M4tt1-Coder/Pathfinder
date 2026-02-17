@@ -24,11 +24,13 @@ use std::{error::Error, fmt::Display, fs, path::Path};
 
 use regex::Regex;
 
-use crate::graphs::{
-    default_node::DefaultNode,
-    directed::{DirectedEdge, DirectedGraph},
-    graph::Graph,
-    undirected::{UndirectedEdge, UndirectedGraph},
+use crate::{
+    graphs::{
+        directed::{DirectedEdge, DirectedGraph},
+        graph::Graph,
+        undirected::{UndirectedEdge, UndirectedGraph},
+    },
+    nodes::default_node::DefaultNode,
 };
 
 // ----- Implementation of the 'GraphDeterminationResult' struct -----

@@ -1,5 +1,3 @@
-// ----- Implementation of the 'TwoDimensionalCoordinateGraph' struct -----
-
 use std::{error::Error, fmt::Display};
 
 use log::debug;

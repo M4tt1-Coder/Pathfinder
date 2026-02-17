@@ -6,7 +6,7 @@
 
 // ----- Implementation of the 'AppConfig' struct -----
 
-use crate::{algorithms::algorithm::Algorithms, graphs::default_node::DefaultNode};
+use crate::{algorithms::algorithm::Algorithms, nodes::default_node::DefaultNode};
 
 /// Represents the data input method used to gather the information to generate the graph.
 ///

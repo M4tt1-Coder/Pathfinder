@@ -2,9 +2,9 @@ use std::{error::Error, fmt::Display};
 
 use uuid::Uuid;
 
-use crate::graphs::{
-    default_node::DefaultNode,
-    graph::{Graph, GraphEdge},
+use crate::{
+    graphs::graph::{Graph, GraphEdge},
+    nodes::default_node::DefaultNode,
 };
 
 /// Undirected graphs don't have the restriction that you can't go along some edges from a specific

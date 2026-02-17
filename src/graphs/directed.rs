@@ -2,9 +2,9 @@ use std::{error::Error, fmt::Display};
 
 use log::info;
 
-use crate::graphs::{
-    default_node::DefaultNode,
-    graph::{Graph, GraphEdge},
+use crate::{
+    graphs::graph::{Graph, GraphEdge},
+    nodes::default_node::DefaultNode,
 };
 
 /// A directed graph implementation.

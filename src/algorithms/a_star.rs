@@ -22,6 +22,8 @@
 
 // TODO: Add the implementation of the A* algorithm
 
+// TODO: Check if used nodes need to have two coordinates
+
 use std::{error::Error, fmt::Display};
 
 use crate::{
