@@ -98,20 +98,10 @@ impl Graph for UndirectedGraph {
     }
 
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
-        for n in &self.nodes {
-            if n.id == id {
-                return Some(n);
-            }
-        }
-        None
+        self.nodes.iter().find(|&n| n.id == id).map(|v| v as _)
     }
     fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        for e in &self.edges {
-            if &e.id == id {
-                return Some(e);
-            }
-        }
-        None
+        self.edges.iter().find(|&e| &e.id == id).map(|v| v as _)
     }
     fn get_all_nodes(&self) -> &Vec<DefaultNode> {
         &self.nodes

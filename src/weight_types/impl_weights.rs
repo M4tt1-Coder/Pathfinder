@@ -19,3 +19,13 @@ impl GraphWeight for f32 {
         f32::MAX
     }
 }
+
+impl GraphWeight for i32 {
+    fn zero() -> Self {
+        0
+    }
+
+    fn max_value() -> Self {
+        i32::MAX
+    }
+}

@@ -101,28 +101,28 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         }
 
         // check if the two 'Node's are in the graph <G>
-        if self.graph.get_node_by_id(&start.get_id()).is_none() {
+        if self.graph.get_node_by_id(start.get_id()).is_none() {
             return Err(DijkstraError::new(format!(
                 "The node {} is not in the graph {}!",
                 start, self.graph
             )));
         }
 
-        if self.graph.get_node_by_id(&end.get_id()).is_none() {
+        if self.graph.get_node_by_id(end.get_id()).is_none() {
             return Err(DijkstraError::new(format!(
                 "The node {} is not in the graph {}!",
                 end, self.graph
             )));
         }
 
-        let distances = self.calculate_distances(&start)?;
+        let distances = self.calculate_distances(start)?;
 
         // search for the shortest route from the 'start' to the 'end' node
         let mut path: Vec<N> = vec![];
         let mut current_node = end.clone();
         let mut output_distance = W::zero();
 
-        while let Some(distance) = distances.get(&current_node.get_id().to_string()) {
+        while let Some(distance) = distances.get(current_node.get_id()) {
             if current_node.get_id() == end.get_id() {
                 output_distance = distance.distance;
             }
@@ -144,7 +144,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         }
 
         // check if a path really has been found
-        if path.last() != Some(&start) {
+        if path.last() != Some(start) {
             return Err(DijkstraError::new("A path could not be found!".to_string()));
         }
 

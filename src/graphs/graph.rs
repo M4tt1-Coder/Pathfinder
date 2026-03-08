@@ -275,5 +275,5 @@ pub trait GraphEdge: Clone + PartialEq {
 /// Represents a node in any kind of graph
 pub trait GraphNode: Display + Debug + Eq + std::hash::Hash + Clone + Ord {
     /// Provide the own ID of a 'GraphNode' struct.
-    fn get_id<'a>(&'a self) -> &'a str;
+    fn get_id(&self) -> &str;
 }

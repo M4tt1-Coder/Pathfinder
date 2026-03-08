@@ -3,7 +3,7 @@ use std::{error::Error, fmt::Display};
 use log::info;
 
 use crate::{
-    graphs::graph::{Graph, GraphEdge},
+    graphs::graph::{Graph, GraphEdge, GraphNode},
     nodes::default_node::DefaultNode,
 };
 
@@ -90,20 +90,16 @@ impl Graph for DirectedGraph {
         false
     }
     fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        for e in &self.edges {
-            if &e.id == id {
-                return Some(e);
-            }
-        }
-        None
+        self.edges
+            .iter()
+            .find(|&e| &e.get_id() == id)
+            .map(|v| v as _)
     }
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
-        for n in &self.nodes {
-            if n.id == id {
-                return Some(n);
-            }
-        }
-        None
+        self.nodes
+            .iter()
+            .find(|&n| n.get_id() == id)
+            .map(|v| v as _)
     }
     fn get_all_nodes(&self) -> &Vec<Self::Node> {
         &self.nodes

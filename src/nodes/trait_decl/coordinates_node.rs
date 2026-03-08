@@ -34,7 +34,7 @@
 //! ```
 //!
 
-use crate::graphs::graph::{GraphNode, GraphWeight};
+use crate::{graphs::graph::GraphNode, nodes::trait_decl::numeric_datatype::NumericDatatype};
 
 /// `CoordinatesNode` is a trait for graph nodes that have spatial coordinate information, extending `GraphNode`.
 ///
@@ -47,7 +47,7 @@ use crate::graphs::graph::{GraphNode, GraphWeight};
 /// - `CoordinateType`: The type used for the node's coordinates, must implement `GraphWeight`.
 pub trait CoordinatesNode: GraphNode {
     /// The type used for the node's coordinates.
-    type CoordinateType: GraphWeight;
+    type CoordinateType: NumericDatatype;
 
     /// Retrieves the x-coordinate of the node.
     ///

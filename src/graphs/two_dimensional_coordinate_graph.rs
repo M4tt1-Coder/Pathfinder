@@ -3,7 +3,12 @@ use std::{error::Error, fmt::Display};
 use log::debug;
 use uuid::Uuid;
 
-use crate::graphs::graph::{Graph, GraphEdge, GraphNode};
+use crate::{
+    graphs::graph::{Graph, GraphEdge, GraphNode},
+    nodes::{
+        trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
+    },
+};
 
 /// Represents a two dimensional graph, which contains nodes with two ordinates X and Y.
 ///
@@ -120,22 +125,17 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
 
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
-        for n in &self.nodes {
-            if n.id == id {
-                return Some(n);
-            }
-        }
-
-        None
+        self.nodes
+            .iter()
+            .find(|&n| n.get_id() == id)
+            .map(|v| v as _)
     }
 
     fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        for e in &self.edges {
-            if e.id == *id {
-                return Some(e);
-            }
-        }
-        None
+        self.edges
+            .iter()
+            .find(|&e| e.get_id() == *id)
+            .map(|v| v as _)
     }
     fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
         for e in &self.edges {
@@ -150,7 +150,8 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         for n in &self.nodes {
-            if n.get_y() == node.get_y() && n.get_x() == node.get_x() || node.id == n.id {
+            if n.get_y() == node.get_y() && n.get_x() == node.get_x() || node.get_id() == n.get_id()
+            {
                 return true;
             }
         }
@@ -164,8 +165,9 @@ impl Display for TwoDimensionalCoordinateGraph {
         // nodes
         let mut nodes_string = String::from("Nodes: \n");
         for n in &self.nodes {
-            nodes_string
-                .push_str(format!("{}: ( X: {}, Y: {} )\n", n.id, n.get_x(), n.get_y()).as_str());
+            nodes_string.push_str(
+                format!("{}: ( X: {}, Y: {} )\n", n.get_id(), n.get_x(), n.get_y()).as_str(),
+            );
         }
         let mut edges_string = String::from("Edges: \n");
         for e in &self.edges {
@@ -178,87 +180,6 @@ impl Display for TwoDimensionalCoordinateGraph {
             );
         }
         write!(f, "{}{}", nodes_string, edges_string)
-    }
-}
-
-// ----- Implementation of the 'TwoDimensionalNode' struct -----
-
-/// Node in a 'TwoDimensionalCoordinateGraph'.
-///
-/// In that context the node needs to hold information about where the node is placed on the 'map'.
-///
-/// All attributes are private and can't be mutated from outside after inizialization.
-///
-/// # Fields
-///
-/// - 'id' -> Identifier
-/// - 'x' -> X - ordinate
-/// - 'y' -> Y - ordinate
-#[derive(Debug, Clone, PartialEq, Hash, Eq, PartialOrd, Ord)]
-pub struct TwoDimensionalNode {
-    /// -- Private Field --
-    ///
-    /// The unique identifier for the node. It can be seen as its name too, but is used as an
-    /// IDsince it the name needs to be unique in a graph.
-    id: String,
-    /// -- Private Field --
-    ///
-    /// X - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    x: u16,
-    /// -- Private field --
-    ///
-    /// Y - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    y: u16,
-}
-
-impl TwoDimensionalNode {
-    /// Creates a new instance of the 'TwoDimensionalNode' struct.
-    ///
-    /// When the identifier has a length of 0, then no new object is being created.
-    ///
-    /// # Arguments
-    ///
-    /// - 'x' -> X-ordinate of the node
-    /// - 'y' -> Y-ordinate of the node
-    /// - 'id' -> unique identifier of the node, which can't be null or a duplicate in the graph
-    ///
-    /// (external check)
-    ///
-    /// # Returns
-    ///
-    /// => Validated fresh 'TwoDimensionalNode'
-    pub fn new(x: u16, y: u16, id: String) -> Option<Self> {
-        // id must be longer then 0
-        if id.is_empty() {
-            return None;
-        };
-        Some(Self { x, y, id })
-    }
-
-    /// Returns the Y ordinate of the 'TwoDimensionalNode' in the graph.
-    pub fn get_x(&self) -> u16 {
-        self.x
-    }
-
-    /// Provides the Y ordinate of the node in the graph.
-    pub fn get_y(&self) -> u16 {
-        self.y
-    }
-}
-
-impl GraphNode for TwoDimensionalNode {
-    fn get_id(&self) -> &str {
-        &self.id
-    }
-}
-
-impl Display for TwoDimensionalNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "ID: {}, X-ordinate: {}, Y-ordinate: {}",
-            self.id, self.x, self.y
-        )
     }
 }
 
@@ -336,8 +257,8 @@ impl TwoDimensionalEdge {
     /// => Calculated <f32> weight using the Pythagorean theorem
     fn retrieve_actual_weight(&self) -> f32 {
         // use trigometry to calculate the distance -> pythagoras
-        let height = (self.node_one.x - self.node_two.x) ^ 2;
-        let width = (self.node_one.y - self.node_two.y) ^ 2;
+        let height = (self.node_one.get_x() - self.node_two.get_x()) ^ 2;
+        let width = (self.node_one.get_y() - self.node_two.get_y()) ^ 2;
 
         // take the square root of the height and width
         let temp_sum = (height + width) as f32;

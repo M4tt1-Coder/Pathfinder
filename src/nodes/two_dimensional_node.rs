@@ -4,6 +4,8 @@ use std::fmt::Display;
 
 use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinates_node::CoordinatesNode};
 
+// TODO: Introduce generic coordinate datatypes (f32, f64, i64, ...)
+
 /// Node in a 'TwoDimensionalCoordinateGraph'.
 ///
 /// In that context the node needs to hold information about where the node is placed on the 'map'.
@@ -22,14 +24,16 @@ pub struct TwoDimensionalNode {
     /// The unique identifier for the node. It can be seen as its name too, but is used as an
     /// IDsince it the name needs to be unique in a graph.
     id: String,
+
     /// -- Private Field --
     ///
     /// X - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    x: u16,
+    x: i32,
+
     /// -- Private field --
     ///
     /// Y - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    y: u16,
+    y: i32,
 }
 
 impl TwoDimensionalNode {
@@ -48,7 +52,7 @@ impl TwoDimensionalNode {
     /// # Returns
     ///
     /// => Validated fresh 'TwoDimensionalNode'
-    pub fn new(x: u16, y: u16, id: String) -> Option<Self> {
+    pub fn new(x: i32, y: i32, id: String) -> Option<Self> {
         // id must be longer then 0
         if id.is_empty() {
             return None;
@@ -58,15 +62,15 @@ impl TwoDimensionalNode {
 }
 
 impl CoordinatesNode for TwoDimensionalNode {
-    type CoordinateType = u16;
+    type CoordinateType = i32;
 
     /// Returns the Y ordinate of the 'TwoDimensionalNode' in the graph.
-    fn get_x(&self) -> u16 {
+    fn get_x(&self) -> i32 {
         self.x
     }
 
     /// Provides the Y ordinate of the node in the graph.
-    fn get_y(&self) -> u16 {
+    fn get_y(&self) -> i32 {
         self.y
     }
 }
