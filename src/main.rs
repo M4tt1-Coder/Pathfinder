@@ -1,9 +1,12 @@
 use std::{env, process};
 
 use log::error;
-use pathfinder::{
-    algorithms::{algorithm::Algorithm, dijkstra::DijkstraAlgorithm},
-    cmd_line::app_config::AppConfig,
+use shortest_path_finder::{
+    algorithms::{
+        algorithm::{Algorithm, Algorithms},
+        dijkstra::DijkstraAlgorithm,
+    },
+    cmd_line::app_config::{AppConfig, InputOrigin},
     data_input::file_input::retrieve_graph_data_from_file,
 };
 
@@ -33,7 +36,7 @@ fn main() {
 
     // create the graph and execute the algorithm on it
     match app_config.data_input {
-        pathfinder::cmd_line::app_config::InputOrigin::File => {
+        InputOrigin::File => {
             let graphs = match retrieve_graph_data_from_file(&app_config.file_path) {
                 Ok(graph) => graph,
                 Err(err) => {
@@ -43,10 +46,8 @@ fn main() {
             };
             if let Some(graph) = graphs.directed_graph {
                 let algo = match app_config.algorithm {
-                    pathfinder::algorithms::algorithm::Algorithms::Dijkstra => {
-                        DijkstraAlgorithm::new(graph)
-                    }
-                    pathfinder::algorithms::algorithm::Algorithms::AStar => unimplemented!(),
+                    Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                    Algorithms::AStar => unimplemented!(),
                 };
                 let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
                 {
@@ -61,10 +62,8 @@ fn main() {
                 process::exit(0);
             } else if let Some(graph) = graphs.undirected_graph {
                 let algo = match app_config.algorithm {
-                    pathfinder::algorithms::algorithm::Algorithms::Dijkstra => {
-                        DijkstraAlgorithm::new(graph)
-                    }
-                    pathfinder::algorithms::algorithm::Algorithms::AStar => unimplemented!(),
+                    Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                    Algorithms::AStar => unimplemented!(),
                 };
                 let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
                 {
@@ -85,6 +84,6 @@ fn main() {
                 process::exit(1);
             };
         }
-        pathfinder::cmd_line::app_config::InputOrigin::CommandLine => unimplemented!(),
+        InputOrigin::CommandLine => unimplemented!(),
     }
 }

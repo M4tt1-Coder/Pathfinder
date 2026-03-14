@@ -1,5 +1,5 @@
 use divan::bench;
-use pathfinder::{
+use shortest_path_finder::{
     data_input::file_input::{
         FileInputGraphResult, InvalidDataInputError, retrieve_graph_data_from_file,
     },

@@ -1,5 +1,5 @@
 use divan::{Bencher, bench};
-use pathfinder::{
+use shortest_path_finder::{
     graphs::{
         graph::{Graph, GraphEdge},
         undirected::{UndirectedEdge, UndirectedGraph},

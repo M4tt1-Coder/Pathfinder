@@ -1,5 +1,5 @@
 use divan::{Bencher, bench};
-use pathfinder::{
+use shortest_path_finder::{
     algorithms::{algorithm::Algorithm, dijkstra::DijkstraAlgorithm},
     graphs::{
         directed::{DirectedEdge, DirectedGraph},
