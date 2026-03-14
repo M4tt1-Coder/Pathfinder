@@ -10,7 +10,7 @@ readme = "README.md"
 repository = "https://github.com/M4tt1-Coder/pathfinder"
 keywords = ["pathfinding", "algorithms", "rust", "library"]
 categories = ["algorithms", "data-structures"]
-exclude = ["target", "examples", "tests", "test_files"]
+exclude = ["target", "examples", "tests", "test_files", "benches", ".github", ".gitignore", ".gitmodules", "Cargo.toml"]
 
 [dependencies]
 env_logger = "^0.11.9"
