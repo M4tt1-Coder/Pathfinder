@@ -46,8 +46,10 @@ fn main() {
                     pathfinder::algorithms::algorithm::Algorithms::Dijkstra => {
                         DijkstraAlgorithm::new(graph)
                     }
+                    pathfinder::algorithms::algorithm::Algorithms::AStar => unimplemented!(),
                 };
-                let result = match algo.shortest_path(app_config.start_node, app_config.end_node) {
+                let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
+                {
                     Ok(res) => res,
                     Err(err) => {
                         error!("{}", err.message);
@@ -62,8 +64,10 @@ fn main() {
                     pathfinder::algorithms::algorithm::Algorithms::Dijkstra => {
                         DijkstraAlgorithm::new(graph)
                     }
+                    pathfinder::algorithms::algorithm::Algorithms::AStar => unimplemented!(),
                 };
-                let result = match algo.shortest_path(app_config.start_node, app_config.end_node) {
+                let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
+                {
                     Ok(res) => res,
                     Err(err) => {
                         error!("{}", err.message);
