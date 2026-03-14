@@ -16,8 +16,9 @@
 use std::collections::HashMap;
 
 use crate::{
+    algorithms::a_star_algorithm::a_star::{AStarExecutionError, AStarQueueElement},
     graphs::graph::{Graph, GraphNode},
-    nodes::trait_decl::numeric_datatype::NumericDatatype,
+    nodes::trait_decl::{coordinates_node::CoordinatesNode, numeric_datatype::NumericDatatype},
 };
 
 /// Prepares the initial G-cost map for all nodes in the graph.
@@ -50,4 +51,55 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
     }
 
     g_cost_map
+}
+
+/// Determines the total path and cost from a sequence of visited nodes in an A* search.
+///
+/// This function reconstructs the path from the goal node back to the start node by
+/// following the chain of predecessors stored in each node. It also calculates the
+/// total cost (distance) of this path.
+///
+/// # Arguments
+/// - `visited_nodes`: A vector of `AStarQueueElement` representing the nodes visited during the search,
+///   typically the contents of the closed set or the sequence of expanded nodes.
+///
+/// # Returns
+/// - `Ok((path, total_cost))`: A tuple containing the vector of nodes representing the path from start to goal,
+///   and the total cost of this path.
+/// - `Err(AStarExecutionError)`: If a predecessor is not found in the visited nodes during reconstruction,
+///   indicating an inconsistency in the search data.
+///
+/// # Type Parameters
+/// - `ND`: A type that implements `NumericDatatype`, representing the cost type (e.g., `f64`, `i32`).
+/// - `N`: A type that implements `CoordinatesNode<CoordinateType = ND>`, representing nodes in the graph.
+///
+/// # Example
+/// ```
+/// let (path, cost) = determine_path_cost(visited_nodes).unwrap();
+/// ```
+pub fn determine_path_cost<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>(
+    visited_nodes: Vec<AStarQueueElement<ND, N>>,
+) -> Result<(Vec<N>, ND), AStarExecutionError> {
+    let mut path: Vec<N> = Vec::new();
+    let mut distance = ND::zero();
+    if let Some(visited_node) = visited_nodes.last() {
+        let mut current_node = visited_node;
+        distance = current_node.get_g_cost();
+        path.push(current_node.get_node().clone());
+        while let Some(predecessor) = current_node.get_predecessor() {
+            path.push(predecessor.clone());
+            current_node = match visited_nodes.iter().find(|e| e.get_node() == predecessor) {
+                Some(element) => element,
+                None => {
+                    return Err(AStarExecutionError::new(
+                        "Predecessor not found in closed queue during path reconstruction."
+                            .to_string(),
+                    ));
+                }
+            }
+        }
+        path.reverse();
+    }
+
+    Ok((path, distance))
 }

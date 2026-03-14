@@ -20,8 +20,6 @@
 //!    dy = abs(node.y - goal.y)
 //!    return D * sqrt(dx * dx + dy * dy)
 
-// TODO: Add the implementation of the A* algorithm
-
 use std::{
     collections::{BinaryHeap, HashMap},
     error::Error,
@@ -32,14 +30,13 @@ use log::warn;
 
 use crate::{
     algorithms::{
-        a_star_algorithm::utils::prepare_g_cost_map,
+        a_star_algorithm::utils::{determine_path_cost, prepare_g_cost_map},
         algorithm::{Algorithm, SearchResult},
     },
     graphs::graph::Graph,
     nodes::trait_decl::{coordinates_node::CoordinatesNode, numeric_datatype::NumericDatatype},
 };
 
-///
 /// Represents the A* pathfinding algorithm, parameterized over numeric type, node type, and graph type.
 ///
 /// This struct encapsulates the graph on which the algorithm operates and provides a foundation
@@ -56,6 +53,7 @@ pub struct AStar<
     /// It must also implement `Display` for potential visualization or debugging purposes.
     pub graph: G,
 }
+
 // ----- Implementation of the 'A_Star' struct -----
 
 impl<
@@ -102,6 +100,9 @@ impl<
         {
             // if the node is the destination node -> break
             if node == end {
+                // move the node to the "closed_queue", don't change any data of the node, because
+                // we need the predecessor for the path reconstruction
+                closed_queue.push(AStarQueueElement::new(node, g_cost, h_cost, predecessor));
                 break;
             }
             // add the node to the "closed_queue"
@@ -114,8 +115,6 @@ impl<
                 // if the neighbour is already in the "open_queue" and the 'g_cost' is higher than
                 // the 'tentative_g_cost' -> update the 'g_cost' of the neighbour in the
                 // "open_queue" and set the current node as the predecessor of the neighbour
-
-                // TODO: move repetative code to a designated function
 
                 let mut neighbour_is_in_open_queue = open_queue
                     .iter()
@@ -156,6 +155,7 @@ impl<
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
                 if !neighbour_is_in_open_queue && !neighbour_is_in_closed_queue {
+                    g_costs.insert(neighbour.get_id().to_string(), tentative_g_cost);
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,
@@ -166,13 +166,12 @@ impl<
             }
         }
 
-        // TODO: Determine the path from the start to the end
+        // the last element in the "closed_queue" is the destination node, so we can reconstruct
+        // the path from the destination node to the start node by following the predecessors
+        let (path, distance) =
+            determine_path_cost(closed_queue).map_err(|e| Self::ExecutionError::new(e.message))?;
 
-        // TODO: return real output
-        Ok(AStarSearchResult {
-            distance: ND::zero(),
-            path: vec![],
-        })
+        Ok(AStarSearchResult { distance, path })
     }
 }
 
@@ -348,7 +347,7 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
 /// - `ND`: Numeric datatype used for costs (e.g., `f64`, `u32`). Must implement traits like `PartialOrd`, `Ord`.
 /// - `N`: The node type in your graph. Must implement `CoordinatesNode` with `CoordinateType = ND`.
 #[derive(Debug)]
-struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
+pub struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
     /// Reference to the current node in the graph.
     ///
     /// This points to the node data structure representing the current position in the graph.
