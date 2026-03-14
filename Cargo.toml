@@ -1,10 +1,10 @@
 [package]
-name = "pathfinder"
+name = "shortest_path_finder"
 version = "0.1.0"
 edition = "2024"
 authors = ["Matthis Geißler <matthisgeissler@gmail.com>"]
 license-file = "LICENSE"
-description = "A Rust library for pathfinding algorithms."
+description = "A Rust library for shortest path finding algorithms, including Dijkstra's, A*, and Bellman-Ford. Supports both directed and undirected graphs, with customizable heuristics and edge weights. Ideal for game development, network routing, and graph analysis."
 homepage = "https://matthisgeissler.pages.dev"
 readme = "README.md"
 repository = "https://github.com/M4tt1-Coder/pathfinder"
