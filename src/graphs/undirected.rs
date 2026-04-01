@@ -10,6 +10,8 @@ use crate::{
 /// Undirected graphs don't have the restriction that you can't go along some edges from a specific
 /// direction. Here you go along all ways.
 ///
+/// Its abbreviation is 'UN' used in files to identify the graph data for an undirected graph.
+///
 /// # Fields
 ///
 /// * 'nodes' -> The nodes of the graph.
@@ -22,8 +24,11 @@ pub struct UndirectedGraph {
 
 impl Graph for UndirectedGraph {
     type Node = DefaultNode;
+
     type Edge = UndirectedEdge;
+
     type Weight = u16;
+
     type InsertionError = UndirectedGraphInsertionError;
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
@@ -100,14 +105,21 @@ impl Graph for UndirectedGraph {
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
         self.nodes.iter().find(|&n| n.id == id).map(|v| v as _)
     }
+
     fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
         self.edges.iter().find(|&e| &e.id == id).map(|v| v as _)
     }
+
     fn get_all_nodes(&self) -> &Vec<DefaultNode> {
         &self.nodes
     }
+
     fn is_weighted(&self) -> bool {
         true
+    }
+
+    fn abbreviation() -> String {
+        String::from("UN")
     }
 }
 

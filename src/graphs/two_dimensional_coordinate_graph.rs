@@ -12,6 +12,8 @@ use crate::{
 
 /// Represents a two dimensional graph, which contains nodes with two ordinates X and Y.
 ///
+/// Its sign is 'TD' utilised in files where graph data is stored.
+///
 /// # Fields
 ///
 /// - 'nodes' -> Nodes in the graph
@@ -74,9 +76,11 @@ impl Graph for TwoDimensionalCoordinateGraph {
         }
         Box::new(neighbours.into_iter())
     }
+
     fn is_directed(&self) -> bool {
         false
     }
+
     fn insert_node(&mut self, new_node: Self::Node) {
         // if the node already exists  -> then dont add it -> return
         if self.does_node_already_exist(&new_node) {
@@ -85,6 +89,7 @@ impl Graph for TwoDimensionalCoordinateGraph {
 
         self.nodes.push(new_node);
     }
+
     fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
         // if the edge with the nodes already exists -> return error
         if self.does_edge_already_exist(&edge) {
@@ -137,6 +142,7 @@ impl Graph for TwoDimensionalCoordinateGraph {
             .find(|&e| e.get_id() == *id)
             .map(|v| v as _)
     }
+
     fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
         for e in &self.edges {
             if e.id == edge.id
@@ -148,6 +154,7 @@ impl Graph for TwoDimensionalCoordinateGraph {
         }
         false
     }
+
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         for n in &self.nodes {
             if n.get_y() == node.get_y() && n.get_x() == node.get_x() || node.get_id() == n.get_id()
@@ -156,6 +163,10 @@ impl Graph for TwoDimensionalCoordinateGraph {
             }
         }
         false
+    }
+
+    fn abbreviation() -> String {
+        String::from("TD")
     }
 }
 

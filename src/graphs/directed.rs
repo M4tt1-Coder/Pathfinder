@@ -9,6 +9,8 @@ use crate::{
 
 /// A directed graph implementation.
 ///
+/// Its representational sign is 'D' relevant for storing data in a file.
+///
 /// # Example
 /// ```
 /// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
@@ -25,12 +27,17 @@ pub struct DirectedGraph {
 
 impl Graph for DirectedGraph {
     type Node = DefaultNode;
+
     type Weight = u16;
+
     type Edge = DirectedEdge;
+
     type InsertionError = DirectedGraphInsertionError;
+
     fn is_directed(&self) -> bool {
         true
     }
+
     fn neighbors<'a>(
         &'a self,
         u: &Self::Node,
@@ -45,6 +52,7 @@ impl Graph for DirectedGraph {
 
         Box::new(neighbors.into_iter())
     }
+
     fn insert_node(&mut self, new_node: Self::Node) {
         if self.does_node_already_exist(&new_node) {
             return;
@@ -53,6 +61,7 @@ impl Graph for DirectedGraph {
         // add the node to the graph
         self.nodes.push(new_node);
     }
+
     fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(&edge) {
             return Some(DirectedGraphInsertionError::new(format!(
@@ -73,6 +82,7 @@ impl Graph for DirectedGraph {
 
         None
     }
+
     fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
         for e in &self.edges {
             if e.from.id == edge.from.id && e.to.id == edge.to.id {
@@ -81,6 +91,7 @@ impl Graph for DirectedGraph {
         }
         false
     }
+
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         for n in &self.nodes {
             if n.id == node.id {
@@ -89,23 +100,31 @@ impl Graph for DirectedGraph {
         }
         false
     }
+
     fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
         self.edges
             .iter()
             .find(|&e| &e.get_id() == id)
             .map(|v| v as _)
     }
+
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
         self.nodes
             .iter()
             .find(|&n| n.get_id() == id)
             .map(|v| v as _)
     }
+
     fn get_all_nodes(&self) -> &Vec<Self::Node> {
         &self.nodes
     }
+
     fn is_weighted(&self) -> bool {
         true
+    }
+
+    fn abbreviation() -> String {
+        String::from("D")
     }
 }
 

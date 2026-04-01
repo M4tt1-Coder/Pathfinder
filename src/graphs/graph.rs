@@ -192,6 +192,12 @@ pub trait Graph {
     ///
     /// This is relevant for some algorithms which need weighted edges.
     fn is_weighted(&self) -> bool;
+
+    /// For storing data in files and possible other use cases graph needs a useful, short and unique
+    /// signature or sign.
+    ///
+    /// Make sure not to use two similar signs for different graph types!
+    fn abbreviation() -> String;
 }
 
 // ----- Definition of the 'GraphTrait' trait -----
