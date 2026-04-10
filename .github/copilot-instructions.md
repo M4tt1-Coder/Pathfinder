@@ -65,3 +65,9 @@
    - `**Date**`, `**Tool**`, `**Model**`, `**Iterations**`
    - `## Prompt` with timestamped prompt text
 - If a prompt has follow-up prompts, include each follow-up under `## Prompt` with its own timestamp, as specified in `diary/README.md`.
+
+## Commit History requirement
+
+- After each user prompt that results in repository modifications, create a dedicated commit containing all changes made for that prompt.
+- Keep commits granular and topic-focused to maximize traceability and reviewability.
+- Do not batch unrelated prompt changes into one commit.

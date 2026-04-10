@@ -57,6 +57,9 @@ separate entry with its own timestamp:
 Every prompt that creates or modifies code artifacts results in its own commit
 containing both the code changes and the diary entry:
 
+- One prompt -> one dedicated commit for the resulting repository changes.
+- Keep commits scoped only to the changes introduced for that prompt.
+
 ```
 [diary] NNN — Short description of what was prompted
 ```
