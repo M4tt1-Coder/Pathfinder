@@ -1,4 +1,4 @@
-Graph: Undirected
+UN
 A-B:7
 A-E:5
 A-K:2
