@@ -49,6 +49,12 @@
 - For any newly created Rust source file, add file-level documentation suitable for crates.io rendering (typically inner module docs via `//!` at the top of the file).
 - Treat documentation updates as required deliverables, not optional polish.
 
+## README synchronization requirement
+
+- For every prompt that results in repository changes, explicitly check whether those changes affect `README.md`.
+- If behavior, CLI usage, configuration, testing workflow, project structure, or documented examples have changed, update `README.md` in the same change.
+- Treat this check as mandatory before finalizing work, even when changes are small.
+
 ## Errors encountered during onboarding and workarounds used
 
 - While running `cargo test --verbose` in this environment, tool output exceeded inline display limits and was redirected to a temp log file (`/tmp/copilot-tool-output-...txt`).
