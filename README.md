@@ -119,40 +119,36 @@ Explicit file and algorithm example:
 
 ### Input file format
 
-The current parser expects graph-type prefixes in each line and applies a strict flow:
+The current parser format (used by the provided test files) is header plus edge lines:
 
-- Line 1 is used to detect graph type (`D`, `UN`, `TD`) and validate syntax.
+- Line 1 is a graph-type header: `D`, `UN`, or `TD`.
 - Only lines after line 1 are converted into edges.
-- This means line 1 must be a valid prefixed edge line (for example `DA->B:7`), not only `D` or
-	`UN`, and it is not inserted as an edge.
+- Line 1 is not inserted as an edge.
 
 Directed example:
 
 ```text
-DA->B:7
-DA->B:7
-DB->C:3
-DC->D:5
+D
+A->B:7
+B->C:3
+C->D:5
 ```
-
-In this example, the first line detects type and is ignored for insertion, while the second line
-adds the first actual edge.
 
 Undirected example:
 
 ```text
-UNA-B:7
-UNA-B:7
-UNB-C:3
-UNC-D:5
+UN
+A-B:7
+B-C:3
+C-D:5
 ```
 
 Two-dimensional format currently recognized by parser:
 
 ```text
-TDA:0,0-B:2,1
-TDA:0,0-B:2,1
-TDB:2,1-C:4,1
+TD
+A:0,0-B:2,1
+B:2,1-C:4,1
 ```
 
 ### Development workflow

@@ -12,29 +12,31 @@
 //! # Input Format
 //!
 //! The parser infers graph type from the first line and expects all following non-empty lines to
-//! use the same graph encoding. In the current implementation, each edge line starts with a graph
-//! abbreviation marker:
-//! - `D...` for directed edge lines,
-//! - `UN...` for undirected edge lines,
-//! - `TD...` for two-dimensional edge lines.
+//! use the same graph encoding. In the current implementation and test files, the first line is a
+//! graph-type marker:
+//! - `D` for directed graph input,
+//! - `UN` for undirected graph input,
+//! - `TD` for two-dimensional graph input.
 //!
 //! Important current behavior:
 //! - The first line is used only for graph-type detection.
 //! - Graph edges are built from lines after the first line.
-//! - Therefore, the first line must be a syntactically valid prefixed edge line.
+//! - Therefore, the first line is a header marker and is not parsed as an edge.
 //!
 //! ## Supported edge patterns
 //!
 //! ```text
-//! Directed:     D<from>-><to>:<weight>        (example: DA->B:7)
-//! Undirected:   UN<from>-<to>:<weight>        (example: UNA-B:7)
-//! 2D edge line: TD<from>:x,y-<to>:x,y         (example: TDA:0,0-B:4,2)
+//! Header line:  D | UN | TD
+//! Directed:     <from>-><to>:<weight>         (example: A->B:7)
+//! Undirected:   <from>-<to>:<weight>          (example: A-B:7)
+//! 2D edge line: <from>:x,y-<to>:x,y           (example: A:0,0-B:4,2)
 //! ```
 //!
 //! # Validation and consistency rules
 //!
 //! - The file must contain at least one line.
-//! - Every parsed line must match one of the supported syntaxes.
+//! - The first line must identify a supported graph type.
+//! - Every remaining parsed line must match one of the supported edge syntaxes.
 //! - A file can produce exactly one graph variant.
 //! - Duplicate edges are ignored during insertion.
 //! - The first line is consumed for type detection and is not inserted as an edge.
@@ -239,9 +241,9 @@ pub fn retrieve_graph_data_from_file(
 fn validate_line_syntax(line: &str) -> bool {
     // MAKE SURE THIS CONTAINS ALL REGEXs OF ALL GRAPHS
     let reg_exps = vec![
-        r"D[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+",
-        r"UN[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+",
-        r"TD[A-Za-z0-9]+:[0-9]+,[0-9]+-[A-Za-z0-9]+:[0-9]+,[0-9]+", // A:2,6 - B:5,5
+        r"[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+",
+        r"[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+",
+        r"[A-Za-z0-9]+:[0-9]+,[0-9]+-[A-Za-z0-9]+:[0-9]+,[0-9]+", // A:2,6 - B:5,5
     ];
     for exp in reg_exps {
         let reg = Regex::new(exp).unwrap();
@@ -276,9 +278,9 @@ fn validate_line_syntax(line: &str) -> bool {
 /// # Examples
 ///
 /// ```text
-/// Directed example:   DA->B:12
-/// Undirected example: UNA-B:12
-/// 2D example:         TDA:0,0-B:4,2
+/// Directed edge line:   A->B:12
+/// Undirected edge line: A-B:12
+/// 2D edge line:         A:0,0-B:4,2
 /// ```
 fn convert_line_to_graph_data(
     line: &str,
@@ -344,20 +346,13 @@ fn convert_line_to_graph_data(
 /// The inferred [`FoundGraphType`] if the line syntax is valid and a known graph abbreviation
 /// prefix is detected.
 ///
-/// The first line must follow the same prefixed edge format as subsequent lines, for example
-/// `DA->B:4` or `UNA-B:4`.
+/// The first line is expected to be a graph-type marker such as `D`, `UN`, or `TD`.
 ///
 /// # Errors
 ///
 /// Returns [`ParseError::InvalidDataInput`] if the line does not match any supported syntax or if
 /// no graph prefix can be resolved.
 fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
-    // validate that the line has a valid format
-    if !validate_line_syntax(first_line) {
-        return Err(ParseError::InvalidDataInput(
-            "The first line of the input file is in a wrong format! Please use these formats: 'UN' (undirected) OR 'D' (directed) ".to_string(),
-        ));
-    }
     if first_line.starts_with(&DirectedGraph::abbreviation()) {
         Ok(FoundGraphType::D)
     } else if first_line.starts_with(&UndirectedGraph::abbreviation()) {
