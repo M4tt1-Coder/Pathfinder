@@ -13,7 +13,7 @@
 //! This module, therefore, serves as a foundational component for building generic, type-agnostic
 //! numerical functionalities within the broader codebase.use crate::nodes::trait_decl::numeric_datatype::NumericDatatype;
 
-use crate::nodes::trait_decl::numeric_datatype::NumericDatatype;
+use crate::weight_types::numeric_datatype::NumericDatatype;
 
 /// A small constant factor used to adjust values for heuristic calculations, if necessary.
 static HEURISTIC_ADJUSTMENT_FACTOR: f32 = 0.001;

@@ -10,8 +10,16 @@ use shortest_path_finder::{
     data_input::file_input::retrieve_graph_data_from_file,
 };
 
-// TODO: Refactor code -> check if in some cases references are better then cloning (if possible)
-// etc.
+// TODO: Run a prompt that searches for errors in the whole source code and then ask if they should
+// be made global and if they should be refactored to a more generic error type (e.g. 'AppError' or
+// 'GraphError' or 'ParseError' or 'InputError' or ...) and place them in the 'error' module. Also,
+// check if the error types are used in the right way and if they are used at all (if not, remove
+// them).
+
+// TODO: Refactor code -> check if in some cases references are better then cloning (if possible),
+// apply best practices, apply better error handling
+
+// TODO: Make 'A*' algorithm usable (test it) and benchmark it against Dijkstra's algorithm
 
 fn main() {
     // enable logging to the terminal
@@ -29,7 +37,7 @@ fn main() {
     let app_config = match AppConfig::setup_config(args) {
         Ok(config) => config,
         Err(err) => {
-            error!("Here: {}", err.message);
+            error!("{}", err.message);
             process::exit(1);
         }
     };

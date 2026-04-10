@@ -8,8 +8,8 @@
 //! # Usage
 //!
 //! ```rust
-//! use your_crate::DefaultNode;
-//! use your_crate::graphs::graph::GraphNode;
+//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let node = DefaultNode::new("node1".to_string());
 //! println!("Node ID: {}", node); // prints "node1"
@@ -17,7 +17,7 @@
 
 // ----- Implementation of the 'DefaultNode' struct -----
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use crate::graphs::graph::GraphNode;
 
@@ -74,5 +74,24 @@ impl GraphNode for DefaultNode {
     /// A string slice referencing the node's ID.
     fn get_id(&self) -> &str {
         &self.id
+    }
+}
+
+impl FromStr for DefaultNode {
+    type Err = ();
+
+    /// Parses a `DefaultNode` from a string.
+    ///
+    /// This implementation simply creates a `DefaultNode` with the input string as its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - A string slice to parse into a `DefaultNode`.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the parsed `DefaultNode` or an error if parsing fails.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(s.to_string()))
     }
 }

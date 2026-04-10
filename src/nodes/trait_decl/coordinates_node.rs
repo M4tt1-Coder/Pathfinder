@@ -6,12 +6,21 @@
 //! # Usage
 //!
 //! ```rust
-//! use pathfinder::graphs::graph::{GraphNode, GraphWeight, CoordinatesNode};
+//! use std::fmt::{Display, Formatter};
+//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::nodes::trait_decl::coordinates_node::CoordinatesNode;
 //!
+//! #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
 //! struct MapNode {
 //!     id: String,
-//!     x: f64,
-//!     y: f64,
+//!     x: i32,
+//!     y: i32,
+//! }
+//!
+//! impl Display for MapNode {
+//!     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//!         write!(f, "{}", self.id)
+//!     }
 //! }
 //!
 //! impl GraphNode for MapNode {
@@ -21,7 +30,7 @@
 //! }
 //!
 //! impl CoordinatesNode for MapNode {
-//!     type CoordinateType = f64;
+//!     type CoordinateType = i32;
 //!     
 //!     fn get_x(&self) -> Self::CoordinateType {
 //!         self.x
@@ -34,7 +43,7 @@
 //! ```
 //!
 
-use crate::{graphs::graph::GraphNode, nodes::trait_decl::numeric_datatype::NumericDatatype};
+use crate::{graphs::graph::GraphNode, weight_types::numeric_datatype::NumericDatatype};
 
 /// `CoordinatesNode` is a trait for graph nodes that have spatial coordinate information, extending `GraphNode`.
 ///

@@ -4,6 +4,11 @@ use std::{
     ops::Add,
 };
 
+// TODO: Check for all implementations of the 'Graph' trait if using references for nodes etc. is
+// better than cloning (if possible) and apply it if it is the case. Also, check if there are some
+// cases where using references is better than cloning for the 'GraphWeight' trait and apply it if
+// it is the case.
+
 /// A trait representing a weighted graph structure.
 ///
 /// The graph can be either directed or undirected.
@@ -26,11 +31,18 @@ pub trait Graph {
     ///
     /// # Example
     /// ```rust
-    /// use pathfinder::graphs::graph::GraphNode;
+    /// use std::fmt::{Display, Formatter};
+    /// use shortest_path_finder::graphs::graph::GraphNode;
     ///
-    /// #[derive(Clone, PartialEq, Eq, Hash)]
+    /// #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
     /// struct Node {
     ///     id: String,
+    /// }
+    ///
+    /// impl Display for Node {
+    ///     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    ///         write!(f, "{}", self.id)
+    ///     }
     /// }
     ///
     /// impl GraphNode for Node {
@@ -57,13 +69,20 @@ pub trait Graph {
     ///
     /// # Example
     /// ```
-    /// use pathfinder::graphs::graph::Node;
+    /// use shortest_path_finder::graphs::graph::GraphEdge;
+    /// use uuid::Uuid;
     ///
     /// #[derive(Clone, PartialEq)]
     /// struct Edge {
-    ///     from: Node,
-    ///     to: Node,
-    ///     weight: u16,
+    ///     id: Uuid,
+    /// }
+    ///
+    /// impl GraphEdge for Edge {
+    ///     type ID = Uuid;
+    ///
+    ///     fn get_id(&self) -> Self::ID {
+    ///         self.id
+    ///     }
     /// }
     /// ```
     type Edge: GraphEdge;
@@ -88,15 +107,22 @@ pub trait Graph {
     /// # Example
     ///
     /// ```
-    /// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
-    /// use crate::pathfinder::graphs::graph::Graph;
+    /// use shortest_path_finder::graphs::{
+    ///     directed::{DirectedEdge, DirectedGraph},
+    ///     graph::Graph,
+    /// };
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let graph = DirectedGraph::new(
-    ///     vec![Node::new("A".to_string()), Node::new("B".to_string())],
-    ///     vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()), 6)]
+    ///     vec![DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string())],
+    ///     vec![DirectedEdge::new(
+    ///         DefaultNode::new("A".to_string()),
+    ///         DefaultNode::new("B".to_string()),
+    ///         6,
+    ///     )],
     /// );
     ///
-    /// let node = Node::new("A".to_string());
+    /// let node = DefaultNode::new("A".to_string());
     ///
     /// let neighbors = graph.neighbors(&node);
     /// for (neighbor, weight) in neighbors {
@@ -115,8 +141,8 @@ pub trait Graph {
     /// * `false` if the graph is undirected.
     /// # Example
     /// ```
-    /// use crate::pathfinder::graphs::graph::Graph;
-    /// use pathfinder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![], vec![]);
     /// if graph.is_directed() {
@@ -218,12 +244,14 @@ pub trait Graph {
 /// # Example
 /// ```rust
 /// use std::ops::Add;
+/// use shortest_path_finder::graphs::graph::GraphWeight;
 ///
 /// fn total_weight<W: GraphWeight>(weights: &[W]) -> W {
 ///     weights.iter().cloned().fold(W::zero(), |acc, w| acc + w)
 /// }
 ///
-/// // Assuming W implements `Zero` trait or similar for W::zero()
+/// let weights = vec![1u16, 2u16, 3u16];
+/// assert_eq!(total_weight(&weights), 6u16);
 /// ```
 pub trait GraphWeight:
     Copy + PartialOrd + Add<Output = Self> + Display + Debug + PartialOrd + PartialEq

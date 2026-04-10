@@ -14,12 +14,13 @@
 //! # Usage
 //!
 //! ```rust
-//! use crate::graphs::graph::GraphWeight;
-//! use crate::your_module::NumericDatatype;
+//! use shortest_path_finder::weight_types::numeric_datatype::NumericDatatype;
 //!
 //! fn scale_weight<W: NumericDatatype>(weight: W, factor: W) -> W {
 //!     weight * factor
 //! }
+//!
+//! assert_eq!(scale_weight(3i32, 2i32), 6i32);
 //! ```
 //!
 

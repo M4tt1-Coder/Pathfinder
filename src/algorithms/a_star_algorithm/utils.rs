@@ -18,7 +18,8 @@ use std::collections::HashMap;
 use crate::{
     algorithms::a_star_algorithm::a_star::{AStarExecutionError, AStarQueueElement},
     graphs::graph::{Graph, GraphNode},
-    nodes::trait_decl::{coordinates_node::CoordinatesNode, numeric_datatype::NumericDatatype},
+    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    weight_types::numeric_datatype::NumericDatatype,
 };
 
 /// Prepares the initial G-cost map for all nodes in the graph.
@@ -74,7 +75,9 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 /// - `N`: A type that implements `CoordinatesNode<CoordinateType = ND>`, representing nodes in the graph.
 ///
 /// # Example
-/// ```
+/// ```ignore
+/// // This helper is used internally by the A* implementation once
+/// // the visited queue has been populated during search execution.
 /// let (path, cost) = determine_path_cost(visited_nodes).unwrap();
 /// ```
 pub fn determine_path_cost<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>(

@@ -24,7 +24,7 @@ pub struct ShortestDistance<N: GraphNode, W: GraphWeight + Ord> {
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
-    /// Creates a new instance of `YourStruct` with the specified previous node and distance.
+    /// Creates a new instance of `ShortestDistance` with the specified previous node and distance.
     ///
     /// # Parameters
     /// - `previous_node`: An optional reference to the previous node in the path.
@@ -32,13 +32,15 @@ impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
     /// - `distance`: The accumulated distance or weight associated with this node.
     ///
     /// # Returns
-    /// A new instance of `YourStruct` initialized with the provided `previous_node` and `distance`.
+    /// A new `ShortestDistance` initialized with the provided `previous_node` and `distance`.
     ///
     /// # Example
-    /// ```
+    /// ```ignore
+    /// // Internal helper used inside Dijkstra's algorithm.
+    /// // Constructed by the algorithm while computing shortest paths.
     /// let start_node = None;
-    /// let initial_distance = 0.0;
-    /// let node = YourStruct::new(start_node, initial_distance);
+    /// let initial_distance = 0u16;
+    /// let node = ShortestDistance::new(start_node, initial_distance);
     /// ```
     fn new(previous_node: Option<N>, distance: W) -> Self {
         Self {

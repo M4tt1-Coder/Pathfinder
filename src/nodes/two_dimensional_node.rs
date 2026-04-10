@@ -1,8 +1,11 @@
 // ----- Implementation of the 'TwoDimensionalNode' struct -----
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
-use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinates_node::CoordinatesNode};
+use crate::{
+    error::parse_error::ParseError, graphs::graph::GraphNode,
+    nodes::trait_decl::coordinates_node::CoordinatesNode,
+};
 
 // TODO: Introduce generic coordinate datatypes (f32, f64, i64, ...)
 
@@ -88,5 +91,51 @@ impl Display for TwoDimensionalNode {
             "ID: {}, X-ordinate: {}, Y-ordinate: {}",
             self.id, self.x, self.y
         )
+    }
+}
+
+impl FromStr for TwoDimensionalNode {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Trim whitespace and split into two parts: id and coordinates
+        let mut parts = s.trim().splitn(2, ':');
+        let id_part = parts.next().unwrap_or("");
+        let coord_part = parts.next();
+
+        // Input must have exactly one colon
+        let coord_part = match coord_part {
+            Some(c) => c,
+            None => return Err(ParseError::MissingColon),
+        };
+
+        let id = id_part.trim();
+        if id.is_empty() {
+            return Err(ParseError::EmptyId);
+        }
+
+        // Split coordinates by comma
+        let mut coordinates = coord_part.trim().splitn(2, ',');
+        let x_str = coordinates.next().unwrap_or("");
+        let y_str = coordinates.next();
+
+        // Must have exactly two coordinates
+        let y_str = match y_str {
+            Some(y) if !y.is_empty() => y,
+            _ => return Err(ParseError::InvalidCoordinates),
+        };
+
+        // Parse x and y as integers
+        let x: i32 = x_str
+            .trim()
+            .parse()
+            .map_err(|_| ParseError::InvalidInteger)?;
+        let y: i32 = y_str
+            .trim()
+            .parse()
+            .map_err(|_| ParseError::InvalidInteger)?;
+
+        // Construct the node, returning error if construction fails
+        TwoDimensionalNode::new(x, y, id.to_string()).ok_or(ParseError::NodeConstructionFailed)
     }
 }

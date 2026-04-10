@@ -34,7 +34,8 @@ use crate::{
         algorithm::{Algorithm, SearchResult},
     },
     graphs::graph::Graph,
-    nodes::trait_decl::{coordinates_node::CoordinatesNode, numeric_datatype::NumericDatatype},
+    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    weight_types::numeric_datatype::NumericDatatype,
 };
 
 /// Represents the A* pathfinding algorithm, parameterized over numeric type, node type, and graph type.
@@ -234,14 +235,16 @@ impl<
 /// # Example
 ///
 /// ```rust
-/// use pathfinder::{ graphs::two_dimensional_coordinate_graph::TwoDimensionalNode,
-/// algorithms::a_star::AStarSearchResult };
+/// use shortest_path_finder::algorithms::algorithm::SearchResult;
+/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
-/// let node_A = TwoDimensionalNode::new(0,0,"A".to_string());
-/// let node_B = TwoDimensionalNode::new(0,1,"B".to_string());
+/// let node_a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+/// let node_b = TwoDimensionalNode::new(0, 1, "B".to_string()).unwrap();
 ///
 /// // create the 'AStarSearchResult' object
-/// let search_result = AStarSearchResult::new(1., vec![node_A, node_B]);
+/// let search_result = AStarSearchResult::new(1, vec![node_a, node_b]).unwrap();
+/// assert_eq!(search_result.get_total_distance(), 1);
 /// ```
 #[derive(Debug)]
 pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
@@ -276,10 +279,16 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     ///
     /// # Examples
     ///
-    /// ```
-    /// let path = vec![TwoDimensionalNode::new(0.0, 0.0), TwoDimensionalNode::new(1.0, 1.0)];
-    /// let result = AStarSearchResult::new(5.0, path);
-    /// assert!(result.is\_ok());
+    /// ```rust
+    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let path = vec![
+    ///     TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap(),
+    ///     TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap(),
+    /// ];
+    /// let result = AStarSearchResult::new(5, path);
+    /// assert!(result.is_ok());
     /// ```
     ///
     /// # Returns

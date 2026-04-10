@@ -108,12 +108,17 @@ pub trait SearchResult: Display + Debug {
     /// # Example
     ///
     /// ```rust
-    /// use pathfinder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::algorithms::algorithm::SearchResult;
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// // create a search which shouldn't be instanciated manually like this
-    /// let artificial_search_result = DijkstraSearchResult::new(vec![], 0);
+    /// let path = vec![
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    /// ];
+    /// let artificial_search_result = DijkstraSearchResult::new(path, 3u16).unwrap();
     ///
-    /// println!("{}", artificial_search_result.get_total_distance()); // 0
+    /// assert_eq!(artificial_search_result.get_total_distance(), 3u16);
     /// ```
     fn get_total_distance(&self) -> Self::Distance;
 

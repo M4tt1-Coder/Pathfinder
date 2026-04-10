@@ -13,10 +13,18 @@ use crate::{
 ///
 /// # Example
 /// ```
-/// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
+/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+/// use shortest_path_finder::nodes::default_node::DefaultNode;
 /// let graph = DirectedGraph {
-///     nodes: vec![Node::new("A".to_string()), Node::new("B".to_string())],
-///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()), 4)],
+///     nodes: vec![
+///         DefaultNode::new("A".to_string()),
+///         DefaultNode::new("B".to_string()),
+///     ],
+///     edges: vec![DirectedEdge::new(
+///         DefaultNode::new("A".to_string()),
+///         DefaultNode::new("B".to_string()),
+///         4,
+///     )],
 /// };
 /// ```
 #[derive(Debug, Clone)]

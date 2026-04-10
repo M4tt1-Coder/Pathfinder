@@ -18,7 +18,7 @@ use crate::{
 ///
 /// - 'nodes' -> Nodes in the graph
 /// - 'edges' -> Edges in the graph
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TwoDimensionalCoordinateGraph {
     /// ----- Private field -----
     ///
@@ -310,7 +310,7 @@ impl Display for TwoDimensionalEdge {
 #[derive(Debug)]
 pub struct TwoDimensionalGraphInsertionError {
     /// Detailed description of the error
-    message: String,
+    pub message: String,
     /// A 'TwoDimensionalEdge' instance which potentially be what caused the error.
     cause_edge: Option<TwoDimensionalEdge>,
     /// Two nodes passed when they caused the issue.
