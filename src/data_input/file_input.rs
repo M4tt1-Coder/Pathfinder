@@ -12,12 +12,17 @@
 //!
 //! # Input Format
 //!
-//! The parser infers graph type from the first non-empty edge line and expects all following edge
-//! lines to use the same graph encoding. In the current implementation, each edge line starts with
-//! the graph abbreviation:
+//! The parser infers graph type from the first line and expects all following non-empty lines to
+//! use the same graph encoding. In the current implementation, each line starts with the graph
+//! abbreviation:
 //! - `D...` for directed edge lines,
 //! - `UN...` for undirected edge lines,
 //! - `TD...` for two-dimensional edge lines.
+//!
+//! Important current behavior:
+//! - The first line is used only for graph-type detection.
+//! - Graph edges are built from lines after the first line.
+//! - Therefore, the first line must still be a syntactically valid prefixed edge line.
 //!
 //! ## Supported edge patterns
 //!
@@ -33,7 +38,8 @@
 //! - Every parsed line must match one of the supported syntaxes.
 //! - A file can produce exactly one graph variant.
 //! - Duplicate edges are ignored during insertion.
-//! - Two-dimensional file input is currently recognized but not yet fully built into
+//! - The first line is consumed for type detection and is not inserted as an edge.
+//! - Two-dimensional file input is parsed and inserted into
 //!   [`TwoDimensionalCoordinateGraph`] in [`generate_graph_from_file`].
 //!
 //! # Usage Example
@@ -339,6 +345,9 @@ fn convert_line_to_graph_data(
 /// The inferred [`FoundGraphType`] if the line syntax is valid and a known graph abbreviation
 /// prefix is detected.
 ///
+/// The first line must follow the same prefixed edge format as subsequent lines, for example
+/// `DA->B:4` or `UNA-B:4`.
+///
 /// # Errors
 ///
 /// Returns [`ParseError::InvalidDataInput`] if the line does not match any supported syntax or if
@@ -380,6 +389,8 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 /// - Skips duplicate edges.
 /// - Returns an error for invalid syntax or incompatible parsed node/weight variants.
 ///
+/// Note: the first line is not inserted as an edge in the resulting graph.
+///
 /// # Returns
 ///
 /// - `Ok(FileInputGraphResult)` with exactly one graph variant populated.
@@ -387,7 +398,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 ///
 /// # Important
 ///
-/// Two-dimensional graph parsing is currently reported as not implemented in this function.
+/// Two-dimensional graph parsing is supported in this function.
 fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, ParseError> {
     let mut lines_iter = lines.lines();
 
