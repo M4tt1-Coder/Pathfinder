@@ -1,0 +1,71 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "rust: fmt-check",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"fmt",
+				"--all",
+				"--",
+				"--check"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "rust: clippy-strict",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "rust: test-all-targets",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"test",
+				"--workspace",
+				"--all-targets",
+				"--locked"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "rust: test-docs",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"test",
+				"--workspace",
+				"--doc",
+				"--locked"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-add-test-suite-changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".github/workflows/rust-ci.yml",
+				".github/workflows/rust.yml",
+				".vscode/tasks.json",
+				"Cargo.toml",
+				"Cargo.lock",
+				"tests",
+				"diary/feature/a_star/020-add-production-grade-test-suite-and-ci-hardening.md"
+			],
+			"isBackground": false
+		}
+	]
+}
