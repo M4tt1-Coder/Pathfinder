@@ -66,6 +66,90 @@
 				"diary/feature/a_star/020-add-production-grade-test-suite-and-ci-hardening.md"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "git-status-short",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-add-instructions-update",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".github/copilot-instructions.md",
+				"diary/feature/a_star/021-add-readme-synchronization-rule-to-instructions.md"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-commit-instructions-update",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Require README synchronization check in repo instructions"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-short",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-short",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-diff-stat",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"diff",
+				"--stat"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-diff",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"--no-pager",
+				"diff"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-add-all-unstaged-plus-diary",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".vscode/tasks.json",
+				"src/main.rs",
+				"diary/feature/a_star/022-commit-all-current-unstaged-changes.md"
+			],
+			"isBackground": false
 		}
 	]
 }

@@ -21,6 +21,8 @@ use shortest_path_finder::{
 
 // TODO: Make 'A*' algorithm usable (test it) and benchmark it against Dijkstra's algorithm
 
+// TODO: Publish to crates.io and add a badge to the README.md file
+
 fn main() {
     // enable logging to the terminal
     env_logger::init();
