@@ -5,16 +5,15 @@
 //! This module reads text files and converts them into one concrete graph representation:
 //! - [`DirectedGraph`] for directed, weighted edges,
 //! - [`UndirectedGraph`] for undirected, weighted edges,
-//! - [`TwoDimensionalCoordinateGraph`] for two-dimensional coordinate edges (currently detected,
-//!   but graph construction from file is not implemented yet).
+//! - [`TwoDimensionalCoordinateGraph`] for two-dimensional coordinate edges.
 //!
 //! The public entrypoint is [`retrieve_graph_data_from_file`].
 //!
 //! # Input Format
 //!
 //! The parser infers graph type from the first line and expects all following non-empty lines to
-//! use the same graph encoding. In the current implementation, each line starts with the graph
-//! abbreviation:
+//! use the same graph encoding. In the current implementation, each edge line starts with a graph
+//! abbreviation marker:
 //! - `D...` for directed edge lines,
 //! - `UN...` for undirected edge lines,
 //! - `TD...` for two-dimensional edge lines.
@@ -22,7 +21,7 @@
 //! Important current behavior:
 //! - The first line is used only for graph-type detection.
 //! - Graph edges are built from lines after the first line.
-//! - Therefore, the first line must still be a syntactically valid prefixed edge line.
+//! - Therefore, the first line must be a syntactically valid prefixed edge line.
 //!
 //! ## Supported edge patterns
 //!
@@ -356,7 +355,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
     // validate that the line has a valid format
     if !validate_line_syntax(first_line) {
         return Err(ParseError::InvalidDataInput(
-            "The first line of the input file is in a wrong format! Please use these formats: (directed) 'A->B:4' OR (undirected) A-B:46".to_string(),
+            "The first line of the input file is in a wrong format! Please use these formats: 'UN' (undirected) OR 'D' (directed) ".to_string(),
         ));
     }
     if first_line.starts_with(&DirectedGraph::abbreviation()) {

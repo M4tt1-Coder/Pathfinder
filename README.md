@@ -123,7 +123,8 @@ The current parser expects graph-type prefixes in each line and applies a strict
 
 - Line 1 is used to detect graph type (`D`, `UN`, `TD`) and validate syntax.
 - Only lines after line 1 are converted into edges.
-- This means line 1 must be a valid prefixed edge line, but it is not inserted as an edge.
+- This means line 1 must be a valid prefixed edge line (for example `DA->B:7`), not only `D` or
+	`UN`, and it is not inserted as an edge.
 
 Directed example:
 
