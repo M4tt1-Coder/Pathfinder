@@ -1,3 +1,41 @@
+//! Core algorithm abstractions used by this crate.
+//!
+//! This module provides three key building blocks:
+//! - [`Algorithms`]: a user-facing selector for supported shortest-path algorithms.
+//! - [`Algorithm`]: a trait that algorithm engines (for example Dijkstra or A*) implement.
+//! - [`SearchResult`]: a trait describing the result object returned by an algorithm run.
+//!
+//! The traits in this module are intentionally generic so they can be reused for different
+//! graph implementations, node types, and numeric weight/distance types.
+//!
+//! # Typical usage
+//!
+//! Convert CLI/user text input to an algorithm selection:
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::algorithm::Algorithms;
+//!
+//! let algorithm = Algorithms::get_from_string("Dijkstra");
+//! assert!(matches!(algorithm, Algorithms::Dijkstra));
+//! ```
+//!
+//! Consume a search result produced by a concrete algorithm implementation:
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::algorithm::SearchResult;
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//!
+//! let path = vec![
+//!     DefaultNode::new("A".to_string()),
+//!     DefaultNode::new("B".to_string()),
+//! ];
+//! let result = DijkstraSearchResult::new(path, 7u16).unwrap();
+//!
+//! assert_eq!(result.get_total_distance(), 7u16);
+//! assert_eq!(result.get_path().len(), 2);
+//! ```
+
 use std::{
     error::Error,
     fmt::{Debug, Display},
@@ -5,111 +43,151 @@ use std::{
 
 use crate::graphs::graph::GraphNode;
 
-// ----- Enumeration over all implemented algorithms -----
-
-/// Enumeration over all algorithms.
+/// Enumeration over all algorithms currently exposed by the application layer.
 ///
-/// Used to specify which algorithm is used by the user.
+/// This enum is primarily used by CLI/config parsing to select which concrete
+/// algorithm implementation should be executed at runtime.
 #[derive(Debug)]
 pub enum Algorithms {
+    /// Select the Dijkstra shortest-path algorithm.
     Dijkstra,
+    /// Select the A* shortest-path algorithm.
     AStar,
 }
 
 impl Algorithms {
-    /// Converts a string to an 'Algorithms' enum value.
+    /// Converts a user-provided string into an [`Algorithms`] value.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// - 'src' -> The string that is used to determine the algorithm.
+    /// - `src`: The input token used to determine the algorithm.
+    ///
+    /// Recognized values are currently:
+    /// - `"Dijkstra"`
+    /// - `"AStar"`
+    ///
+    /// Any unknown value falls back to [`Algorithms::Dijkstra`].
     ///
     /// # Returns
     ///
-    /// => Some(Algorithms) if the 'src' string matches a required key string for an algorithm.
+    /// A concrete [`Algorithms`] variant.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::algorithm::Algorithms;
+    ///
+    /// assert!(matches!(Algorithms::get_from_string("Dijkstra"), Algorithms::Dijkstra));
+    /// assert!(matches!(Algorithms::get_from_string("AStar"), Algorithms::AStar));
+    ///
+    /// // Unknown input currently defaults to Dijkstra.
+    /// assert!(matches!(Algorithms::get_from_string("unknown"), Algorithms::Dijkstra));
+    /// ```
     pub fn get_from_string(src: &str) -> Self {
         match src {
             "Dijkstra" => Self::Dijkstra,
-            "A*" => Self::AStar,
+            "AStar" => Self::AStar,
             _ => Self::Dijkstra,
         }
     }
 }
 
-/// Abstract trait defining general behaviour of an path finding algorithm working with graphs.
+/// Common behavior for shortest-path algorithms operating on graph data.
 ///
-/// Implementing algorithms should support directed and undirected graphs.
+/// Implementors encapsulate algorithm-specific logic and expose a consistent
+/// interface via [`Algorithm::shortest_path`].
 pub trait Algorithm {
-    /// Error type to directly describe when an error occured during the process.
+    /// Error type returned when execution fails.
     ///
-    /// Needs to implement basic behaviour of a an Rust error.
+    /// Implementations should use an error type that provides both human-readable
+    /// context and standard Rust error semantics.
     type ExecutionError: Error + Display + Debug;
 
-    /// The end result containing the determined path from the node A to node B.
+    /// Concrete search result type produced by this algorithm.
     ///
-    /// Needs to have a 'distance' in case the used graph is weighted and
-    /// always has a path, which is a list of nodes in the order of the nodes to go from the starting node to the destination.
+    /// The result must implement [`SearchResult`] so callers can inspect both
+    /// the total distance/cost and the ordered path.
     type AlgorithmSearchResult: SearchResult;
 
-    /// Represents the used node in the graph implementing the *Graph* trait.
+    /// Node type of the graph consumed by this algorithm.
     ///
-    /// Is a *GraphNode* trait implementation.
+    /// Must satisfy [`GraphNode`] so algorithm implementations can work with
+    /// node identifiers and cloning/formatting requirements defined by the graph model.
     type NodeOfUsedGraph: GraphNode;
 
-    /// Method to find the shortest path between two nodes.
+    /// Computes the shortest path between two node identifiers.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// -> 'start' -> The node where to start the algorithm.
-    /// -> 'end' -> The destination node we try to reach.
+    /// - `start_node_id`: Identifier of the start node.
+    /// - `end_node_id`: Identifier of the destination node.
     ///
     /// # Returns
     ///
-    /// => The 'SearchResult' of the execution.
+    /// - `Ok(Self::AlgorithmSearchResult)` if a valid path was computed.
+    /// - `Err(Self::ExecutionError)` if execution fails, for example because input
+    ///   data is invalid or no path can be determined.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let mut graph = DirectedGraph::<DefaultNode, u16>::new();
+    /// let a = DefaultNode::new("A".to_string());
+    /// let b = DefaultNode::new("B".to_string());
+    /// graph.add_edge(a.clone(), b.clone(), Some(3u16));
+    ///
+    /// let algorithm = DijkstraAlgorithm::new(graph);
+    /// let result = algorithm.shortest_path(&a, &b).unwrap();
+    ///
+    /// assert_eq!(result.get_total_distance(), 3u16);
+    /// assert_eq!(result.get_path().len(), 2);
+    /// ```
     fn shortest_path(
         &self,
-        start: &Self::NodeOfUsedGraph,
-        end: &Self::NodeOfUsedGraph,
+        start_node_id: &str,
+        end_node_id: &str,
     ) -> Result<Self::AlgorithmSearchResult, Self::ExecutionError>;
 }
 
-// ----- Implementation of the 'SearchResult' trait
-
-/// **Trait**
+/// Common interface for algorithm output objects.
 ///
-/// A trait that represents the behaviour that of a returned object from an algorithm that has
-/// finished running.
+/// A search result stores two pieces of information:
+/// - The total path distance/cost.
+/// - The ordered list of nodes representing the path from start to destination.
 ///
-/// It specifies that they have implemented a distance type that also implements all mandatory
-/// traits for mathimatical operations. (Ord, Eq, ...).
+/// Consumers should depend on this trait when they only need read access to
+/// path information and do not care about a specific algorithm implementation.
 pub trait SearchResult: Display + Debug {
-    /// The total distance stored in a data type like u8, i16 and f64.
+    /// Numeric type representing the total path distance/cost.
     ///
-    /// Sum of all edges from A to B.
+    /// Implementations may use unsigned integers, signed integers, or floating
+    /// point values depending on graph constraints.
     type Distance: PartialEq + PartialOrd + Display;
 
-    /// Can be any struct or data type which impersonates the required functions etc from the
-    /// **GraphNode** trait
+    /// Node type used in the returned path.
     ///
-    /// Should be any NODE.
+    /// Must satisfy [`GraphNode`] so callers can inspect identifiers and display
+    /// node values in a uniform way.
     type Node: GraphNode;
 
-    /// **Method**
-    ///
-    /// Returns the total distance from one node X to Y.
-    ///
-    /// # Arguments
-    ///
-    /// - '&self' -> Instance of a struct implementing the *SearchResult* trait.
+    /// Returns the total distance/cost from start node to destination node.
     ///
     /// # Returns
     ///
-    /// => Total distance (u16, ...)
+    /// The full distance/cost value of the computed path.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::algorithm::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::graphs::graph::GraphNode;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let path = vec![
@@ -122,17 +200,32 @@ pub trait SearchResult: Display + Debug {
     /// ```
     fn get_total_distance(&self) -> Self::Distance;
 
-    /// **Method**
+    /// Returns the ordered path from start node to destination node.
     ///
-    /// Provides the list of all nodes in the path which the individual algorithm visited to get
-    /// from A to B.
-    ///
-    /// # Arguments
-    ///
-    /// - '&self' -> Instance of a struct implementing the *SearchResult* trait.
+    /// The vector is expected to include both start and end nodes when a path
+    /// exists.
     ///
     /// # Returns
     ///
-    /// => Vector of nodes implementing the *GraphNode* trait. (Self::Node type)
+    /// A borrowed vector containing path nodes in traversal order.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::algorithm::SearchResult;
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let path = vec![
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    ///     DefaultNode::new("C".to_string()),
+    /// ];
+    /// let result = DijkstraSearchResult::new(path, 10u16).unwrap();
+    ///
+    /// assert_eq!(result.get_path().first().unwrap().get_id(), "A");
+    /// assert_eq!(result.get_path().last().unwrap().get_id(), "C");
+    /// assert_eq!(result.get_path().len(), 3);
+    /// ```
     fn get_path(&self) -> &Vec<Self::Node>;
 }
