@@ -1,3 +1,40 @@
+//! Dijkstra shortest-path algorithm implementation.
+//!
+//! This module contains the concrete Dijkstra implementation used by the
+//! application. It supports graph types that implement [`Graph`] and uses a
+//! priority queue (`BinaryHeap`) to iteratively relax edges.
+//!
+//! Dijkstra requires all traversed edge weights to be non-negative. If a
+//! negative edge weight is encountered during processing, the algorithm returns
+//! a [`DijkstraError`].
+//!
+//! # Main types
+//!
+//! - [`DijkstraAlgorithm`]: algorithm engine operating on a concrete graph.
+//! - [`DijkstraSearchResult`]: successful path computation output.
+//! - [`DijkstraError`]: execution error payload.
+//!
+//! # Example
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+//! use shortest_path_finder::graphs::directed::DirectedGraph;
+//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//!
+//! let mut graph = DirectedGraph::<DefaultNode, u16>::new();
+//! graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string()), Some(4));
+//! graph.add_edge(DefaultNode::new("B".to_string()), DefaultNode::new("C".to_string()), Some(2));
+//! graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("C".to_string()), Some(10));
+//!
+//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let result = dijkstra.shortest_path("A", "C").unwrap();
+//!
+//! assert_eq!(result.get_total_distance(), 6);
+//! assert_eq!(result.get_path().len(), 3);
+//! ```
+
 use std::{
     collections::{BinaryHeap, HashMap},
     error::Error,
@@ -9,14 +46,11 @@ use crate::{
     graphs::graph::{Graph, GraphNode, GraphWeight},
 };
 
-// ----- Implementation of the 'ShortestDistance' struct -----
-
-/// Represents the result of a shortest distance from 'Node' A to B.
+/// Internal bookkeeping entry used while distances are being relaxed.
 ///
-/// # Fields
-///
-/// - 'distance' -> Minimum distance to a specific 'Node'.
-/// - 'previous_node' -> The last 'Node' that was visited before reaching the specific 'Node'.
+/// Each node maps to one instance of this type while the algorithm is running:
+/// - `distance` stores the currently known best distance from the start node.
+/// - `previous_node` stores the predecessor used to reconstruct the final path.
 #[derive(Debug)]
 pub struct ShortestDistance<N: GraphNode, W: GraphWeight + Ord> {
     distance: W,
@@ -24,20 +58,18 @@ pub struct ShortestDistance<N: GraphNode, W: GraphWeight + Ord> {
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
-    /// Creates a new instance of `ShortestDistance` with the specified previous node and distance.
+    /// Creates a new internal distance-tracking entry.
     ///
     /// # Parameters
-    /// - `previous_node`: An optional reference to the previous node in the path.
-    ///   Use `None` if there is no predecessor (e.g., for the start node).
-    /// - `distance`: The accumulated distance or weight associated with this node.
+    /// - `previous_node`: Optional predecessor of the current node.
+    /// - `distance`: Current best-known distance from the start node.
     ///
     /// # Returns
-    /// A new `ShortestDistance` initialized with the provided `previous_node` and `distance`.
+    /// A new [`ShortestDistance`] value.
     ///
-    /// # Example
+    /// # Example (internal-only helper)
     /// ```ignore
-    /// // Internal helper used inside Dijkstra's algorithm.
-    /// // Constructed by the algorithm while computing shortest paths.
+    /// // Used by Dijkstra's internal state map.
     /// let start_node = None;
     /// let initial_distance = 0u16;
     /// let node = ShortestDistance::new(start_node, initial_distance);
@@ -60,18 +92,43 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
     }
 }
 
-// ----- Implementation of the 'DijkstraAlgorithm' struct -----
-
-/// Implements the "Dijkstra" for weighted graphs.
+/// Concrete implementation of the Dijkstra shortest-path algorithm.
 ///
-/// The graphs need to have weighted edges!
+/// The generic parameters are:
+/// - `N`: graph node type.
+/// - `W`: edge-weight/distance type.
+/// - `G`: graph type implementing [`Graph`].
+///
+/// # Requirements
+///
+/// - The underlying graph must be weighted.
+/// - Edge weights must be non-negative when the algorithm explores edges.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+/// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+/// use shortest_path_finder::graphs::directed::DirectedGraph;
+/// use shortest_path_finder::graphs::graph::Graph;
+/// use shortest_path_finder::nodes::default_node::DefaultNode;
+///
+/// let mut graph = DirectedGraph::<DefaultNode, u16>::new();
+/// graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string()), Some(1));
+/// graph.add_edge(DefaultNode::new("B".to_string()), DefaultNode::new("C".to_string()), Some(1));
+/// graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("C".to_string()), Some(5));
+///
+/// let algorithm = DijkstraAlgorithm::new(graph);
+/// let result = algorithm.shortest_path("A", "C").unwrap();
+/// assert_eq!(result.get_total_distance(), 2u16);
+/// ```
 #[derive(Debug)]
 pub struct DijkstraAlgorithm<
     N: GraphNode,
     W: GraphWeight + Ord,
     G: Graph<Node = N, Weight = W> + Display,
 > {
-    /// Can be every (type) implementation of the 'Graph' trait.
+    /// Graph instance processed by this algorithm implementation.
     graph: G,
 }
 
@@ -86,8 +143,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
     fn shortest_path(
         &self,
-        start: &N,
-        end: &N,
+        start_node_id: &str,
+        end_node_id: &str,
     ) -> Result<DijkstraSearchResult<N, W>, DijkstraError> {
         // - loop:
         //  - get distance / weight of edge to all unvisited neighbours
@@ -102,20 +159,26 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             ));
         }
 
-        // check if the two 'Node's are in the graph <G>
-        if self.graph.get_node_by_id(start.get_id()).is_none() {
-            return Err(DijkstraError::new(format!(
-                "The node {} is not in the graph {}!",
-                start, self.graph
-            )));
-        }
+        // check if the two 'Node's are in the graph <G> and get them as 'Node' objects
+        let start: &N = match self.graph.get_node_by_id(start_node_id) {
+            Some(node) => node,
+            None => {
+                return Err(DijkstraError::new(format!(
+                    "The start node {} is not in the graph {}!",
+                    start_node_id, self.graph
+                )));
+            }
+        };
 
-        if self.graph.get_node_by_id(end.get_id()).is_none() {
-            return Err(DijkstraError::new(format!(
-                "The node {} is not in the graph {}!",
-                end, self.graph
-            )));
-        }
+        let end: &N = match self.graph.get_node_by_id(end_node_id) {
+            Some(node) => node,
+            None => {
+                return Err(DijkstraError::new(format!(
+                    "The end node {} is not in the graph {}!",
+                    end_node_id, self.graph
+                )));
+            }
+        };
 
         let distances = self.calculate_distances(start)?;
 
@@ -134,7 +197,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 None => {
                     return Err(DijkstraError::new(format!(
                         "Unable to determine a valid path from {} to {}!",
-                        start, end
+                        start_node_id, end_node_id
                     )));
                 }
             };
@@ -162,28 +225,42 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display>
     DijkstraAlgorithm<N, W, G>
 {
-    /// Creates a new instance of the 'DijkstraAlgorithm' struct.
+    /// Creates a new [`DijkstraAlgorithm`] bound to a graph instance.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// - 'graph' -> Is a graph object implementing the 'Graph' trait.
+    /// - `graph`: Graph object implementing [`Graph`].
     ///
     /// # Returns
     ///
-    /// => 'DijkstraAlgorithm' instance.
+    /// A ready-to-use algorithm instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let graph = DirectedGraph::<DefaultNode, u16>::new();
+    /// let _algorithm = DijkstraAlgorithm::new(graph);
+    /// ```
     pub fn new(graph: G) -> Self {
         Self { graph }
     }
 
-    /// Prepares the "shortest distance" from one node A to every other node B.
+    /// Initializes the distance map for Dijkstra processing.
     ///
-    /// # Arguments
+    /// The start node receives distance `0` and references itself as previous node.
+    /// Every other node receives `W::max_value()` and no predecessor.
     ///
-    /// - 'start' -> The start node of the algorithm.
+    /// # Parameters
+    ///
+    /// - `start`: Start node used as the origin of all distance calculations.
     ///
     /// # Returns
     ///
-    /// A hashmap of 'ShortestDistance's for every node in the graph.
+    /// A map from node ID to internal [`ShortestDistance`] state.
     fn setup_shortest_distance(&self, start: &N) -> HashMap<String, ShortestDistance<N, W>> {
         let mut output: HashMap<String, ShortestDistance<N, W>> = HashMap::new();
         for n in self.graph.get_all_nodes() {
@@ -205,15 +282,17 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         output
     }
 
-    /// Executes the whole core 'Dijkstra' algorithm on the provide data graph '<G>'.
+    /// Executes the core Dijkstra relaxation loop.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// - 'start' -> The 'Node' which we start the path from.
+    /// - `start`: Node from which shortest distances are computed.
     ///
     /// # Returns
     ///
-    /// => 'HashMap<String, ShortestDistance>' with all shortest distance from the 'start' Node.
+    /// - `Ok(HashMap<...>)` containing shortest-distance metadata for all nodes.
+    /// - `Err(DijkstraError)` if graph consistency checks fail or an invalid
+    ///   edge weight (negative) is encountered.
     fn calculate_distances(
         &self,
         start: &N,
@@ -281,30 +360,28 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     }
 }
 
-// ----- Implementation of the 'QueueItem' struct -----
-
-/// Temporary item in the step queue.
+/// Internal priority-queue element used by the Dijkstra processing loop.
+///
+/// The queue stores candidate nodes ordered by distance.
 #[derive(Eq, PartialEq)]
 struct QueueItem<N: GraphNode, W: GraphWeight> {
-    /// Temporary distance during the process.
-    ///
-    /// Represents a potential shortest distance to a 'Node'.
+    /// Candidate distance for this queue step.
     distance: W,
-    /// The 'Node' we are at with this item.
+    /// Candidate node position associated with `distance`.
     position: N,
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord + Eq> QueueItem<N, W> {
-    /// Creates a new instance of the 'QueueItem' struct.
+    /// Creates a new queue item.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// - 'distance' -> The distance to a 'Node'.
-    /// - 'position' -> The 'Node' we are checking in the next validation step.
+    /// - `distance`: Tentative distance for `position`.
+    /// - `position`: Node to be processed next by the queue consumer.
     ///
     /// # Returns
     ///
-    /// => 'QueueItem' object.
+    /// A new [`QueueItem`].
     fn new(distance: W, position: N) -> Self {
         Self { distance, position }
     }
@@ -322,20 +399,26 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
     }
 }
 
-// ----- Implementation of the 'DijkstraError' struct -----
-
-/// Specific error for the *DijkstraAlgorithm*.
+/// Error returned when Dijkstra execution fails.
 ///
-/// # Fields
-///
-/// - 'message' -> Description of the occured issue during the process.
+/// This type wraps a user-facing diagnostic message.
 #[derive(Debug)]
 pub struct DijkstraError {
+    /// Human-readable explanation of the failure.
     pub message: String,
 }
 
 impl DijkstraError {
-    /// Creates a new 'DijkstraError' instance.
+    /// Creates a new [`DijkstraError`] from a message.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+    ///
+    /// let err = DijkstraError::new("invalid input".to_string());
+    /// assert_eq!(err.to_string(), "invalid input");
+    /// ```
     pub fn new(message: String) -> Self {
         Self { message }
     }
@@ -349,35 +432,54 @@ impl Display for DijkstraError {
 
 impl Error for DijkstraError {}
 
-// ----- Implementation of the 'DijkstraSearchResult' struct -----
-
-/// Search result of all algorithms which implement the 'Algorithm' trait.
+/// Search result produced by [`DijkstraAlgorithm`].
 ///
-/// # Fields
-///
-/// - 'path' -> All nodes we need to go through to reach the destination.
-/// - 'distance' -> Sum of all edges.
+/// Contains the final path and total distance of the shortest route.
 #[derive(Debug, Clone)]
 pub struct DijkstraSearchResult<N: GraphNode, W: GraphWeight> {
-    /// List of the nodes starting from the start to the final node.
+    /// Ordered node sequence from start node to destination node.
     ///
-    /// Must have atleast 2 elements.
+    /// The path must contain at least two nodes.
     pub path: Vec<N>,
 
-    /// All weighted edges combined and added together.
+    /// Sum of all edge weights along `path`.
     pub distance: W,
 }
 
 impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
-    /// Create a new 'SearchResult' instance.
+    /// Creates a validated [`DijkstraSearchResult`].
     ///
-    /// # FAILS
+    /// # Errors
     ///
-    /// ... if there are less then 2 nodes in the 'path' vector.
+    /// Returns an error if `path` contains fewer than two nodes.
     ///
     /// # Returns
     ///
-    /// => Ok(SearchResult), if a valid result has been created.
+    /// - `Ok(Self)` when the provided path is valid.
+    /// - `Err(String)` with a detailed reason otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let path = vec![
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    /// ];
+    /// let result = DijkstraSearchResult::new(path, 9u16);
+    /// assert!(result.is_ok());
+    /// ```
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let invalid_path = vec![DefaultNode::new("A".to_string())];
+    /// let result = DijkstraSearchResult::new(invalid_path, 0u16);
+    /// assert!(result.is_err());
+    /// ```
     pub fn new(path: Vec<N>, distance: W) -> Result<Self, String> {
         if path.len() < 2 {
             return Err("There need to be at least 2 nodes in the path from one node A to another node B! Couldn't create a 'SearchResult'!".to_string());
