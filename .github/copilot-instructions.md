@@ -49,6 +49,12 @@
 - For any newly created Rust source file, add file-level documentation suitable for crates.io rendering (typically inner module docs via `//!` at the top of the file).
 - Treat documentation updates as required deliverables, not optional polish.
 
+## Code documentation synchronization requirement
+
+- For any prompt that changes code, update the corresponding documentation in the same change so implementation and docs stay synchronized.
+- Consider both code-local and user-facing documentation as applicable to the change scope (for example: Rust doc comments, module docs, README usage notes, and behavior descriptions).
+- If a code change does not require a documentation update, explicitly verify that existing documentation already matches the new behavior before finalizing.
+
 ## README synchronization requirement
 
 - For every prompt that results in repository changes, explicitly check whether those changes affect `README.md`.
