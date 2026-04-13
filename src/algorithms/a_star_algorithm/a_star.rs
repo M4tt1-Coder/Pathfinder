@@ -1,24 +1,53 @@
-//! # Theory for the A* algorithm
+//! A* shortest-path implementation for coordinate-based graphs.
 //!
-//! ## Sources
+//! # Overview
 //!
-//! - https://www.datacamp.com/tutorial/a-star-algorithm
-//! - https://www.geeksforgeeks.org/dsa/a-search-algorithm/
-//! - https://theory.stanford.edu/~amitp/GameProgramming/AStarComparison.html
+//! This module provides:
+//! - [`AStar`]: the algorithm engine,
+//! - [`AStarSearchResult`]: the output type returned by successful searches,
+//! - [`AStarQueueElement`]: queue payload used by the internal priority queue,
+//! - [`AStarExecutionError`]: execution error type.
 //!
-//! g(n) -> cost from start to node n
-//! h(n) -> heuristic cost estimate from n to goal
+//! # Algorithm Model
 //!
-//! f(n) = g(n) + h(n) -> estimated total cost from start to goal through n
+//! The implementation follows the common A* scoring model:
+//! - $g(n)$: known cost from start to node $n$,
+//! - $h(n)$: heuristic estimate from $n$ to the goal,
+//! - $f(n) = g(n) + h(n)$: priority score used in the open queue.
 //!
-//! - in the main loop, we pick the node with the lowest f(n) = g(n) + h(n)
+//! The heuristic uses a cross-product based estimate derived from start, goal,
+//! and current coordinates and then applies `adjust_for_heuristic()` from
+//! [`NumericDatatype`].
 //!
-//! - use the euclidean distance or Manhattan distance for h(n)
+//! # Requirements
 //!
-//! function heuristic(node) =
-//!    dx = abs(node.x - goal.x)
-//!    dy = abs(node.y - goal.y)
-//!    return D * sqrt(dx * dx + dy * dy)
+//! - Graph must implement [`Graph`] with node type implementing [`CoordinatesNode`].
+//! - The graph must be weighted (`graph.is_weighted() == true`).
+//! - `start_node_id` and `end_node_id` must exist in the graph.
+//!
+//! # Usage Example
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//!
+//! let start = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![start], vec![]);
+//! let algorithm = AStar::new(graph);
+//!
+//! // Minimal valid query where start and destination are identical.
+//! let result = algorithm.shortest_path("A", "A").unwrap();
+//! assert_eq!(result.get_total_distance(), 0.0_f32);
+//! assert_eq!(result.get_path().len(), 1);
+//! ```
+//!
+//! # Sources
+//!
+//! - <https://www.datacamp.com/tutorial/a-star-algorithm>
+//! - <https://www.geeksforgeeks.org/dsa/a-search-algorithm/>
+//! - <https://theory.stanford.edu/~amitp/GameProgramming/AStarComparison.html>
 
 use std::{
     collections::{BinaryHeap, HashMap},
@@ -38,20 +67,41 @@ use crate::{
     weight_types::numeric_datatype::NumericDatatype,
 };
 
-/// Represents the A* pathfinding algorithm, parameterized over numeric type, node type, and graph type.
+/// A* pathfinding engine for coordinate-aware graph nodes.
 ///
-/// This struct encapsulates the graph on which the algorithm operates and provides a foundation
-/// for implementing pathfinding logic.
+/// # Type Parameters
+///
+/// - `ND`: numeric datatype used for both graph edge weights and costs.
+/// - `N`: node type implementing [`CoordinatesNode`] with `CoordinateType = ND`.
+/// - `G`: graph type implementing [`Graph<Node = N, Weight = ND>`].
+///
+/// # Responsibilities
+///
+/// - Resolve start and goal nodes by ID.
+/// - Execute the open/closed queue loop.
+/// - Reconstruct path and distance.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+///
+/// let n = TwoDimensionalNode::new(1, 2, "S".to_string()).unwrap();
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![n], vec![]);
+/// let _algorithm = AStar::new(graph);
+/// ```
 #[derive(Debug)]
 pub struct AStar<
     ND: NumericDatatype,
     N: CoordinatesNode<CoordinateType = ND>,
     G: Graph<Node = N, Weight = ND> + Display,
 > {
-    /// The graph on which the A* algorithm will operate.
+    /// Graph instance used as the search domain.
     ///
-    /// This graph should implement the `Graph` trait with nodes of type `N`.
-    /// It must also implement `Display` for potential visualization or debugging purposes.
+    /// This field is public to keep interoperability with existing integration
+    /// points in the project.
     pub graph: G,
 }
 
@@ -69,26 +119,83 @@ impl<
 
     type ExecutionError = AStarExecutionError;
 
+    /// Computes a shortest path between two node IDs using A*.
+    ///
+    /// # Parameters
+    ///
+    /// - `start_node_id`: identifier of the start node.
+    /// - `end_node_id`: identifier of the destination node.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(AStarSearchResult<...>)` when a route can be produced.
+    /// - `Err(AStarExecutionError)` when graph constraints are violated or
+    ///   required nodes cannot be found.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - graph is not weighted,
+    /// - `start_node_id` does not exist,
+    /// - `end_node_id` does not exist,
+    /// - path reconstruction fails.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let node = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
+    /// let a_star = AStar::new(graph);
+    ///
+    /// let result = a_star.shortest_path("A", "A").unwrap();
+    /// assert_eq!(result.get_total_distance(), 0.0_f32);
+    /// assert_eq!(result.get_path().len(), 1);
+    /// ```
     fn shortest_path(
         &self,
-        start: &N,
-        end: &N,
+        start_node_id: &str,
+        end_node_id: &str,
     ) -> Result<Self::AlgorithmSearchResult, Self::ExecutionError> {
+        if !self.graph.is_weighted() {
+            return Err(Self::ExecutionError::new(
+                "The graph needs to be weighted for the A* algorithm to work!".to_string(),
+            ));
+        }
+
+        let start_node = self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
+            Self::ExecutionError::new(format!(
+                "Start node with id '{}' not found in the graph!",
+                start_node_id
+            ))
+        })?;
+
+        let end_node = self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
+            Self::ExecutionError::new(format!(
+                "End node with id '{}' not found in the graph!",
+                end_node_id
+            ))
+        })?;
+
         // "open" queue with nodes that haven't been visited yet
         // add the start node to the queue
         let mut open_queue: BinaryHeap<AStarQueueElement<ND, N>> = BinaryHeap::new();
 
         open_queue.push(AStarQueueElement::new(
-            start,
+            start_node,
             ND::zero(),
-            self.heuristic(start, end, start),
+            self.heuristic(start_node, end_node, start_node),
             None,
         ));
 
         // "closed" queue -> nodes that have been visited
         let mut closed_queue: Vec<AStarQueueElement<ND, N>> = Vec::new();
 
-        let mut g_costs: HashMap<String, ND> = prepare_g_cost_map(&self.graph, start.get_id());
+        let mut g_costs: HashMap<String, ND> = prepare_g_cost_map(&self.graph, start_node.get_id());
 
         // while open is not empty -> continue
         while let Some(AStarQueueElement {
@@ -100,7 +207,7 @@ impl<
         }) = open_queue.pop()
         {
             // if the node is the destination node -> break
-            if node == end {
+            if node == end_node {
                 // move the node to the "closed_queue", don't change any data of the node, because
                 // we need the predecessor for the path reconstruction
                 closed_queue.push(AStarQueueElement::new(node, g_cost, h_cost, predecessor));
@@ -160,7 +267,7 @@ impl<
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,
-                        self.heuristic(start, end, neighbour),
+                        self.heuristic(start_node, end_node, neighbour),
                         Some(node),
                     ));
                 }
@@ -182,28 +289,55 @@ impl<
     G: Graph<Node = N, Weight = ND> + Display,
 > AStar<ND, N, G>
 {
-    /// Creates a new instance of the AStar algorithm with the provided graph.
+    /// Creates a new [`AStar`] instance bound to `graph`.
+    ///
+    /// # Parameters
+    ///
+    /// - `graph`: concrete graph used during subsequent path search calls.
+    ///
+    /// # Returns
+    ///
+    /// A ready-to-use algorithm instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+    ///
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![], vec![]);
+    /// let _a_star = AStar::new(graph);
+    /// ```
     pub fn new(graph: G) -> Self {
         Self { graph }
     }
 
-    /// Calculates the heuristic estimate (often called h(n)) from the current node to the goal.
+    /// Internal heuristic function used for A* queue prioritization.
     ///
-    /// This implementation uses a cross-product based heuristic, which is often used for
-    /// certain types of pathfinding problems (e.g., for detecting the area swept by a point).
+    /// # Heuristic Formula
     ///
-    /// It computes the absolute value of the cross product of vectors from the current node to the goal
-    /// and from the start to the goal, then adjusts it for heuristic admissibility.
+    /// Uses a cross-product magnitude based estimate:
+    /// - build vectors `(current -> goal)` and `(start -> goal)`,
+    /// - compute their cross-product magnitude,
+    /// - apply `adjust_for_heuristic()`.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// * `start` - The starting node.
-    /// * `goal` - The target node.
-    /// * `current` - The current node for which the heuristic is being calculated.
+    /// - `start`: start node.
+    /// - `goal`: destination node.
+    /// - `current`: node currently being evaluated.
     ///
     /// # Returns
     ///
-    /// The estimated cost (`ND`) from `current` to `goal`.
+    /// Heuristic estimate from `current` toward `goal`.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Internal helper called during queue expansion.
+    /// // It is not part of the public API.
+    /// let estimate = a_star.heuristic(start, goal, current);
+    /// ```
     fn heuristic(&self, start: &N, goal: &N, current: &N) -> ND {
         let dx1 = current.get_x() - goal.get_x();
         let dy1 = current.get_y() - goal.get_y();
@@ -222,29 +356,26 @@ impl<
 
 // ----- Implementation of the 'AStarSearchResult' struct -----
 
-/// **Struct**
+/// Result object returned by A* search execution.
 ///
-/// Represents the result that the A* algorithm returns containing the determined distance and the
-/// visited nodes
+/// # Contents
 ///
-/// # Fields
-///
-/// - *distance* -> Total distance; sum of all edges
-/// - *path* -> List of nodes thatt were visited
+/// - `distance`: total path cost.
+/// - `path`: ordered node sequence from start to destination.
 ///
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::algorithm::SearchResult;
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+/// use shortest_path_finder::algorithms::algorithm::SearchResult;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
-/// let node_a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-/// let node_b = TwoDimensionalNode::new(0, 1, "B".to_string()).unwrap();
+/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+/// let b = TwoDimensionalNode::new(0, 1, "B".to_string()).unwrap();
+/// let result = AStarSearchResult::new(1, vec![a, b]).unwrap();
 ///
-/// // create the 'AStarSearchResult' object
-/// let search_result = AStarSearchResult::new(1, vec![node_a, node_b]).unwrap();
-/// assert_eq!(search_result.get_total_distance(), 1);
+/// assert_eq!(result.get_total_distance(), 1);
+/// assert_eq!(result.get_path().len(), 2);
 /// ```
 #[derive(Debug)]
 pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
@@ -258,24 +389,22 @@ pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateT
 }
 
 impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchResult<ND, N> {
-    /// Creates a new instance of `AStarSearchResult` with the specified distance and path.
+    /// Creates a validated [`AStarSearchResult`] instance.
     ///
-    /// This function initializes a new `AStarSearchResult`, ensuring that the provided
-    /// path contains at least two nodes and that the distance is non-negative.
+    /// # Validation Rules
+    ///
+    /// - `path` must contain at least two nodes.
+    /// - `distance` must be greater than or equal to zero.
     ///
     /// # Parameters
     ///
-    /// * `distance`: A non-negative float representing the distance between the start
-    ///   and end nodes. It is crucial for evaluating the effectiveness of the path.
+    /// - `distance`: total route cost.
+    /// - `path`: ordered route nodes.
     ///
-    /// * `path`: A `Vec<TwoDimensionalNode>` that represents the path. This vector
-    ///   must contain at least two nodes, which are essential for defining a valid path.
+    /// # Returns
     ///
-    /// # Errors
-    ///
-    /// Returns an `Err(String)` if any of the following conditions are met:
-    /// - The `path` contains fewer than two nodes.
-    /// - The `distance` is less than zero.
+    /// - `Ok(Self)` when inputs are valid.
+    /// - `Err(String)` when one or more rules are violated.
     ///
     /// # Examples
     ///
@@ -287,13 +416,16 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     ///     TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap(),
     ///     TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap(),
     /// ];
-    /// let result = AStarSearchResult::new(5, path);
-    /// assert!(result.is_ok());
+    /// assert!(AStarSearchResult::new(5, path).is_ok());
     /// ```
     ///
-    /// # Returns
+    /// ```rust
+    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
-    ///  => `Ok(AStarSearchResult)` if the path is valid and the distance is non-negative.
+    /// let invalid_path = vec![TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap()];
+    /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
+    /// ```
     pub fn new(distance: ND, path: Vec<N>) -> Result<Self, String> {
         // path needs to have at least 2 nodes
         if path.len() < 2 {
@@ -344,17 +476,41 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
 
 // ----- Implementation of the 'AStarQueueElement' struct -----
 
-/// Represents an element in the priority queue used by the A* search algorithm.
+/// Element stored in the A* priority queue.
 ///
-/// This struct encapsulates all the necessary information for a node during the search,
-/// including references to the graph node, costs, and path reconstruction data.
+/// # Purpose
 ///
-/// # Lifetime
-/// - `'n`: Lifetime for references to nodes, ensuring they do not outlive the graph data.
+/// Each queue entry tracks:
+/// - current node,
+/// - predecessor (for path reconstruction),
+/// - `g(n)`, `h(n)`, and `f(n)` values.
+///
+/// # Ordering
+///
+/// Ordering is implemented on `f_cost` with reversed comparison to emulate a
+/// min-heap on top of Rust's `BinaryHeap`.
 ///
 /// # Type Parameters
-/// - `ND`: Numeric datatype used for costs (e.g., `f64`, `u32`). Must implement traits like `PartialOrd`, `Ord`.
-/// - `N`: The node type in your graph. Must implement `CoordinatesNode` with `CoordinateType = ND`.
+///
+/// - `'n`: lifetime of referenced graph nodes.
+/// - `ND`: numeric cost type implementing [`NumericDatatype`].
+/// - `N`: coordinate-based node type.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarQueueElement;
+/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+///
+/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+/// let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
+/// let mut element = AStarQueueElement::new(&a, 2.0_f32, 3.0_f32, None);
+///
+/// assert_eq!(element.f_cost, 5.0_f32);
+/// element.set_predecessor(Some(&b));
+/// assert_eq!(element.get_predecessor().unwrap().get_id(), "B");
+/// ```
 #[derive(Debug)]
 pub struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
     /// Reference to the current node in the graph.
@@ -387,16 +543,16 @@ pub struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<Coordin
 impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
     AStarQueueElement<'n, ND, N>
 {
-    /// Creates a new `AStarQueueElement` with the provided node and costs.
+    /// Creates a queue element with precomputed score components.
     ///
     /// # Parameters
-    /// - `node`: A reference to the current graph node.
-    /// - `g_cost`: The cost from the start node to this node (`g(n)`).
-    /// - `h_cost`: The heuristic estimate of the cost from this node to the goal (`h(n)`).
-    /// - `predecessor`: An optional reference to the previous node in the path. This is used for path reconstruction.
+    /// - `node`: current node.
+    /// - `g_cost`: known path cost from start to `node`.
+    /// - `h_cost`: heuristic estimate from `node` to goal.
+    /// - `predecessor`: previous node on best known route.
     ///
     /// # Returns
-    /// A new instance of `AStarQueueElement` with the `f_cost` calculated as `g_cost + h_cost`.
+    /// Queue element where `f_cost = g_cost + h_cost`.
     pub fn new(node: &'n N, g_cost: ND, h_cost: ND, predecessor: Option<&'n N>) -> Self {
         // Calculate the total estimated cost for this node.
         let f_cost = g_cost + h_cost;
@@ -408,61 +564,47 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
             predecessor,
         }
     }
-    /// Set the predecessor node for this queue element.
+    /// Updates the predecessor reference.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// * `predescessor` - An optional reference to the predecessor node. This is used for path
-    ///   reconstruction after reaching the goal.
-    ///
-    /// # Returns
-    ///
-    /// => None (this method mutates the internal state of the queue element)
+    /// - `predecessor`: optional predecessor node used during path reconstruction.
     pub fn set_predecessor(&mut self, predecessor: Option<&'n N>) {
         self.predecessor = predecessor;
     }
 
-    /// Get the predecessor node reference for this queue element.
+    /// Returns the predecessor node reference, if present.
     ///
     /// # Returns
     ///
-    /// => An optional reference to the predecessor node, if it exists. This can be used for path
-    /// reconstruction after reaching the goal.
-    ///
-    /// If the predecessor is `None`, it indicates that this node is the starting node or that the
-    /// predecessor has not been set yet.
-    ///
-    /// Note: The predecessor reference is crucial for backtracking the path from the goal to the
-    /// starting node once the goal is reached.
-    /// It allows the algorithm to reconstruct the path taken to reach the goal by following the
-    /// chain of predecessor nodes.
+    /// Optional predecessor.
     pub fn get_predecessor(&self) -> Option<&'n N> {
         self.predecessor
     }
 
-    /// Get the node reference that this queue element represents.
+    /// Returns the node represented by this queue entry.
     ///
     /// # Returns
     ///
-    /// => Reference to the node.
+    /// Node reference.
     pub fn get_node(&self) -> &'n N {
         self.node
     }
 
-    /// Get the g(n) cost from start to this node.
+    /// Returns `g(n)` for this queue entry.
     ///
     /// # Returns
     ///
-    /// => g(n) cost.
+    /// Cost from start to current node.
     pub fn get_g_cost(&self) -> ND {
         self.g_cost
     }
 
-    /// Get the h(n) heuristic cost estimate to the goal.
+    /// Returns `h(n)` for this queue entry.
     ///
     /// # Returns
     ///
-    /// => h(n) cost.
+    /// Heuristic estimate from current node to goal.
     pub fn get_h_cost(&self) -> ND {
         self.h_cost
     }
@@ -505,14 +647,20 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Eq
 
 // ----- Implementation of the 'AStarExecutionError' struct -----
 
-/// **Struct**
+/// Error type returned by A* execution and helper utilities.
 ///
-/// In case any error occured during duing the runtime of the A* algorithm, this struct represents
-/// the error and holds the important information.
+/// # Contents
 ///
-/// # Fields
+/// - `message`: user-facing diagnostic description.
 ///
-/// - *message* -> descriptive message of the error
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarExecutionError;
+///
+/// let err = AStarExecutionError::new("missing start node".to_string());
+/// assert!(err.to_string().contains("missing start node"));
+/// ```
 #[derive(Debug)]
 pub struct AStarExecutionError {
     /// Message of the error
@@ -521,15 +669,11 @@ pub struct AStarExecutionError {
 }
 
 impl AStarExecutionError {
-    /// Create a new 'AStarExecutionError' instance.
+    /// Creates a new execution error with a custom message.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
-    /// -> 'message' -> Description of what caused the error to occur.
-    ///
-    /// # Returns
-    ///
-    /// => New 'AStarExecutionError' object
+    /// - `message`: descriptive error text.
     pub fn new(message: String) -> Self {
         Self { message }
     }
