@@ -21,6 +21,7 @@ The repository provides:
 - Command-line graph input mode is defined but not implemented in runtime flow
 - Dijkstra is fully wired in the executable
 - A* is available in modules but not yet enabled in the final CLI execution path
+- Two-dimensional (`TD`) graph files are parsed, but the CLI execution path currently handles directed and undirected graph runs only
 
 ### Technologies
 
@@ -35,7 +36,7 @@ Core stack and dependencies:
 
 Quality and automation:
 
-- GitHub Actions workflow for fmt, clippy, and tests
+- Two GitHub Actions workflows covering fmt, clippy, build, tests, and documentation tests
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ### Project Structure
@@ -114,7 +115,7 @@ Minimal example using defaults for origin and algorithm:
 Explicit file and algorithm example:
 
 ```sh
-./target/release/pathfinder --origin file --graph-file graph.txt --algo Dijkstra --start A --end B
+./target/release/pathfinder --graph-file graph.txt --algo Dijkstra --start A --end B
 ```
 
 ### Input file format
@@ -155,11 +156,29 @@ B:2,1-C:4,1
 
 Run checks locally before pushing:
 
-Example command for formatting:
+CI-parity commands:
 
 ```sh
 cargo fmt --all -- --check
 ```
+
+```sh
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+```sh
+cargo build --workspace --all-targets --locked --verbose
+```
+
+```sh
+cargo test --workspace --all-targets --locked --verbose
+```
+
+```sh
+cargo test --workspace --doc --locked --verbose
+```
+
+Pre-commit hook setup (optional):
 
 Example command for clippy:
 
