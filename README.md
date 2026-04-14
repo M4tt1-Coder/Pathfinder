@@ -37,7 +37,10 @@ Core stack and dependencies:
 
 Quality and automation:
 
-- Two GitHub Actions workflows covering fmt, clippy, build, tests, and documentation tests
+- Three GitHub Actions workflows:
+	- Rust CI checks (fmt, clippy, tests, docs)
+	- Rust baseline verification on pushes and PRs to main
+	- Automated release publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ### Project Structure
@@ -183,6 +186,24 @@ cargo test --workspace --all-targets --locked --verbose
 ```sh
 cargo test --workspace --doc --locked --verbose
 ```
+
+### Automated releases
+
+When a pull request is merged into `main`, the release workflow (`.github/workflows/release.yml`) runs and:
+
+- Reads `package.version` from `Cargo.toml`
+- Fails with an explicit error if the corresponding release tag already exists
+- Fails with an explicit error if `package.version` is not greater than the latest `v*` release tag
+- Publishes the crate to crates.io
+- Creates a GitHub release using tag `v<package.version>`
+
+Release authentication requirement:
+
+- Configure crates.io trusted publishing for this repository so GitHub Actions can mint a short-lived publish token via OIDC
+
+Important release rule:
+
+- Always bump `version` in `Cargo.toml` before merging a release-worthy PR into `main`
 
 Pre-commit hook setup (optional):
 
