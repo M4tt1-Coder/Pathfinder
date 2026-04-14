@@ -69,9 +69,9 @@ impl Graph for TwoDimensionalCoordinateGraph {
         // edge
         for e in &self.edges {
             if &e.node_one == u {
-                neighbours.push((&e.node_one, e.weight));
-            } else if &e.node_two == u {
                 neighbours.push((&e.node_two, e.weight));
+            } else if &e.node_two == u {
+                neighbours.push((&e.node_one, e.weight));
             }
         }
         Box::new(neighbours.into_iter())
