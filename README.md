@@ -19,6 +19,7 @@ The repository provides:
 
 - File-based input is implemented and used by the CLI
 - Command-line graph input mode is defined but not implemented in runtime flow
+- The `--origin` flag is present in CLI syntax, but current compatibility behavior still reads input origin from `--algo`
 - Dijkstra is fully wired in the executable
 - A* is available in modules but not yet enabled in the final CLI execution path
 - Two-dimensional (`TD`) graph files are parsed, but the CLI execution path currently handles directed and undirected graph runs only
@@ -103,6 +104,11 @@ Example command:
 ```text
 pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
 ```
+
+Compatibility note:
+
+- In the current implementation, input-origin parsing still reads from `--algo` (not `--origin`).
+- `--origin cmd-line` is therefore not active in executable flow yet.
 
 ### CLI argument examples
 
