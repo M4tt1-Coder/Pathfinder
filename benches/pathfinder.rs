@@ -50,10 +50,7 @@ fn find_shortest_path_in_directed_graph_with_dijkstra(bencher: Bencher) {
         })
         .bench_refs(|dg| {
             let algo_d = DijkstraAlgorithm::new(dg.clone());
-            let _result = match algo_d.shortest_path(
-                &DefaultNode::new("A".to_string()),
-                &DefaultNode::new("B".to_string()),
-            ) {
+            let _result = match algo_d.shortest_path("A", "B") {
                 Ok(path) => path,
                 Err(_) => return,
             };
@@ -75,10 +72,7 @@ fn find_shortest_path_in_undirected_graph_with_dijkstra(bencher: Bencher) {
         })
         .bench_refs(|dg| {
             let algo_d = DijkstraAlgorithm::new(dg.clone());
-            let _result = match algo_d.shortest_path(
-                &DefaultNode::new("A".to_string()),
-                &DefaultNode::new("B".to_string()),
-            ) {
+            let _result = match algo_d.shortest_path("A", "B") {
                 Ok(path) => path,
                 Err(_) => return,
             };

@@ -19,8 +19,8 @@ fn setup_config_parses_required_arguments_and_defaults() {
     let config = AppConfig::setup_config(args).expect("expected valid config");
 
     assert_eq!(config.file_path, "graph.txt");
-    assert_eq!(config.start_node.id, "A");
-    assert_eq!(config.end_node.id, "D");
+    assert_eq!(config.start_node_id, "A");
+    assert_eq!(config.end_node_id, "D");
     assert!(matches!(config.algorithm, Algorithms::Dijkstra));
     assert!(matches!(config.data_input, InputOrigin::File));
 }
@@ -32,7 +32,7 @@ fn setup_config_parses_optional_graph_file_and_algorithm() {
         "--graph-file",
         "test_files/directed_graph.txt",
         "--algo",
-        "A*",
+        "AStar",
         "--start",
         "A",
         "--end",

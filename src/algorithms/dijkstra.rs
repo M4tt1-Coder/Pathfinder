@@ -19,14 +19,20 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
+//! use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
 //! use shortest_path_finder::graphs::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
-//! let mut graph = DirectedGraph::<DefaultNode, u16>::new();
-//! graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string()), Some(4));
-//! graph.add_edge(DefaultNode::new("B".to_string()), DefaultNode::new("C".to_string()), Some(2));
-//! graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("C".to_string()), Some(10));
+//! let mut graph = DirectedGraph::default();
+//! let a = DefaultNode::new("A".to_string());
+//! let b = DefaultNode::new("B".to_string());
+//! let c = DefaultNode::new("C".to_string());
+//! graph.insert_node(a.clone());
+//! graph.insert_node(b.clone());
+//! graph.insert_node(c.clone());
+//! assert!(graph.insert_edge(DirectedEdge::new(a.clone(), b.clone(), 4)).is_none());
+//! assert!(graph.insert_edge(DirectedEdge::new(b, c.clone(), 2)).is_none());
+//! assert!(graph.insert_edge(DirectedEdge::new(a, c, 10)).is_none());
 //!
 //! let dijkstra = DijkstraAlgorithm::new(graph);
 //! let result = dijkstra.shortest_path("A", "C").unwrap();
@@ -109,14 +115,20 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// ```rust
 /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
+/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
 /// use shortest_path_finder::graphs::graph::Graph;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
-/// let mut graph = DirectedGraph::<DefaultNode, u16>::new();
-/// graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string()), Some(1));
-/// graph.add_edge(DefaultNode::new("B".to_string()), DefaultNode::new("C".to_string()), Some(1));
-/// graph.add_edge(DefaultNode::new("A".to_string()), DefaultNode::new("C".to_string()), Some(5));
+/// let mut graph = DirectedGraph::default();
+/// let a = DefaultNode::new("A".to_string());
+/// let b = DefaultNode::new("B".to_string());
+/// let c = DefaultNode::new("C".to_string());
+/// graph.insert_node(a.clone());
+/// graph.insert_node(b.clone());
+/// graph.insert_node(c.clone());
+/// assert!(graph.insert_edge(DirectedEdge::new(a.clone(), b.clone(), 1)).is_none());
+/// assert!(graph.insert_edge(DirectedEdge::new(b, c.clone(), 1)).is_none());
+/// assert!(graph.insert_edge(DirectedEdge::new(a, c, 5)).is_none());
 ///
 /// let algorithm = DijkstraAlgorithm::new(graph);
 /// let result = algorithm.shortest_path("A", "C").unwrap();
@@ -240,9 +252,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// ```rust
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// let graph = DirectedGraph::<DefaultNode, u16>::new();
+    /// let graph = DirectedGraph::new(vec![], vec![]);
     /// let _algorithm = DijkstraAlgorithm::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {

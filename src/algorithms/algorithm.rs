@@ -133,17 +133,19 @@ pub trait Algorithm {
     /// ```rust
     /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
     /// use shortest_path_finder::graphs::graph::Graph;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// let mut graph = DirectedGraph::<DefaultNode, u16>::new();
+    /// let mut graph = DirectedGraph::default();
     /// let a = DefaultNode::new("A".to_string());
     /// let b = DefaultNode::new("B".to_string());
-    /// graph.add_edge(a.clone(), b.clone(), Some(3u16));
+    /// graph.insert_node(a.clone());
+    /// graph.insert_node(b.clone());
+    /// assert!(graph.insert_edge(DirectedEdge::new(a, b, 3u16)).is_none());
     ///
     /// let algorithm = DijkstraAlgorithm::new(graph);
-    /// let result = algorithm.shortest_path(&a, &b).unwrap();
+    /// let result = algorithm.shortest_path("A", "B").unwrap();
     ///
     /// assert_eq!(result.get_total_distance(), 3u16);
     /// assert_eq!(result.get_path().len(), 2);
@@ -214,6 +216,7 @@ pub trait SearchResult: Display + Debug {
     /// ```rust
     /// use shortest_path_finder::algorithms::algorithm::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::graphs::graph::GraphNode;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let path = vec![

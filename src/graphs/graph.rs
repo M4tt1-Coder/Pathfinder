@@ -55,7 +55,7 @@ use std::{
 ///
 /// ```rust
 /// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
-/// use shortest_path_finder::graphs::graph::Graph;
+/// use shortest_path_finder::graphs::graph::{Graph, GraphNode};
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
 /// let a = DefaultNode::new("A".to_string());

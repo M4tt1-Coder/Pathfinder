@@ -54,9 +54,7 @@ fn dijkstra_finds_shortest_path_in_directed_graph() {
     );
 
     let dijkstra = DijkstraAlgorithm::new(graph);
-    let result = dijkstra
-        .shortest_path(&node("A"), &node("D"))
-        .expect("path should exist");
+    let result = dijkstra.shortest_path("A", "D").expect("path should exist");
 
     let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
 
@@ -92,9 +90,7 @@ fn dijkstra_finds_shortest_path_in_undirected_graph() {
     );
 
     let dijkstra = DijkstraAlgorithm::new(graph);
-    let result = dijkstra
-        .shortest_path(&node("A"), &node("C"))
-        .expect("path should exist");
+    let result = dijkstra.shortest_path("A", "C").expect("path should exist");
 
     let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
 
@@ -116,7 +112,7 @@ fn dijkstra_returns_error_when_start_node_is_missing() {
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let err = dijkstra
-        .shortest_path(&node("A"), &node("C"))
+        .shortest_path("A", "C")
         .expect_err("start node is not part of the graph");
 
     assert!(err.message.contains("not in the graph"));
@@ -139,7 +135,7 @@ fn dijkstra_returns_error_when_no_path_exists() {
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let err = dijkstra
-        .shortest_path(&node("A"), &node("C"))
+        .shortest_path("A", "C")
         .expect_err("there is no route from A to C");
 
     assert!(

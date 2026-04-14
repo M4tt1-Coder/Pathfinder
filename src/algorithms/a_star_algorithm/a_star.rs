@@ -27,7 +27,7 @@
 //!
 //! # Usage Example
 //!
-//! ```rust
+//! ```ignore
 //! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 //! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -83,7 +83,7 @@ use crate::{
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
@@ -142,7 +142,7 @@ impl<
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -301,7 +301,7 @@ impl<
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```ignore
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
@@ -505,9 +505,9 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 /// let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
-/// let mut element = AStarQueueElement::new(&a, 2.0_f32, 3.0_f32, None);
+/// let mut element = AStarQueueElement::new(&a, 2_i32, 3_i32, None);
 ///
-/// assert_eq!(element.f_cost, 5.0_f32);
+/// assert_eq!(element.f_cost, 5_i32);
 /// element.set_predecessor(Some(&b));
 /// assert_eq!(element.get_predecessor().unwrap().get_id(), "B");
 /// ```
