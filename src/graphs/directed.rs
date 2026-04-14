@@ -2,32 +2,50 @@ use std::{error::Error, fmt::Display};
 
 use log::info;
 
-use crate::graphs::graph::{Graph, GraphEdge, Node};
+use crate::{
+    graphs::graph::{Graph, GraphEdge, GraphNode},
+    nodes::default_node::DefaultNode,
+};
 
 /// A directed graph implementation.
 ///
+/// Its representational sign is 'D' relevant for storing data in a file.
+///
 /// # Example
 /// ```
-/// use pathfinder::graphs::{ directed::{ DirectedGraph, DirectedEdge }, graph::Node };
+/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+/// use shortest_path_finder::nodes::default_node::DefaultNode;
 /// let graph = DirectedGraph {
-///     nodes: vec![Node::new("A".to_string()), Node::new("B".to_string())],
-///     edges: vec![DirectedEdge::new(Node::new("A".to_string()), Node::new("B".to_string()), 4)],
+///     nodes: vec![
+///         DefaultNode::new("A".to_string()),
+///         DefaultNode::new("B".to_string()),
+///     ],
+///     edges: vec![DirectedEdge::new(
+///         DefaultNode::new("A".to_string()),
+///         DefaultNode::new("B".to_string()),
+///         4,
+///     )],
 /// };
 /// ```
 #[derive(Debug, Clone)]
 pub struct DirectedGraph {
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<DefaultNode>,
     pub edges: Vec<DirectedEdge>,
 }
 
 impl Graph for DirectedGraph {
-    type Node = Node;
+    type Node = DefaultNode;
+
     type Weight = u16;
+
     type Edge = DirectedEdge;
+
     type InsertionError = DirectedGraphInsertionError;
+
     fn is_directed(&self) -> bool {
         true
     }
+
     fn neighbors<'a>(
         &'a self,
         u: &Self::Node,
@@ -42,20 +60,16 @@ impl Graph for DirectedGraph {
 
         Box::new(neighbors.into_iter())
     }
-    fn neighbours_as_standard_output<'a>(
-        &'a self,
-        u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
-        self.neighbors(u)
-    }
+
     fn insert_node(&mut self, new_node: Self::Node) {
         if self.does_node_already_exist(&new_node) {
             return;
         }
 
         // add the node to the graph
-        self.nodes.push(new_node.clone());
+        self.nodes.push(new_node);
     }
+
     fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(&edge) {
             return Some(DirectedGraphInsertionError::new(format!(
@@ -76,6 +90,7 @@ impl Graph for DirectedGraph {
 
         None
     }
+
     fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
         for e in &self.edges {
             if e.from.id == edge.from.id && e.to.id == edge.to.id {
@@ -84,6 +99,7 @@ impl Graph for DirectedGraph {
         }
         false
     }
+
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         for n in &self.nodes {
             if n.id == node.id {
@@ -92,33 +108,37 @@ impl Graph for DirectedGraph {
         }
         false
     }
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<Self::Edge> {
-        for e in &self.edges {
-            if &e.id == id {
-                return Some(e.clone());
-            }
-        }
-        None
+
+    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
+        self.edges
+            .iter()
+            .find(|&e| &e.get_id() == id)
+            .map(|v| v as _)
     }
-    fn get_node_by_id(&self, id: &str) -> Option<Self::Node> {
-        for n in &self.nodes {
-            if n.id == id {
-                return Some(n.clone());
-            }
-        }
-        None
+
+    fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
+        self.nodes
+            .iter()
+            .find(|&n| n.get_id() == id)
+            .map(|v| v as _)
     }
-    fn get_all_nodes(&self) -> &Vec<Node> {
+
+    fn get_all_nodes(&self) -> &Vec<Self::Node> {
         &self.nodes
     }
+
     fn is_weighted(&self) -> bool {
         true
+    }
+
+    fn abbreviation() -> String {
+        String::from("D")
     }
 }
 
 impl DirectedGraph {
     /// Create new 'DirectedGraph' instance.
-    pub fn new(nodes: Vec<Node>, edges: Vec<DirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<DirectedEdge>) -> Self {
         Self { nodes, edges }
     }
 }
@@ -147,15 +167,15 @@ impl Default for DirectedGraph {
 /// - 'weight' -> The abstract "distance" between the two nodes.
 #[derive(Clone, PartialEq, Debug)]
 pub struct DirectedEdge {
-    pub from: Node,
-    pub to: Node,
+    pub from: DefaultNode,
+    pub to: DefaultNode,
     pub weight: u16,
     id: uuid::Uuid,
 }
 
 impl DirectedEdge {
     /// Create a new 'DirectedEdge' instance.
-    pub fn new(from: Node, to: Node, weight: u16) -> Self {
+    pub fn new(from: DefaultNode, to: DefaultNode, weight: u16) -> Self {
         Self {
             from,
             to,

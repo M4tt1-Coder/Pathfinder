@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  id-token: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish crate and create GitHub release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure push came from a merged pull request
+        id: pr_check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const commit_sha = context.sha;
+            const response = await github.request(
+              'GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls',
+              {
+                owner,
+                repo,
+                commit_sha,
+                mediaType: { previews: ['groot'] }
+              }
+            );
+
+            const mergedPr = response.data.find(
+              (pr) => pr.merged_at && pr.base.ref === 'main'
+            );
+
+            if (!mergedPr) {
+              core.notice('No merged pull request is associated with this push. Skipping release.');
+              core.setOutput('should_release', 'false');
+              return;
+            }
+
+            core.info(`Release triggered by merged PR #${mergedPr.number}.`);
+            core.setOutput('should_release', 'true');
+
+      - name: Install stable Rust
+        if: steps.pr_check.outputs.should_release == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + index + build
+        if: steps.pr_check.outputs.should_release == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - name: Read crate version
+        if: steps.pr_check.outputs.should_release == 'true'
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(grep -m1 '^version = "' Cargo.toml | sed -E 's/version = "([^"]+)"/\1/')"
+          if [[ -z "${VERSION}" ]]; then
+            echo '::error::Could not read package.version from Cargo.toml.'
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate version bump and release tag
+        if: steps.pr_check.outputs.should_release == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          git fetch --tags --force
+
+          if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            echo "::error::Release tag ${TAG} already exists. Please bump package.version in Cargo.toml before merging to main."
+            exit 1
+          fi
+
+          LATEST_TAG="$(git tag --list 'v*' --sort=-version:refname | head -n1 || true)"
+          if [[ -n "${LATEST_TAG}" ]]; then
+            LATEST_VERSION="${LATEST_TAG#v}"
+
+            if [[ "${LATEST_VERSION}" == "${VERSION}" ]]; then
+              echo "::error::Cargo.toml version (${VERSION}) matches the latest release tag (${LATEST_TAG}). Update package.version before merging."
+              exit 1
+            fi
+
+            HIGHEST="$(printf '%s\n%s\n' "${LATEST_VERSION}" "${VERSION}" | sort -V | tail -n1)"
+            if [[ "${HIGHEST}" != "${VERSION}" ]]; then
+              echo "::error::Cargo.toml version (${VERSION}) is not greater than latest release (${LATEST_TAG}). Bump package.version before merging."
+              exit 1
+            fi
+          fi
+
+      - name: Authenticate with crates.io trusted publishing
+        if: steps.pr_check.outputs.should_release == 'true'
+        id: crates_auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish to crates.io
+        if: steps.pr_check.outputs.should_release == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates_auth.outputs.token }}
+        run: cargo publish --locked
+
+      - name: Create GitHub release
+        if: steps.pr_check.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true

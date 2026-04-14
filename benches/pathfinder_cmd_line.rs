@@ -1,5 +1,5 @@
 use divan::{Bencher, bench};
-use pathfinder::cmd_line::app_config::{AppConfig, InputOrigin, SetupProcessError};
+use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin, SetupProcessError};
 
 fn main() {
     divan::main();

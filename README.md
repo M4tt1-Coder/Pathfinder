@@ -1,91 +1,256 @@
-<!-- TODO: Udjust the README.md for GitHub -->
-
 # PathFinder
 
-Contains implementations of various shortest path algorithms like Dijkstra, etc.! You can calculate the best route from one point 'A' to point 'B'.
+PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
+The runtime currently uses Dijkstra, with A* present in the codebase and under active integration.
 
 ## Description
 
-Basically, the executable later generates a graph based on data provided by the user through a file or manual in the terminal (not implemented yet). Then using a specified algorithm the shortest path is being determined.
+PathFinder builds a graph from input data and computes the shortest path from a start node to an end node.
+The project supports directed and undirected weighted graphs, plus two-dimensional node types used by A* internals.
 
-Some graphs only work with specific algorithms and visa verca!
+The repository provides:
+
+- A reusable crate: shortest_path_finder
+- A CLI binary: pathfinder
+- Benchmarks for core modules
+- CI and pre-commit quality checks
+
+### Current Runtime Scope
+
+- File-based input is implemented and used by the CLI
+- Command-line graph input mode is defined but not implemented in runtime flow
+- The `--origin` flag is present in CLI syntax, but current compatibility behavior still reads input origin from `--algo`
+- Dijkstra is fully wired in the executable
+- A* is available in modules but not yet enabled in the final CLI execution path
+- Two-dimensional (`TD`) graph files are parsed, but the CLI execution path currently handles directed and undirected graph runs only
 
 ### Technologies
 
-To implement the data structures needed for the execution, I primarily used types from the **std** module. For the implementation of the **_Dijkstra_** algorithm I used the `std::collections::{BinaryHeap, HashMap}` structs for example.
+Core stack and dependencies:
 
-In some cases I need to identify objects, where I made use of the **uuid** crate.
+- Rust edition 2024
+- std collections for algorithm internals (for example BinaryHeap and HashMap)
+- uuid for edge identifiers
+- regex for line-format validation during graph parsing
+- strum and strum_macros for graph-type parsing helpers
+- env_logger and log for runtime logging
 
-```rust
-    // for example in edges
-    pub struct DirectedEdge {
-        // ...
-        id: uuid::Uuid,
-    }
-```
+Quality and automation:
+
+- Three GitHub Actions workflows:
+	- Rust CI checks (fmt, clippy, tests, docs)
+	- Rust baseline verification on pushes and PRs to main
+	- Automated release publishing on merged PRs into main
+- Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
+
+### Project Structure
+
+- src/main.rs: CLI entrypoint and runtime wiring
+- src/cmd_line/app_config.rs: argument parsing and defaults
+- src/data_input/file_input.rs: graph-file parsing and validation
+- src/algorithms/: algorithm traits and implementations
+- src/graphs/: graph trait and concrete graph types
+- benches/: benchmark targets
 
 ### Challenges & Feature
 
-During the process, I faced a few challenges, which is normal.
+Main engineering challenges addressed so far:
 
-- Creating suited **_generic data structures_** (e.g. for multiple graphs implementing the same behaviour) BUT it's never perfect ;D
-- ...
+- Designing graph abstractions that support multiple graph models
+- Keeping algorithm interfaces generic while preserving practical runtime ergonomics
+- Validating strict, typed parsing from textual graph definitions
 
-In the future, I will add the following features to the crate ...
+Planned and in-progress features:
 
-- [ ] **A\*** algorithm
-- [ ] data input through the **command line**
+- [ ] Finalize full A* runtime integration
+- [ ] Enable command-line graph input origin in executable flow
+- [ ] Extend usage examples and integration tests for all graph variants
 
 ## How to use it?
 
-You need to be in the _root-directory_: `~/your/path/to/pathfinder`!
+### Prerequisites
 
-To actual run the binary executable, you need to compile the code in release mode!
+Install Rust from https://rust-lang.org/tools/install and verify your setup.
 
-Make sure you have **Rust** installed! To set it up please go [here ...](https://rust-lang.org/tools/install/)
-
-Check if you have **Rust** installed with:
+Example command:
 
 ```sh
-    cargo -V
-    # expected output: "cargo 1.19.1 (ea2d97820 2025-10-10)"
-
+cargo -V
 ```
 
-Now, run this command in a terminal in the _root-directory_:
+Expected style of output example:
+
+```text
+cargo 1.xx.x (........ 2026-..-..)
+```
+
+### Build
+
+From the repository root, build the release binary.
+
+Example command:
 
 ```sh
-    cargo build --release
+cargo build --release
 ```
 
-... this will create a `target` folder with the _executable_ in the `target/release` folder.
+### Run the binary
 
-For running the `binary`, type this into the terminal!
+Example command:
 
 ```sh
-    ./target/release/pathfinder --start A --end B
+./target/release/pathfinder --graph-file graph.txt --start A --end B
 ```
 
-The syntax for the usage of the executable is:
+### CLI syntax
 
-```
-    pathfinder [ --origin <file / cmd-line> --graph-file <path_to_file> --algo <algorithm_name>] --start <node> --end <node>
+```text
+pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
 ```
 
-You can expect this output if you provided a valid query and data!
+Compatibility note:
+
+- In the current implementation, input-origin parsing still reads from `--algo` (not `--origin`).
+- `--origin cmd-line` is therefore not active in executable flow yet.
+
+### CLI argument examples
+
+Minimal example using defaults for origin and algorithm:
 
 ```sh
-    ./target/release/pathfind --start A --end B
+./target/release/pathfinder --start A --end B
+```
 
-    Path: -> A -> B,
-    Distance: 5
+Explicit file and algorithm example:
 
+```sh
+./target/release/pathfinder --graph-file graph.txt --algo Dijkstra --start A --end B
+```
+
+### Input file format
+
+The current parser format (used by the provided test files) is header plus edge lines:
+
+- Line 1 is a graph-type header: `D`, `UN`, or `TD`.
+- Only lines after line 1 are converted into edges.
+- Line 1 is not inserted as an edge.
+
+Directed example:
+
+```text
+D
+A->B:7
+B->C:3
+C->D:5
+```
+
+Undirected example:
+
+```text
+UN
+A-B:7
+B-C:3
+C-D:5
+```
+
+Two-dimensional format currently recognized by parser:
+
+```text
+TD
+A:0,0-B:2,1
+B:2,1-C:4,1
+```
+
+### Development workflow
+
+Run checks locally before pushing:
+
+CI-parity commands:
+
+```sh
+cargo fmt --all -- --check
+```
+
+```sh
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+```sh
+cargo build --workspace --all-targets --locked --verbose
+```
+
+```sh
+cargo test --workspace --all-targets --locked --verbose
+```
+
+```sh
+cargo test --workspace --doc --locked --verbose
+```
+
+### Automated releases
+
+When a pull request is merged into `main`, the release workflow (`.github/workflows/release.yml`) runs and:
+
+- Reads `package.version` from `Cargo.toml`
+- Fails with an explicit error if the corresponding release tag already exists
+- Fails with an explicit error if `package.version` is not greater than the latest `v*` release tag
+- Publishes the crate to crates.io
+- Creates a GitHub release using tag `v<package.version>`
+
+Release authentication requirement:
+
+- Configure crates.io trusted publishing for this repository so GitHub Actions can mint a short-lived publish token via OIDC
+
+Important release rule:
+
+- Always bump `version` in `Cargo.toml` before merging a release-worthy PR into `main`
+
+Pre-commit hook setup (optional):
+
+Example command for clippy:
+
+```sh
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+Example command for tests:
+
+```sh
+cargo test --all-features
+```
+
+If you use pre-commit in your environment, install and run hooks.
+
+Example command to install hooks:
+
+```sh
+pre-commit install
+```
+
+Example command to run hooks manually:
+
+```sh
+pre-commit run --all-files
 ```
 
 ### Default Settings
 
-For running the app you have to know some default settings which are applied if the user doesn't mutate them!
+Current defaults from CLI configuration:
 
-- the **origin of the data input** is the a file with the name `graph.txt` in the _root-directory_
-- ... corresponing with that default name of the file mentioned is the same
-- if no algorith was specified then the **_Dijkstra_** will be used
+- Input origin defaults to file
+- Graph file defaults to graph.txt
+- Algorithm defaults to Dijkstra
+
+### Example output
+
+Output shape example (values depend on input graph):
+
+```text
+Path: A -> ... -> B
+Distance: <value>
+```
+
+## License
+
+This repository is licensed under the terms defined in the license file: [LICENSE](LICENSE).
+Please review [LICENSE](LICENSE) for full usage, distribution, and contribution terms.

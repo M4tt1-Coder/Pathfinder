@@ -2,10 +2,15 @@ use std::{error::Error, fmt::Display};
 
 use uuid::Uuid;
 
-use crate::graphs::graph::{Graph, GraphEdge, Node};
+use crate::{
+    graphs::graph::{Graph, GraphEdge},
+    nodes::default_node::DefaultNode,
+};
 
 /// Undirected graphs don't have the restriction that you can't go along some edges from a specific
 /// direction. Here you go along all ways.
+///
+/// Its abbreviation is 'UN' used in files to identify the graph data for an undirected graph.
 ///
 /// # Fields
 ///
@@ -13,14 +18,17 @@ use crate::graphs::graph::{Graph, GraphEdge, Node};
 /// * 'edges' -> The edges of the graph.
 #[derive(Debug, Clone)]
 pub struct UndirectedGraph {
-    pub nodes: Vec<Node>,
+    pub nodes: Vec<DefaultNode>,
     pub edges: Vec<UndirectedEdge>,
 }
 
 impl Graph for UndirectedGraph {
-    type Node = Node;
+    type Node = DefaultNode;
+
     type Edge = UndirectedEdge;
+
     type Weight = u16;
+
     type InsertionError = UndirectedGraphInsertionError;
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
@@ -60,12 +68,6 @@ impl Graph for UndirectedGraph {
         Box::new(neighbors.into_iter())
     }
 
-    fn neighbours_as_standard_output<'a>(
-        &'a self,
-        u: &Node,
-    ) -> Box<dyn Iterator<Item = (&'a Node, u16)> + 'a> {
-        self.neighbors(u)
-    }
     fn is_directed(&self) -> bool {
         false
     }
@@ -100,27 +102,24 @@ impl Graph for UndirectedGraph {
         None
     }
 
-    fn get_node_by_id(&self, id: &str) -> Option<Self::Node> {
-        for n in &self.nodes {
-            if n.id == id {
-                return Some(n.clone());
-            }
-        }
-        None
+    fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
+        self.nodes.iter().find(|&n| n.id == id).map(|v| v as _)
     }
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<Self::Edge> {
-        for e in &self.edges {
-            if &e.id == id {
-                return Some(e.clone());
-            }
-        }
-        None
+
+    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
+        self.edges.iter().find(|&e| &e.id == id).map(|v| v as _)
     }
-    fn get_all_nodes(&self) -> &Vec<Node> {
+
+    fn get_all_nodes(&self) -> &Vec<DefaultNode> {
         &self.nodes
     }
+
     fn is_weighted(&self) -> bool {
         true
+    }
+
+    fn abbreviation() -> String {
+        String::from("UN")
     }
 }
 
@@ -135,7 +134,7 @@ impl UndirectedGraph {
     /// # Returns
     ///
     /// => A new instance of the 'UndirectedGraph'.
-    pub fn new(nodes: Vec<Node>, edges: Vec<UndirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<UndirectedEdge>) -> Self {
         Self { nodes, edges }
     }
 }
@@ -163,15 +162,15 @@ impl Default for UndirectedGraph {
 /// * 'weight' -> Fictional 'length' of the edge
 #[derive(Clone, PartialEq, Debug)]
 pub struct UndirectedEdge {
-    pub a_node: Node,
-    pub b_node: Node,
+    pub a_node: DefaultNode,
+    pub b_node: DefaultNode,
     pub weight: u16,
     id: Uuid,
 }
 
 impl UndirectedEdge {
     /// Create a new instance of the 'UndirectedEdge' struct.
-    pub fn new(a_node: Node, b_node: Node, weight: u16) -> Self {
+    pub fn new(a_node: DefaultNode, b_node: DefaultNode, weight: u16) -> Self {
         Self {
             a_node,
             b_node,

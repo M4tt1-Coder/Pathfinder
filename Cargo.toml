@@ -1,17 +1,24 @@
 [package]
-name = "pathfinder"
-version = "0.1.0"
+name = "shortest_path_finder"
+version = "0.1.1"
 edition = "2024"
 authors = ["Matthis Geißler <matthisgeissler@gmail.com>"]
-license = "MIT"
-description = "A Rust library for pathfinding algorithms."
+license-file = "LICENSE"
+description = "A Rust library for shortest path finding algorithms, including Dijkstra's, A*, and Bellman-Ford. Supports both directed and undirected graphs, with customizable heuristics and edge weights. Ideal for game development, network routing, and graph analysis."
+homepage = "https://matthisgeissler.pages.dev"
 readme = "README.md"
+repository = "https://github.com/M4tt1-Coder/pathfinder"
+keywords = ["pathfinding", "algorithms", "rust", "library"]
+categories = ["algorithms", "data-structures"]
+exclude = ["target", "examples", "tests", "test_files", "benches", ".github", ".gitignore", ".gitmodules", "Cargo.toml"]
 
 [dependencies]
-env_logger = "^0.11.8"
-log = "^0.4.28"
-regex = { version = "^1.12.2", features = [ "logging" ] }
-uuid = { version = "^1.18.1", features = ['v4'] }
+env_logger = "^0.11.10"
+log = "^0.4.29"
+regex = { version = "^1.12.3", features = [ "logging" ] }
+uuid = { version = "^1.23.0", features = [ 'v4' ] }
+strum = "0.28.0"
+strum_macros = "0.28.0"
 
 [[bin]]
 name = "pathfinder"
@@ -19,6 +26,7 @@ path = "src/main.rs"
 
 [dev-dependencies]
 divan = { version = "^0.1.21" }
+tempfile = "3.27.0"
 
 [[bench]]
 name = "pathfinder"
