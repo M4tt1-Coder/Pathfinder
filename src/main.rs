@@ -59,14 +59,14 @@ fn main() {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
                     Algorithms::AStar => unimplemented!(),
                 };
-                let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
-                {
-                    Ok(res) => res,
-                    Err(err) => {
-                        error!("{}", err.message);
-                        process::exit(1);
-                    }
-                };
+                let result =
+                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
+                        Ok(res) => res,
+                        Err(err) => {
+                            error!("{}", err.message);
+                            process::exit(1);
+                        }
+                    };
                 // display the result
                 println!("{}", result);
                 process::exit(0);
@@ -75,14 +75,14 @@ fn main() {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
                     Algorithms::AStar => unimplemented!(),
                 };
-                let result = match algo.shortest_path(&app_config.start_node, &app_config.end_node)
-                {
-                    Ok(res) => res,
-                    Err(err) => {
-                        error!("{}", err.message);
-                        process::exit(1);
-                    }
-                };
+                let result =
+                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
+                        Ok(res) => res,
+                        Err(err) => {
+                            error!("{}", err.message);
+                            process::exit(1);
+                        }
+                    };
                 // display the result
                 println!("{}", result);
                 process::exit(0);

@@ -11,6 +11,7 @@ use crate::nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimension
 /// `NodeType` is an enum that can wrap either a [`TwoDimensionalNode`] (for grid-based graphs)
 /// or a [`DefaultNode`] (for generic node identifiers). This abstraction allows graph
 /// structures and algorithms to handle multiple node representations in a type-safe manner.
+#[derive(Debug)]
 pub enum NodeType {
     /// A node with two-dimensional coordinates (e.g., for grid graphs).
     TwoDimensionalNode(TwoDimensionalNode),
