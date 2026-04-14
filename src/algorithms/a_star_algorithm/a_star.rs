@@ -279,7 +279,7 @@ impl<
         let (path, distance) =
             determine_path_cost(closed_queue).map_err(|e| Self::ExecutionError::new(e.message))?;
 
-        Ok(AStarSearchResult { distance, path })
+        AStarSearchResult::new(distance, path).map_err(Self::ExecutionError::new)
     }
 }
 
@@ -384,7 +384,7 @@ pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateT
     /// List of nodes in order of the nodes that where visited to get the shortest path from the
     /// start to the destination node.
     ///
-    /// Must have at least 2 nodes (case where the starting node is also the destination)!
+    /// Must have at least 1 node (the `start == destination` case produces a single-node path).
     path: Vec<N>,
 }
 
@@ -393,7 +393,7 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     ///
     /// # Validation Rules
     ///
-    /// - `path` must contain at least two nodes.
+    /// - `path` must contain at least one node.
     /// - `distance` must be greater than or equal to zero.
     ///
     /// # Parameters
@@ -423,16 +423,13 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
-    /// let invalid_path = vec![TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap()];
+    /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
     /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
     /// ```
     pub fn new(distance: ND, path: Vec<N>) -> Result<Self, String> {
-        // path needs to have at least 2 nodes
-        if path.len() < 2 {
-            return Err(
-                "A valid result must have a path with atleast two representative nodes!"
-                    .to_string(),
-            );
+        // path needs to have at least 1 node
+        if path.is_empty() {
+            return Err("A valid result must have at least one representative node!".to_string());
         }
 
         // the distance must not be negative
