@@ -71,8 +71,8 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 ///   indicating an inconsistency in the search data.
 ///
 /// # Type Parameters
-/// - `ND`: A type that implements `NumericDatatype`, representing the cost type (e.g., `f64`, `i32`).
-/// - `N`: A type that implements `CoordinatesNode<CoordinateType = ND>`, representing nodes in the graph.
+/// - `WD`: A type that implements `NumericDatatype`, representing the path-cost and edge-weight type.
+/// - `N`: A type that implements `CoordinatesNode`, representing nodes in the graph.
 ///
 /// # Example
 /// ```ignore
@@ -80,11 +80,11 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 /// // the visited queue has been populated during search execution.
 /// let (path, cost) = determine_path_cost(visited_nodes).unwrap();
 /// ```
-pub fn determine_path_cost<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>(
-    visited_nodes: Vec<AStarQueueElement<ND, N>>,
-) -> Result<(Vec<N>, ND), AStarExecutionError> {
+pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
+    visited_nodes: Vec<AStarQueueElement<WD, N>>,
+) -> Result<(Vec<N>, WD), AStarExecutionError> {
     let mut path: Vec<N> = Vec::new();
-    let mut distance = ND::zero();
+    let mut distance = WD::zero();
     if let Some(visited_node) = visited_nodes.last() {
         let mut current_node = visited_node;
         distance = current_node.get_g_cost();

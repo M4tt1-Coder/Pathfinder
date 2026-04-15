@@ -41,7 +41,9 @@ use crate::graphs::graph::GraphWeight;
 /// - `Sized` for compile-time size.
 ///
 /// # Note
-/// This trait doesn't add new methods but serves as a convenient bound for generic functions requiring numeric types with these operations.
+/// Besides arithmetic bounds, this trait defines helper methods used by heuristics
+/// and mixed-type numeric flows (`adjust_for_heuristic`, `to_f32`, and
+/// `from_f32`).
 pub trait NumericDatatype:
     GraphWeight + Sub<Output = Self> + Sized + Mul<Output = Self> + Div<Output = Self>
 {
@@ -61,4 +63,15 @@ pub trait NumericDatatype:
     ///
     /// => The adjusted value for heuristic calculations.
     fn adjust_for_heuristic(&self) -> Self;
+
+    /// Converts the numeric value into an `f32` representation.
+    ///
+    /// This is primarily used by mixed-type heuristic calculations where
+    /// coordinate and edge-weight datatypes differ.
+    fn to_f32(&self) -> f32;
+
+    /// Creates a value of `Self` from an `f32` representation.
+    ///
+    /// Implementations may apply a lossy conversion depending on target type.
+    fn from_f32(value: f32) -> Self;
 }

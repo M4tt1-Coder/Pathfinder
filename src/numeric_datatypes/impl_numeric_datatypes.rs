@@ -40,6 +40,14 @@ impl NumericDatatype for f32 {
     fn adjust_for_heuristic(&self) -> Self {
         *self * HEURISTIC_ADJUSTMENT_FACTOR
     }
+
+    fn to_f32(&self) -> f32 {
+        *self
+    }
+
+    fn from_f32(value: f32) -> Self {
+        value
+    }
 }
 
 impl NumericDatatype for i32 {
@@ -49,5 +57,13 @@ impl NumericDatatype for i32 {
 
     fn adjust_for_heuristic(&self) -> Self {
         *self * HEURISTIC_ADJUSTMENT_FACTOR as i32
+    }
+
+    fn to_f32(&self) -> f32 {
+        *self as f32
+    }
+
+    fn from_f32(value: f32) -> Self {
+        value as i32
     }
 }

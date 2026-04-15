@@ -1,7 +1,7 @@
 # PathFinder
 
 PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
-The runtime currently uses Dijkstra, with A* present in the codebase and under active integration.
+The runtime currently supports Dijkstra for directed/undirected graphs and A* for two-dimensional graphs.
 
 ## Description
 
@@ -21,8 +21,8 @@ The repository provides:
 - Command-line graph input mode is defined but not implemented in runtime flow
 - The `--origin` flag is present in CLI syntax, but current compatibility behavior still reads input origin from `--algo`
 - Dijkstra is fully wired in the executable
-- A* is available in modules but not yet enabled in the final CLI execution path
-- Two-dimensional (`TD`) graph files are parsed, but the CLI execution path currently handles directed and undirected graph runs only
+- A* is wired for two-dimensional (`TD`) graph execution in the CLI path
+- A* now supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
 
 ### Technologies
 

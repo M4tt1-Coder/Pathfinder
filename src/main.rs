@@ -41,6 +41,7 @@ use std::{env, process};
 use log::error;
 use shortest_path_finder::{
     algorithms::{
+        a_star_algorithm::a_star::AStar,
         algorithm::{Algorithm, Algorithms},
         dijkstra::DijkstraAlgorithm,
     },
@@ -59,7 +60,10 @@ use shortest_path_finder::{
 
 // TODO: Make 'A*' algorithm usable (test it) and benchmark it against Dijkstra's algorithm
 
-// TODO: Publish to crates.io and add a badge to the README.md file
+// TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
+// file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
+// way, the user can choose which features to include in their project and which not (e.g. if they
+// don't need the 'A*' algorithm, they can exclude it from their project and save some space).
 
 /// Runs the Pathfinder CLI application lifecycle.
 ///
@@ -109,7 +113,13 @@ fn main() {
             if let Some(graph) = graphs.directed_graph {
                 let algo = match app_config.algorithm {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
-                    Algorithms::AStar => unimplemented!(),
+                    _ => {
+                        error!(
+                            "Algorithm {:?} is not implemented for directed graphs yet or a directed graph is not supported by the implementation of the algorithm!",
+                            app_config.algorithm
+                        );
+                        process::exit(1);
+                    }
                 };
                 let result =
                     match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
@@ -125,7 +135,35 @@ fn main() {
             } else if let Some(graph) = graphs.undirected_graph {
                 let algo = match app_config.algorithm {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
-                    Algorithms::AStar => unimplemented!(),
+                    _ => {
+                        error!(
+                            "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
+                            app_config.algorithm
+                        );
+                        process::exit(1);
+                    }
+                };
+                let result =
+                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
+                        Ok(res) => res,
+                        Err(err) => {
+                            error!("{}", err.message);
+                            process::exit(1);
+                        }
+                    };
+                // display the result
+                println!("{}", result);
+                process::exit(0);
+            } else if let Some(graph) = graphs.two_dimensional_graph {
+                let algo = match app_config.algorithm {
+                    Algorithms::AStar => AStar::new(graph),
+                    _ => {
+                        error!(
+                            "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
+                            app_config.algorithm
+                        );
+                        process::exit(1);
+                    }
                 };
                 let result =
                     match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
