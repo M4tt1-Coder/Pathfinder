@@ -42,14 +42,17 @@ use crate::{
     },
 };
 
-/// Represents a two dimensional graph, which contains nodes with two ordinates X and Y.
+/// Undirected weighted graph whose nodes carry x/y coordinates.
 ///
-/// Its sign is 'TD' utilised in files where graph data is stored.
+/// # File-format marker
 ///
-/// # Fields
+/// This graph is represented by `TD` in file-input headers.
 ///
-/// - 'nodes' -> Nodes in the graph
-/// - 'edges' -> Edges in the graph
+/// # Invariants
+///
+/// - Duplicate nodes are rejected based on coordinates or ID.
+/// - Duplicate edges are rejected in either endpoint order.
+/// - Edge insertion requires both endpoint nodes to already exist.
 #[derive(Debug, Clone, Default)]
 pub struct TwoDimensionalCoordinateGraph {
     /// ----- Private field -----
@@ -60,7 +63,7 @@ pub struct TwoDimensionalCoordinateGraph {
     ///
     /// All existing edges in the graph.
     ///
-    /// Number of edges can't exceed |'nodes'| * |'nodes'|.
+    /// Number of edges is bounded by the undirected complete-graph limit.
     edges: Vec<TwoDimensionalEdge>,
 }
 
@@ -237,35 +240,28 @@ impl Display for TwoDimensionalCoordinateGraph {
 
 // ----- Implementation of the 'TwoDimensionalEdge' -----
 
-/// Represents the edge in a 'TwoDimensionalCoordinateGraph' graph holding two nodes which have two
-/// ordinates for a two dimensional coordinate system.
+/// Edge connecting two nodes in a [`TwoDimensionalCoordinateGraph`].
 ///
-/// # Fields
+/// # Weighting
 ///
-/// * 'id' -> Identifier
-/// * 'node_one' -> Node A of the edge
-/// * 'node_two' -> Node B ...
-/// * 'weight' -> Determined weight of the edge
+/// The edge weight is calculated eagerly at construction and cached in the
+/// struct for fast access during pathfinding.
 #[derive(Debug, PartialEq, Clone)]
 pub struct TwoDimensionalEdge {
     /// Unique identifier of the edge.
     ///
     /// UUID
     id: Uuid,
-    /// The first node of the 'TwoDimensionalEdge'.
+    /// First endpoint of the edge.
     pub node_one: TwoDimensionalNode,
-    /// The second node of the 'TwoDimensionalEdge'.
+    /// Second endpoint of the edge.
     pub node_two: TwoDimensionalNode,
-    /// The weight of the edge.
-    ///
-    /// It is calculated directly after creating the object. There was the option to determine on a
-    /// method call but storing another 32bit extra to save computing time later.
+    /// Cached weight computed from endpoint coordinates at construction time.
     weight: f32,
 }
 
 impl TwoDimensionalEdge {
-    /// Stores copies of the two nodes which the edge will connect. Furthermore, the weight is
-    /// calculated based on the coordinates of the two nodes.
+    /// Creates a new edge and computes its cached weight.
     ///
     /// # Arguments
     ///
@@ -300,7 +296,7 @@ impl TwoDimensionalEdge {
         edge
     }
 
-    /// Retrieves the private value of the weight of the 'TwoDimensionalEdge'.
+    /// Returns the cached weight of this edge.
     ///
     /// # Returns
     ///
@@ -321,13 +317,17 @@ impl TwoDimensionalEdge {
         self.weight
     }
 
-    /// Calculates the internal edge weight from the two endpoint coordinates.
+    /// Calculates the internal edge weight from endpoint coordinate deltas.
     ///
     /// # Implementation Detail
     ///
-    /// The current implementation uses bitwise XOR with `2` for both coordinate
-    /// deltas and then takes the square root of their sum. This means the
-    /// computed value is not a mathematical Euclidean distance.
+    /// The current implementation computes:
+    /// - `dx = x1 - x2`
+    /// - `dy = y1 - y2`
+    /// - `sqrt(dx.pow(2) + dy.pow(2))`
+    ///
+    /// which corresponds to the Euclidean distance formula for integer
+    /// coordinates.
     ///
     /// # Arguments
     ///
@@ -338,8 +338,8 @@ impl TwoDimensionalEdge {
     /// Computed `f32` weight value used internally by the graph.
     fn retrieve_actual_weight(&self) -> f32 {
         // Current implementation applies XOR-based transformation to deltas.
-        let height = (self.node_one.get_x() - self.node_two.get_x()) ^ 2;
-        let width = (self.node_one.get_y() - self.node_two.get_y()) ^ 2;
+        let height = (self.node_one.get_x() - self.node_two.get_x()).pow(2);
+        let width = (self.node_one.get_y() - self.node_two.get_y()).pow(2);
 
         // take the square root of the height and width
         let temp_sum = (height + width) as f32;
@@ -369,14 +369,13 @@ impl Display for TwoDimensionalEdge {
 
 // ----- Implementation of the 'TwoDimensionalGraphInsertionError' struct -----
 
-/// A global error for an issue in the insertion process when inserting an edge or node in the
-/// graph.
+/// Error type for failed insertions into [`TwoDimensionalCoordinateGraph`].
 ///
 /// # Fields
 ///
-/// * 'message' -> Clear message / description of the occured error.
-/// * 'cause_edge' -> 'TwoDimensionalEdge' object which could have caused the error.
-/// * 'cause_nodes' -> Array of two nodes which could be the reason the problem was faced.
+/// - `message`: human-readable error description.
+/// - `cause_edge`: edge payload that may have caused the error.
+/// - `cause_nodes`: node pair that may have caused the error.
 #[derive(Debug)]
 pub struct TwoDimensionalGraphInsertionError {
     /// Detailed description of the error
@@ -388,9 +387,9 @@ pub struct TwoDimensionalGraphInsertionError {
 }
 
 impl TwoDimensionalGraphInsertionError {
-    /// Generates a new object of the 'TwoDimensionalGraphInsertionError' struct.
+    /// Creates a new insertion error value.
     ///
-    /// When the passed 'message' to the function is emtpy an default message is used.
+    /// If `message` is empty, a default fallback message is used.
     ///
     /// # Arguments
     ///

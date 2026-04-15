@@ -15,6 +15,11 @@
 //! `adjust_for_heuristic()` applies a lightweight scaling factor intended for
 //! heuristic score tuning in coordinate-based pathfinding.
 //!
+//! Current implementation details:
+//! - `f32`: multiplies by `0.001`.
+//! - `i32`: multiplies by `0.001 as i32` (which is `0`), resulting in `0` for
+//!   all inputs.
+//!
 //! # Usage
 //!
 //! ```rust
@@ -29,7 +34,7 @@
 
 use crate::weight_types::numeric_datatype::NumericDatatype;
 
-/// Constant factor used by `adjust_for_heuristic()` implementations.
+/// Constant factor used by heuristic scaling implementations.
 static HEURISTIC_ADJUSTMENT_FACTOR: f32 = 0.001;
 
 impl NumericDatatype for f32 {

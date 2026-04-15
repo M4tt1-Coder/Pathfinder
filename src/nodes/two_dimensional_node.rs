@@ -42,17 +42,28 @@ use crate::{
 
 // TODO: Introduce generic coordinate datatypes (f32, f64, i64, ...)
 
-/// Node in a 'TwoDimensionalCoordinateGraph'.
+/// Coordinate-aware node type used by two-dimensional graph models.
 ///
-/// In that context the node needs to hold information about where the node is placed on the 'map'.
+/// # Invariants
 ///
-/// All attributes are private and can't be mutated from outside after inizialization.
+/// - `id` must not be empty.
+/// - Coordinates are stored as `i32`.
+/// - Fields are private and immutable from outside the type after creation.
 ///
-/// # Fields
+/// # Example
 ///
-/// - 'id' -> Identifier
-/// - 'x' -> X - ordinate
-/// - 'y' -> Y - ordinate
+/// ```rust
+/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::nodes::{
+///     trait_decl::coordinates_node::CoordinatesNode,
+///     two_dimensional_node::TwoDimensionalNode,
+/// };
+///
+/// let node = TwoDimensionalNode::new(2, -1, "Depot".to_string()).unwrap();
+/// assert_eq!(node.get_id(), "Depot");
+/// assert_eq!(node.get_x(), 2);
+/// assert_eq!(node.get_y(), -1);
+/// ```
 #[derive(Debug, Clone, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub struct TwoDimensionalNode {
     /// -- Private Field --
@@ -73,21 +84,18 @@ pub struct TwoDimensionalNode {
 }
 
 impl TwoDimensionalNode {
-    /// Creates a new instance of the 'TwoDimensionalNode' struct.
-    ///
-    /// When the identifier has a length of 0, then no new object is being created.
+    /// Creates a validated [`TwoDimensionalNode`].
     ///
     /// # Arguments
     ///
-    /// - 'x' -> X-ordinate of the node
-    /// - 'y' -> Y-ordinate of the node
-    /// - 'id' -> unique identifier of the node, which can't be null or a duplicate in the graph
-    ///
-    /// (external check)
+    /// - `x`: x-coordinate.
+    /// - `y`: y-coordinate.
+    /// - `id`: unique non-empty identifier.
     ///
     /// # Returns
     ///
-    /// Validated fresh [`TwoDimensionalNode`].
+    /// - `Some(Self)` if `id` is non-empty.
+    /// - `None` if `id` is empty.
     ///
     /// # Examples
     ///
@@ -116,12 +124,12 @@ impl TwoDimensionalNode {
 impl CoordinatesNode for TwoDimensionalNode {
     type CoordinateType = i32;
 
-    /// Returns the Y ordinate of the 'TwoDimensionalNode' in the graph.
+    /// Returns the x-coordinate of this node.
     fn get_x(&self) -> i32 {
         self.x
     }
 
-    /// Provides the Y ordinate of the node in the graph.
+    /// Returns the y-coordinate of this node.
     fn get_y(&self) -> i32 {
         self.y
     }
@@ -147,6 +155,13 @@ impl FromStr for TwoDimensionalNode {
     type Err = ParseError;
 
     /// Parses a node from `<id>:<x>,<y>` input.
+    ///
+    /// # Parsing Rules
+    ///
+    /// - Exactly one `:` must separate ID and coordinate payload.
+    /// - Exactly one `,` must separate `x` and `y`.
+    /// - Both coordinates must parse as `i32`.
+    /// - ID must not be empty.
     ///
     /// # Returns
     ///

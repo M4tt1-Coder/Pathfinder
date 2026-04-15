@@ -23,17 +23,32 @@
 
 use crate::graphs::graph::GraphWeight;
 
-/// An enum representing possible types for edge weights in a graph.
+/// Runtime weight wrapper used by parsing and intermediate conversion code.
 ///
-/// This allows for dynamic handling of different numeric types as weights,
-/// enabling algorithms to work with graphs whose edge weights may be of
-/// varying types at runtime.
+/// # Purpose
+///
+/// This enum is mainly used at data-input boundaries where edge lines can map
+/// to different graph models before they are converted to concrete graph types.
+/// Algorithms themselves typically use a single static weight type.
 ///
 /// # Variants
 ///
 /// - `U16(u16)`: Represents an unsigned 16-bit integer weight.
 /// - `F32(f32)`: Represents a 32-bit floating point weight.
 /// - `I32(i32)`: Represents a signed 32-bit integer weight.
+/// - `NotNecessary`: Marker used when a graph derives weights internally.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::weight_types::impl_weights::WeightType;
+///
+/// let w = WeightType::U16(12);
+/// assert!(matches!(w, WeightType::U16(12)));
+///
+/// let inferred = WeightType::NotNecessary;
+/// assert!(matches!(inferred, WeightType::NotNecessary));
+/// ```
 pub enum WeightType {
     /// Represents an unsigned 16-bit integer weight.
     U16(u16),

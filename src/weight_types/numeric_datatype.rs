@@ -1,15 +1,17 @@
-//! # NumericDatatype Trait
+//! Extended numeric trait used by weighted graph algorithms.
 //!
-//! The `NumericDatatype` trait extends `GraphWeight` with common arithmetic operations needed for numeric computations.
-//! It is designed for types that support subtraction, multiplication, and division, making it suitable for numerical data
-//! used in graph algorithms, weights, or coordinate calculations.
+//! # Overview
 //!
-//! # Bounds
-//! - Implements `GraphWeight` (assumed to be a trait for types usable as weights).
-//! - Supports subtraction (`Sub`) with output of the same type.
-//! - Supports multiplication (`Mul`) with output of the same type.
-//! - Supports division (`Div`) with output of the same type.
-//! - `Sized` for compile-time size information, typical for primitive numeric types.
+//! [`NumericDatatype`] builds on [`crate::graphs::graph::GraphWeight`] and adds
+//! arithmetic functionality needed by heuristic-based algorithms such as A*.
+//!
+//! # Responsibilities
+//!
+//! Implementors must provide:
+//! - arithmetic operators (`Sub`, `Mul`, `Div`),
+//! - absolute-value handling via [`NumericDatatype::abs`],
+//! - heuristic adjustment via [`NumericDatatype::adjust_for_heuristic`],
+//! - conversion helpers to and from `f32`.
 //!
 //! # Usage
 //!
@@ -21,47 +23,37 @@
 //! }
 //!
 //! assert_eq!(scale_weight(3i32, 2i32), 6i32);
+//! assert_eq!((-3_i32).abs(), 3_i32);
 //! ```
-//!
 
 use std::ops::{Div, Mul, Sub};
 
 use crate::graphs::graph::GraphWeight;
 
-/// `NumericDatatype` extends `GraphWeight` with essential arithmetic operations for numerical data.
+/// Numeric contract for algorithm weight/coordinate datatypes.
 ///
-/// It is intended for types that support subtraction, multiplication, and division,
-/// such as `f32`, `f64`, `i32`, `u32`, etc.
+/// # Design intent
 ///
-/// # Bounds
-/// - Implements `GraphWeight`.
-/// - Supports `Sub` with output `Self`.
-/// - Supports `Mul` with output `Self`.
-/// - Supports `Div` with output `Self`.
-/// - `Sized` for compile-time size.
-///
-/// # Note
-/// Besides arithmetic bounds, this trait defines helper methods used by heuristics
-/// and mixed-type numeric flows (`adjust_for_heuristic`, `to_f32`, and
-/// `from_f32`).
+/// This trait allows algorithms to stay generic over integer and floating-point
+/// types while still performing heuristic math in a predictable way.
 pub trait NumericDatatype:
     GraphWeight + Sub<Output = Self> + Sized + Mul<Output = Self> + Div<Output = Self>
 {
-    /// Returns the absolute value of the numeric type.
+    /// Returns the absolute value of the numeric value.
     ///
     /// # Returns
     ///
-    /// => The absolute value of the implementing type.
+    /// Absolute value of the implementing type.
     fn abs(&self) -> Self;
 
-    /// Adjusts the value for heuristic calculations, if necessary.
+    /// Adjusts the value for heuristic calculations.
     ///
     /// This method can be used to modify the value based on specific heuristic requirements, such
     /// as scaling or normalization.
     ///
     /// # Returns
     ///
-    /// => The adjusted value for heuristic calculations.
+    /// Adjusted value used in heuristic calculations.
     fn adjust_for_heuristic(&self) -> Self;
 
     /// Converts the numeric value into an `f32` representation.

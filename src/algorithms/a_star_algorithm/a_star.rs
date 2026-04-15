@@ -27,7 +27,7 @@
 //!
 //! # Usage Example
 //!
-//! ```ignore
+//! ```no_run
 //! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 //! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -83,7 +83,7 @@ use crate::{
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```no_run
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
@@ -136,7 +136,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```no_run
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -292,7 +292,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```no_run
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
@@ -435,7 +435,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
 
 impl<WD: NumericDatatype, N: CoordinatesNode> Display for AStarSearchResult<WD, N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut formatted_path = format!("{}", self.path[0]);
+        let mut formatted_path = self.path[0].get_id().to_string();
         for node in &self.path[1..] {
             formatted_path = format!("{} -> {}", formatted_path, node.get_id())
         }
@@ -475,7 +475,6 @@ impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult
 ///
 /// # Type Parameters
 ///
-/// - `'n`: lifetime of referenced graph nodes.
 /// - `WD`: numeric cost type implementing [`NumericDatatype`].
 /// - `N`: coordinate-based node type.
 ///
@@ -523,6 +522,7 @@ pub struct AStarQueueElement<'n, WD: NumericDatatype, N: CoordinatesNode> {
     /// It may be adjusted for weighted graphs by applying a weight factor.
     pub f_cost: WD,
 }
+
 impl<'n, WD: NumericDatatype, N: CoordinatesNode> AStarQueueElement<'n, WD, N> {
     /// Creates a queue element with precomputed score components.
     ///

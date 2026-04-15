@@ -1,34 +1,48 @@
-//! Defines the `NodeType` enum, which encapsulates supported node variants for graph algorithms.
+//! Unified wrapper over parser-supported node representations.
 //!
-//! This module provides a unified enum to represent different node types used throughout the
-//! pathfinding library, enabling algorithms and data structures to operate generically over
-//! heterogeneous node representations.
+//! # Overview
+//!
+//! [`NodeType`] is used at input/parsing boundaries where node values are not yet
+//! known at compile time. It enables conversion code to return one typed payload
+//! while preserving the concrete node variant.
+//!
+//! # Typical usage
+//!
+//! - File parsing returns temporary values as [`NodeType`].
+//! - Graph-type-specific code then matches on the enum and converts the node into
+//!   the concrete representation required by that graph implementation.
+//!
+//! # Example
+//!
+//! ```rust
+//! use shortest_path_finder::nodes::{
+//!     default_node::DefaultNode,
+//!     node_types::NodeType,
+//!     two_dimensional_node::TwoDimensionalNode,
+//! };
+//!
+//! let generic = NodeType::DefaultNode(DefaultNode::new("A".to_string()));
+//! let parsed = match generic {
+//!     NodeType::DefaultNode(node) => node.id,
+//!     NodeType::TwoDimensionalNode(_) => "unexpected".to_string(),
+//! };
+//!
+//! assert_eq!(parsed, "A");
+//!
+//! let td = NodeType::TwoDimensionalNode(
+//!     TwoDimensionalNode::new(1, 2, "P".to_string()).unwrap(),
+//! );
+//! assert!(matches!(td, NodeType::TwoDimensionalNode(_)));
+//! ```
 
 use crate::nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode};
 
-/// Represents the supported node variants in the pathfinding library.
+/// Enum representing all node variants currently supported by parser output.
 ///
-/// `NodeType` is an enum that can wrap either a [`TwoDimensionalNode`] (for grid-based graphs)
-/// or a [`DefaultNode`] (for generic node identifiers). This abstraction allows graph
-/// structures and algorithms to handle multiple node representations in a type-safe manner.
+/// # Variant selection
 ///
-/// # Example
-///
-/// ```rust
-/// use shortest_path_finder::nodes::{
-///     default_node::DefaultNode,
-///     node_types::NodeType,
-///     two_dimensional_node::TwoDimensionalNode,
-/// };
-///
-/// let default = NodeType::DefaultNode(DefaultNode::new("A".to_string()));
-/// assert!(matches!(default, NodeType::DefaultNode(_)));
-///
-/// let td = NodeType::TwoDimensionalNode(
-///     TwoDimensionalNode::new(1, 2, "P".to_string()).unwrap(),
-/// );
-/// assert!(matches!(td, NodeType::TwoDimensionalNode(_)));
-/// ```
+/// - [`NodeType::DefaultNode`] is used by directed and undirected graph parsing.
+/// - [`NodeType::TwoDimensionalNode`] is used by two-dimensional coordinate graph parsing.
 #[derive(Debug)]
 pub enum NodeType {
     /// A node with two-dimensional coordinates (e.g., for grid graphs).

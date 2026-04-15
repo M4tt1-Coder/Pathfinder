@@ -36,18 +36,22 @@ use crate::{
     nodes::default_node::DefaultNode,
 };
 
-/// Undirected graphs don't have the restriction that you can't go along some edges from a specific
-/// direction. Here you go along all ways.
+/// Undirected weighted graph implementation.
 ///
-/// Its abbreviation is 'UN' used in files to identify the graph data for an undirected graph.
+/// # File-format marker
 ///
-/// # Fields
+/// This graph is represented by the abbreviation `UN` in file-input headers.
 ///
-/// * 'nodes' -> The nodes of the graph.
-/// * 'edges' -> The edges of the graph.
+/// # Invariants
+///
+/// - Duplicate nodes are ignored on insertion.
+/// - Duplicate edges are rejected regardless of endpoint order (`A-B` equals `B-A`).
+/// - Edges can only be inserted if both endpoint nodes already exist.
 #[derive(Debug, Clone)]
 pub struct UndirectedGraph {
+    /// Nodes currently contained in the graph.
     pub nodes: Vec<DefaultNode>,
+    /// Undirected edges currently contained in the graph.
     pub edges: Vec<UndirectedEdge>,
 }
 
@@ -192,17 +196,25 @@ impl Default for UndirectedGraph {
 
 // ----- Implementation of the 'UndirectedEdge' struct -----
 
-/// The edge of a undirected graph, where you can either come from 'A' or 'B'.
+/// Edge connecting two nodes in an undirected graph.
+///
+/// # Semantics
+///
+/// Endpoint order does not change edge meaning: `(A, B)` and `(B, A)` are
+/// treated as equivalent by duplicate checks.
 ///
 /// # Fields
 ///
-/// * 'a_node' -> One node of the edge ...
-/// * 'b_node' -> Other node of the edge ...
-/// * 'weight' -> Fictional 'length' of the edge
+/// - [`UndirectedEdge::a_node`]: first endpoint.
+/// - [`UndirectedEdge::b_node`]: second endpoint.
+/// - [`UndirectedEdge::weight`]: traversal cost.
 #[derive(Clone, PartialEq, Debug)]
 pub struct UndirectedEdge {
+    /// First endpoint of the edge.
     pub a_node: DefaultNode,
+    /// Second endpoint of the edge.
     pub b_node: DefaultNode,
+    /// Cost/weight associated with traversing this edge.
     pub weight: u16,
     id: Uuid,
 }
@@ -268,13 +280,15 @@ impl GraphEdge for UndirectedEdge {
 
 // ----- Implementation of the 'UndirectedGraphInsertionError' struct -----
 
-/// Represents an error that occured when an edge or node was inserted into the undirected graph.
+/// Error returned when undirected graph insertion fails.
 ///
-/// # Fields
+/// # Typical causes
 ///
-/// - 'message' -> Description of what caused the error to occur.
+/// - duplicate edge insertion,
+/// - inserting an edge for nodes that are missing in the graph.
 #[derive(Debug)]
 pub struct UndirectedGraphInsertionError {
+    /// Human-readable explanation of the insertion failure.
     pub message: String,
 }
 
