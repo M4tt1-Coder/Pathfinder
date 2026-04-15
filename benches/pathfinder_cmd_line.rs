@@ -1,3 +1,18 @@
+//! Benchmarks for command-line configuration parsing components.
+//!
+//! # Overview
+//!
+//! This target benchmarks creation and parsing behavior for:
+//! - `InputOrigin` conversion,
+//! - `AppConfig` setup across argument sets,
+//! - `SetupProcessError` construction.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder_cmd_line
+//! ```
+
 use divan::{Bencher, bench};
 use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin, SetupProcessError};
 

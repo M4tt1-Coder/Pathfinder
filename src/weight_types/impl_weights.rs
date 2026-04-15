@@ -1,14 +1,25 @@
-//! This module provides implementations of the `GraphWeight` trait for common numeric types
-//! used as edge weights in graphs, as well as an enum to encapsulate multiple weight types.
+//! Graph-weight runtime enum and primitive `GraphWeight` implementations.
 //!
 //! # Overview
 //!
-//! - Defines the `WeightType` enum to represent weights of different numeric types (`u16`, `f32`, `i32`).
-//! - Implements the `GraphWeight` trait for `u16`, `f32`, and `i32`, providing methods to obtain
-//!   the additive identity (`zero`) and the maximum possible value (`max_value`) for each type.
+//! This module contributes two things:
+//! - [`WeightType`], an enum used by parsing code when weight types differ by
+//!   graph format.
+//! - Implementations of [`GraphWeight`](crate::graphs::graph::GraphWeight)
+//!   for `u16`, `f32`, and `i32`.
 //!
-//! This abstraction allows graph algorithms to be generic over different weight types, while
-//! also supporting dynamic selection of weight types at runtime via the `WeightType` enum.
+//! # Usage
+//!
+//! ```rust
+//! use shortest_path_finder::graphs::graph::GraphWeight;
+//! use shortest_path_finder::weight_types::impl_weights::WeightType;
+//!
+//! let weight = WeightType::U16(7);
+//! assert!(matches!(weight, WeightType::U16(7)));
+//!
+//! assert_eq!(u16::zero(), 0);
+//! assert!(u16::max_value() > 1_000);
+//! ```
 
 use crate::graphs::graph::GraphWeight;
 

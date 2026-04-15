@@ -1,3 +1,35 @@
+//! Two-dimensional coordinate graph implementation.
+//!
+//! # Overview
+//!
+//! This module models a graph whose nodes carry x/y coordinates:
+//! - [`TwoDimensionalCoordinateGraph`] stores nodes and computed edges.
+//! - [`TwoDimensionalEdge`] connects two coordinate nodes.
+//! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
+//!
+//! The graph implements the shared [`Graph`](crate::graphs::graph::Graph)
+//! trait and can be consumed by coordinate-aware algorithms such as A*.
+//!
+//! # File Abbreviation
+//!
+//! The graph abbreviation used in file input is `TD`.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::{
+//!     TwoDimensionalCoordinateGraph, TwoDimensionalEdge,
+//! };
+//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//!
+//! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+//! let b = TwoDimensionalNode::new(2, 3, "B".to_string()).unwrap();
+//! let mut graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b.clone()], vec![]);
+//! assert!(graph.insert_edge(TwoDimensionalEdge::new(a, b)).is_none());
+//! assert!(!graph.is_directed());
+//! ```
+
 use std::{error::Error, fmt::Display};
 
 use log::debug;
@@ -33,19 +65,28 @@ pub struct TwoDimensionalCoordinateGraph {
 }
 
 impl TwoDimensionalCoordinateGraph {
-    /// Creates the new 'TwoDimensionalCoordinateGraph' instance.
-    ///
-    /// The nodes and edges mainly will be added later when processing the data source of the
-    /// graph.
+    /// Creates a new two-dimensional graph from node and edge vectors.
     ///
     /// # Arguments
     ///
-    /// - 'nodes' -> Vector of 'TwoDimensionalNode' elements, doesn't need to have any nodes in it.
-    /// - 'edges' -> Vector of 'TwoDimensionalEdge's same applies for the edges.
+    /// - `nodes`: initial node set.
+    /// - `edges`: initial edge set.
     ///
     /// # Returns
     ///
-    /// => Fresh 'TwoDimensionalCoordinateGraph' object with initial nodes and edges.
+    /// Fresh [`TwoDimensionalCoordinateGraph`] object with initial nodes and edges.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let node = TwoDimensionalNode::new(1, 2, "N1".to_string()).unwrap();
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
+    /// assert_eq!(graph.get_all_nodes().len(), 1);
+    /// ```
     pub fn new(nodes: Vec<TwoDimensionalNode>, edges: Vec<TwoDimensionalEdge>) -> Self {
         Self { nodes, edges }
     }
@@ -233,7 +274,19 @@ impl TwoDimensionalEdge {
     ///
     /// # Returns
     ///
-    /// => 'TwoDimensionalEdge' object
+    /// [`TwoDimensionalEdge`] object.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalEdge;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let a = TwoDimensionalNode::new(4, 2, "A".to_string()).unwrap();
+    /// let b = TwoDimensionalNode::new(0, 0, "B".to_string()).unwrap();
+    /// let edge = TwoDimensionalEdge::new(a, b);
+    /// assert!(edge.get_weight().is_finite());
+    /// ```
     pub fn new(node_one: TwoDimensionalNode, node_two: TwoDimensionalNode) -> Self {
         let mut edge: Self = Self {
             id: Uuid::new_v4(),
@@ -251,13 +304,30 @@ impl TwoDimensionalEdge {
     ///
     /// # Returns
     ///
-    /// => The weight of the edge.
+    /// The weight of the edge.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalEdge;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let a = TwoDimensionalNode::new(5, 2, "A".to_string()).unwrap();
+    /// let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
+    /// let edge = TwoDimensionalEdge::new(a, b);
+    /// assert!(edge.get_weight().is_finite());
+    /// ```
     pub fn get_weight(&self) -> f32 {
         self.weight
     }
 
-    /// Since the nodes are in a two dimensional coordinate system the weight of an edge needs to
-    /// be calculate depending on the two nodes the edge holds.
+    /// Calculates the internal edge weight from the two endpoint coordinates.
+    ///
+    /// # Implementation Detail
+    ///
+    /// The current implementation uses bitwise XOR with `2` for both coordinate
+    /// deltas and then takes the square root of their sum. This means the
+    /// computed value is not a mathematical Euclidean distance.
     ///
     /// # Arguments
     ///
@@ -265,9 +335,9 @@ impl TwoDimensionalEdge {
     ///
     /// # Returns
     ///
-    /// => Calculated <f32> weight using the Pythagorean theorem
+    /// Computed `f32` weight value used internally by the graph.
     fn retrieve_actual_weight(&self) -> f32 {
-        // use trigometry to calculate the distance -> pythagoras
+        // Current implementation applies XOR-based transformation to deltas.
         let height = (self.node_one.get_x() - self.node_two.get_x()) ^ 2;
         let width = (self.node_one.get_y() - self.node_two.get_y()) ^ 2;
 
@@ -331,7 +401,20 @@ impl TwoDimensionalGraphInsertionError {
     ///
     /// # Returns
     ///
-    /// => New instance of the 'TwoDimensionalGraphInsertionError' struct.
+    /// New instance of the [`TwoDimensionalGraphInsertionError`] struct.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
+    ///
+    /// let err = TwoDimensionalGraphInsertionError::new(
+    ///     "invalid insertion".to_string(),
+    ///     None,
+    ///     None,
+    /// );
+    /// assert_eq!(err.to_string(), "invalid insertion");
+    /// ```
     pub fn new(
         message: String,
         edge: Option<TwoDimensionalEdge>,

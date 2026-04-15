@@ -1,3 +1,41 @@
+//! Binary entrypoint for the Pathfinder CLI application.
+//!
+//! # Overview
+//!
+//! The executable performs four high-level steps:
+//! 1. Initialize logging.
+//! 2. Parse command-line arguments into [`AppConfig`].
+//! 3. Load graph data from the selected origin (currently file input).
+//! 4. Execute the selected shortest-path algorithm and print the result.
+//!
+//! # Runtime Notes
+//!
+//! - `InputOrigin::File` is implemented and used in production flow.
+//! - `InputOrigin::CommandLine` is currently `unimplemented!()`.
+//! - Algorithm selection currently supports Dijkstra in runtime wiring.
+//!
+//! # CLI Example
+//!
+//! ```no_run
+//! use std::process::Command;
+//!
+//! let output = Command::new("pathfinder")
+//!     .args([
+//!         "--graph-file",
+//!         "test_files/directed_graph.txt",
+//!         "--start",
+//!         "A",
+//!         "--end",
+//!         "B",
+//!         "--algo",
+//!         "Dijkstra",
+//!     ])
+//!     .output()
+//!     .expect("failed to execute pathfinder process");
+//!
+//! assert!(output.status.success());
+//! ```
+
 use std::{env, process};
 
 use log::error;
@@ -23,6 +61,20 @@ use shortest_path_finder::{
 
 // TODO: Publish to crates.io and add a badge to the README.md file
 
+/// Runs the Pathfinder CLI application lifecycle.
+///
+/// # Behavior
+///
+/// - Initializes logger output through `env_logger`.
+/// - Parses CLI arguments into [`AppConfig`].
+/// - Loads graph data according to `InputOrigin`.
+/// - Executes selected algorithm for start/end node IDs.
+/// - Prints the resulting path output and exits with status code.
+///
+/// # Exit Codes
+///
+/// - `0`: successful path computation.
+/// - `1`: setup, parsing, graph-loading, or algorithm execution failure.
 fn main() {
     // enable logging to the terminal
     env_logger::init();

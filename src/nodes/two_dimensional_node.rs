@@ -1,3 +1,36 @@
+//! Two-dimensional node implementation used in coordinate-based graphs.
+//!
+//! # Overview
+//!
+//! [`TwoDimensionalNode`] represents a graph node with:
+//! - a unique textual identifier,
+//! - an integer x-coordinate,
+//! - an integer y-coordinate.
+//!
+//! It implements both [`GraphNode`](crate::graphs::graph::GraphNode) and
+//! [`CoordinatesNode`](crate::nodes::trait_decl::coordinates_node::CoordinatesNode),
+//! enabling use in generic graph and pathfinding algorithms.
+//!
+//! # Parsing Format
+//!
+//! `FromStr` supports parsing from `<id>:<x>,<y>` strings.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use std::str::FromStr;
+//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::nodes::{
+//!     trait_decl::coordinates_node::CoordinatesNode,
+//!     two_dimensional_node::TwoDimensionalNode,
+//! };
+//!
+//! let node = TwoDimensionalNode::from_str("Hub:3,5").unwrap();
+//! assert_eq!(node.get_id(), "Hub");
+//! assert_eq!(node.get_x(), 3);
+//! assert_eq!(node.get_y(), 5);
+//! ```
+
 // ----- Implementation of the 'TwoDimensionalNode' struct -----
 
 use std::{fmt::Display, str::FromStr};
@@ -54,7 +87,23 @@ impl TwoDimensionalNode {
     ///
     /// # Returns
     ///
-    /// => Validated fresh 'TwoDimensionalNode'
+    /// Validated fresh [`TwoDimensionalNode`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let node = TwoDimensionalNode::new(2, 7, "N1".to_string());
+    /// assert!(node.is_some());
+    /// ```
+    ///
+    /// ```rust
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let node = TwoDimensionalNode::new(2, 7, "".to_string());
+    /// assert!(node.is_none());
+    /// ```
     pub fn new(x: i32, y: i32, id: String) -> Option<Self> {
         // id must be longer then 0
         if id.is_empty() {
@@ -97,6 +146,23 @@ impl Display for TwoDimensionalNode {
 impl FromStr for TwoDimensionalNode {
     type Err = ParseError;
 
+    /// Parses a node from `<id>:<x>,<y>` input.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(TwoDimensionalNode)` on valid parse.
+    /// - `Err(ParseError)` on malformed identifiers or coordinates.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use std::str::FromStr;
+    /// use shortest_path_finder::graphs::graph::GraphNode;
+    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    ///
+    /// let node = TwoDimensionalNode::from_str("P:10,12").unwrap();
+    /// assert_eq!(node.get_id(), "P");
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Trim whitespace and split into two parts: id and coordinates
         let mut parts = s.trim().splitn(2, ':');

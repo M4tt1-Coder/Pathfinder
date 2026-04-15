@@ -1,3 +1,16 @@
+//! Benchmarks for directed graph operations.
+//!
+//! # Overview
+//!
+//! This target measures key `DirectedGraph` operations such as creation,
+//! insertion, neighbor retrieval, and existence checks.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder_directed_graph
+//! ```
+
 use divan::{Bencher, bench};
 use shortest_path_finder::{
     graphs::{

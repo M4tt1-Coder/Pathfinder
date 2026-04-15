@@ -138,10 +138,18 @@ impl FileInputGraphResult {
     /// # Example
     ///
     /// ```rust
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
     /// use shortest_path_finder::data_input::file_input::FileInputGraphResult;
     ///
-    /// let valid = FileInputGraphResult::new(None, None, None);
-    /// assert!(valid.is_none());
+    /// let valid = FileInputGraphResult::new(Some(DirectedGraph::default()), None, None);
+    /// assert!(valid.is_some());
+    /// ```
+    ///
+    /// ```rust
+    /// use shortest_path_finder::data_input::file_input::FileInputGraphResult;
+    ///
+    /// let invalid = FileInputGraphResult::new(None, None, None);
+    /// assert!(invalid.is_none());
     /// ```
     pub fn new(
         directed_graph: Option<DirectedGraph>,

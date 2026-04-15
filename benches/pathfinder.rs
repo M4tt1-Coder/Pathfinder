@@ -1,3 +1,18 @@
+//! Benchmarks for shortest-path algorithm execution.
+//!
+//! # Overview
+//!
+//! This benchmark target measures:
+//! - creation cost of `DijkstraAlgorithm`,
+//! - shortest-path execution on directed graphs,
+//! - shortest-path execution on undirected graphs.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder
+//! ```
+
 use divan::{Bencher, bench};
 use shortest_path_finder::{
     algorithms::{algorithm::Algorithm, dijkstra::DijkstraAlgorithm},

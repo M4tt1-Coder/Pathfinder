@@ -1,3 +1,34 @@
+//! Directed graph implementation.
+//!
+//! # Overview
+//!
+//! This module provides a concrete weighted directed graph type:
+//! - [`DirectedGraph`] stores [`DefaultNode`] values and [`DirectedEdge`] edges.
+//! - [`DirectedGraphInsertionError`] reports insertion failures.
+//!
+//! It implements the shared [`Graph`](crate::graphs::graph::Graph) trait and
+//! is used by shortest-path algorithms such as Dijkstra.
+//!
+//! # File Abbreviation
+//!
+//! The graph abbreviation used in file input is `D`.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//!
+//! let mut graph = DirectedGraph::default();
+//! let a = DefaultNode::new("A".to_string());
+//! let b = DefaultNode::new("B".to_string());
+//! graph.insert_node(a.clone());
+//! graph.insert_node(b.clone());
+//! assert!(graph.insert_edge(DirectedEdge::new(a, b, 5)).is_none());
+//! assert!(graph.is_directed());
+//! ```
+
 use std::{error::Error, fmt::Display};
 
 use log::info;
@@ -137,7 +168,26 @@ impl Graph for DirectedGraph {
 }
 
 impl DirectedGraph {
-    /// Create new 'DirectedGraph' instance.
+    /// Creates a new directed graph from node and edge vectors.
+    ///
+    /// # Parameters
+    ///
+    /// - `nodes`: initial node list.
+    /// - `edges`: initial directed edge list.
+    ///
+    /// # Returns
+    ///
+    /// A new [`DirectedGraph`] instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    ///
+    /// let graph = DirectedGraph::new(vec![], vec![]);
+    /// assert_eq!(graph.nodes.len(), 0);
+    /// assert_eq!(graph.edges.len(), 0);
+    /// ```
     pub fn new(nodes: Vec<DefaultNode>, edges: Vec<DirectedEdge>) -> Self {
         Self { nodes, edges }
     }
@@ -174,7 +224,34 @@ pub struct DirectedEdge {
 }
 
 impl DirectedEdge {
-    /// Create a new 'DirectedEdge' instance.
+    /// Creates a new directed edge.
+    ///
+    /// # Parameters
+    ///
+    /// - `from`: edge source node.
+    /// - `to`: edge destination node.
+    /// - `weight`: edge weight.
+    ///
+    /// # Returns
+    ///
+    /// A new [`DirectedEdge`] with a generated UUID.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::directed::DirectedEdge;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let edge = DirectedEdge::new(
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    ///     8,
+    /// );
+    ///
+    /// assert_eq!(edge.weight, 8);
+    /// assert_eq!(edge.from.id, "A");
+    /// assert_eq!(edge.to.id, "B");
+    /// ```
     pub fn new(from: DefaultNode, to: DefaultNode, weight: u16) -> Self {
         Self {
             from,
@@ -220,7 +297,16 @@ pub struct DirectedGraphInsertionError {
 }
 
 impl DirectedGraphInsertionError {
-    /// Create a new 'DirectedGraphInsertionError' instance.
+    /// Creates a new insertion error with a descriptive message.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
+    ///
+    /// let err = DirectedGraphInsertionError::new("duplicate edge".to_string());
+    /// assert_eq!(err.to_string(), "duplicate edge");
+    /// ```
     pub fn new(message: String) -> Self {
         DirectedGraphInsertionError { message }
     }

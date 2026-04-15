@@ -1,3 +1,16 @@
+//! Benchmarks for undirected graph operations.
+//!
+//! # Overview
+//!
+//! This target measures key `UndirectedGraph` operations such as creation,
+//! insertion, neighbor traversal, and edge/node lookup operations.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder_undirected_graph
+//! ```
+
 use divan::{Bencher, bench};
 use shortest_path_finder::{
     graphs::{

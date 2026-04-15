@@ -1,3 +1,18 @@
+//! Benchmarks for file-input parsing components.
+//!
+//! # Overview
+//!
+//! This target benchmarks:
+//! - `FileInputGraphResult` construction,
+//! - parse-error variant creation,
+//! - graph loading from sample files.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder_data_input
+//! ```
+
 use divan::bench;
 use shortest_path_finder::{
     data_input::file_input::{FileInputGraphResult, retrieve_graph_data_from_file},

@@ -1,21 +1,35 @@
-//! This module provides implementations of the `NumericDatatype` trait for a range of fundamental
-//! numeric types, including floating-point types (such as `f32`, `f64`) and integer types (such as `i32`, `u32`).
-//! The primary goal of these implementations is to enable these types to be used interchangeably in
-//! generic algorithms and data structures that require common numeric operations, such as absolute value,
-//! addition, subtraction, multiplication, and division.
+//! `NumericDatatype` implementations for primitive numeric types.
 //!
-//! By adhering to the `NumericDatatype` trait, these data types can be seamlessly integrated into
-//! mathematical computations, numerical analysis, and other contexts where a uniform interface for
-//! numeric types is beneficial. This design promotes code abstraction, reusability, and flexibility,
-//! allowing algorithms to operate over any supported numeric type without concern for their specific
-//! underlying representation.
+//! # Overview
 //!
-//! This module, therefore, serves as a foundational component for building generic, type-agnostic
-//! numerical functionalities within the broader codebase.use crate::nodes::trait_decl::numeric_datatype::NumericDatatype;
+//! This module provides concrete implementations of
+//! [`NumericDatatype`](crate::weight_types::numeric_datatype::NumericDatatype)
+//! for selected primitive types used by graph algorithms and heuristics.
+//!
+//! Currently implemented:
+//! - `f32`
+//! - `i32`
+//!
+//! # Heuristic Adjustment
+//!
+//! `adjust_for_heuristic()` applies a lightweight scaling factor intended for
+//! heuristic score tuning in coordinate-based pathfinding.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use shortest_path_finder::weight_types::numeric_datatype::NumericDatatype;
+//!
+//! let value = -4_i32;
+//! assert_eq!(value.abs(), 4);
+//!
+//! let heuristic = 10.0_f32.adjust_for_heuristic();
+//! assert!(heuristic > 0.0);
+//! ```
 
 use crate::weight_types::numeric_datatype::NumericDatatype;
 
-/// A small constant factor used to adjust values for heuristic calculations, if necessary.
+/// Constant factor used by `adjust_for_heuristic()` implementations.
 static HEURISTIC_ADJUSTMENT_FACTOR: f32 = 0.001;
 
 impl NumericDatatype for f32 {
