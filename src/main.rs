@@ -159,7 +159,7 @@ fn main() {
                     Algorithms::AStar => AStar::new(graph),
                     _ => {
                         error!(
-                            "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
+                            "Algorithm {:?} is not implemented for two dimensional graphs yet or a two dimensional graph is not supported by the implementation of the algorithm!",
                             app_config.algorithm
                         );
                         process::exit(1);

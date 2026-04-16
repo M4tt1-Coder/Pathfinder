@@ -112,6 +112,7 @@ enum FoundGraphType {
 /// Exactly one graph variant is expected to be present for valid parsed input. Construction is
 /// therefore guarded by [`FileInputGraphResult::new`], which returns `None` if this invariant is
 /// violated.
+#[derive(Debug)]
 pub struct FileInputGraphResult {
     /// Parsed directed graph, if directed input was detected.
     pub directed_graph: Option<DirectedGraph>,
