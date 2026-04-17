@@ -95,7 +95,7 @@ fn main() {
     let app_config = match AppConfig::setup_config(args) {
         Ok(config) => config,
         Err(err) => {
-            error!("{}", err.message);
+            error!("{}", err);
             process::exit(1);
         }
     };

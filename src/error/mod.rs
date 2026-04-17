@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! The crate currently exposes parsing-focused error types through
-//! [`parse_error`].
+//! [`parse_error`] and CLI setup parsing errors through [`config_error`].
 //!
 //! # Usage
 //!
@@ -13,5 +13,7 @@
 //! let err = ParseError::InvalidLineSyntax;
 //! assert!(err.to_string().contains("Invalid syntax"));
 //! ```
+
+pub mod config_error;
 
 pub mod parse_error;

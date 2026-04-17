@@ -18,7 +18,7 @@
 //! - [`nodes`]: node models used by graph implementations.
 //! - [`data_input`]: graph input parsing (currently file-based).
 //! - [`cmd_line`]: CLI configuration parsing helpers.
-//! - [`error`]: parse-time error definitions.
+//! - [`error`]: parse-time and CLI configuration error definitions.
 //! - [`weight_types`] and [`numeric_datatypes`]: numeric traits and impls.
 //!
 //! # Quick Start
