@@ -49,16 +49,16 @@ use shortest_path_finder::{
     data_input::file_input::retrieve_graph_data_from_file,
 };
 
-// TODO: Run a prompt that searches for errors in the whole source code and then ask if they should
-// be made global and if they should be refactored to a more generic error type (e.g. 'AppError' or
-// 'GraphError' or 'ParseError' or 'InputError' or ...) and place them in the 'error' module. Also,
-// check if the error types are used in the right way and if they are used at all (if not, remove
-// them).
+// TODO: Add a visualization function where the user can see how the algorithm is working step by
+// step (e.g. which nodes are being visited, which nodes are in the priority queue, ...). This can
+// be done by adding a 'visualize' method to the 'Algorithm' trait and then implementing it for each
+// algorithm. The user can then call this method after calling the 'shortest_path' method to see the
+// visualization of the algorithm's execution.
 
 // TODO: Refactor code -> check if in some cases references are better then cloning (if possible),
-// apply best practices, apply better error handling
+// apply best practices, apply better error handling -> for each file indiviually
 
-// TODO: Make 'A*' algorithm usable (test it) and benchmark it against Dijkstra's algorithm
+// TODO: 'A*' -> benchmark it against Dijkstra's algorithm
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
