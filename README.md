@@ -131,9 +131,11 @@ Explicit file and algorithm example:
 
 The current parser format (used by the provided test files) is header plus edge lines:
 
-- Line 1 is a graph-type header: `D`, `UN`, or `TD`.
+- Line 1 is a graph-type header and must be exactly one of: `D`, `UN`, or `TD`.
 - Only lines after line 1 are converted into edges.
 - Line 1 is not inserted as an edge.
+- Whitespace-only lines after the header are ignored.
+- Parse errors include file-line context and graph-type-specific expected syntax.
 
 Directed example:
 

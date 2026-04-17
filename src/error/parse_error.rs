@@ -24,10 +24,12 @@
 //! - [`ParseError::MissingColon`]: Input line does not contain exactly one colon separating node id and coordinates.
 //! - [`ParseError::InvalidCoordinates`]: Coordinates are not two comma-separated values.
 //! - [`ParseError::InvalidInteger`]: Coordinates are not valid integers.
+//! - [`ParseError::InvalidWeightInteger`]: Edge weight token is not a valid integer.
 //! - [`ParseError::EmptyId`]: Node id is empty.
 //! - [`ParseError::NodeConstructionFailed`]: Node construction failed due to internal validation.
 //! - [`ParseError::InvalidGraphType`]: Graph type could not be inferred from line content.
 //! - [`ParseError::InvalidLineSyntax`]: Line does not match expected graph input syntax.
+//! - [`ParseError::RegexCompilationFailed`]: Internal regex compilation failed during parser setup.
 //! - [`ParseError::InvalidDataInput`]: Data input line or parser state is invalid with a detailed message.
 
 use std::error::Error;
@@ -53,6 +55,11 @@ pub enum ParseError {
     ///
     /// This occurs if either coordinate is not a valid integer value.
     InvalidInteger,
+    /// The edge weight token could not be parsed as an integer.
+    ///
+    /// This variant is used for one-dimensional graph edges where a numeric
+    /// weight is required (e.g., `A->B:7`).
+    InvalidWeightInteger,
     /// The node id is empty.
     ///
     /// Node identifiers must not be empty strings.
@@ -71,6 +78,10 @@ pub enum ParseError {
     ///
     /// This is a catch-all for lines that do not match any expected graph input format.
     InvalidLineSyntax,
+    /// Internal parser regex configuration could not be compiled.
+    ///
+    /// This indicates an internal setup issue rather than malformed user data.
+    RegexCompilationFailed(String),
     /// File/data input is invalid and includes a descriptive error message.
     ///
     /// This variant is used when parsing logic can provide additional context
@@ -90,6 +101,9 @@ impl fmt::Display for ParseError {
                 write!(f, "Coordinates must be two comma-separated integers")
             }
             ParseError::InvalidInteger => write!(f, "Coordinates must be valid integers"),
+            ParseError::InvalidWeightInteger => {
+                write!(f, "Edge weight must be a valid integer")
+            }
             ParseError::EmptyId => write!(f, "Node id must not be empty"),
             ParseError::NodeConstructionFailed => {
                 write!(f, "Failed to construct TwoDimensionalNode")
@@ -99,6 +113,9 @@ impl fmt::Display for ParseError {
             }
             ParseError::InvalidLineSyntax => {
                 write!(f, "Invalid syntax for graph input line")
+            }
+            ParseError::RegexCompilationFailed(message) => {
+                write!(f, "Failed to initialize parser regex: {}", message)
             }
             ParseError::InvalidDataInput(message) => write!(f, "{}", message),
         }

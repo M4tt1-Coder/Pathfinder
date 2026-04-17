@@ -13,7 +13,7 @@
 //!
 //! The parser infers graph type from the first line and expects all following non-empty lines to
 //! use the same graph encoding. In the current implementation and test files, the first line is a
-//! graph-type marker:
+//! graph-type marker and must be exactly one of:
 //! - `D` for directed graph input,
 //! - `UN` for undirected graph input,
 //! - `TD` for two-dimensional graph input.
@@ -35,8 +35,9 @@
 //! # Validation and consistency rules
 //!
 //! - The file must contain at least one line.
-//! - The first line must identify a supported graph type.
-//! - Every remaining parsed line must match one of the supported edge syntaxes.
+//! - The first line must identify a supported graph type using an exact header (`D`, `UN`, `TD`).
+//! - Every remaining parsed line must match the syntax expected by the detected graph type.
+//! - Whitespace-only lines are ignored.
 //! - A file can produce exactly one graph variant.
 //! - Duplicate edges are ignored during insertion.
 //! - The first line is consumed for type detection and is not inserted as an edge.
@@ -54,7 +55,7 @@
 //!
 //! The example is marked as `no_run` because it depends on repository-local files at runtime.
 
-use std::{error::Error, fs, path::Path, str::FromStr};
+use std::{error::Error, fmt, fs, io, path::Path, str::FromStr};
 
 use regex::Regex;
 use strum_macros::EnumString;
@@ -103,6 +104,16 @@ enum FoundGraphType {
     /// Accepts aliases `TwoDimensional` and `TD` (case-insensitive).
     #[strum(serialize = "TwoDimensional", serialize = "TD", ascii_case_insensitive)]
     TD,
+}
+
+/// Precompiled regex matchers for supported line syntaxes.
+///
+/// Compiling once per parse run avoids repeated work and guarantees that any
+/// regex setup failure is surfaced as a parser error instead of a panic.
+struct LineSyntaxRegexes {
+    directed: Regex,
+    undirected: Regex,
+    two_dimensional: Regex,
 }
 
 /// Result container for graph data loaded from file input.
@@ -180,6 +191,41 @@ impl FileInputGraphResult {
     }
 }
 
+/// Top-level error type for file-input graph loading.
+///
+/// This enum preserves source errors from both file I/O and parser execution,
+/// making it easier for callers to distinguish filesystem failures from input
+/// format/validation issues.
+#[derive(Debug)]
+pub enum FileInputError {
+    /// File reading failed.
+    Io { path: String, source: io::Error },
+    /// File content was read but could not be parsed into a graph.
+    Parse(ParseError),
+}
+
+impl fmt::Display for FileInputError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FileInputError::Io { path, source } => {
+                write!(f, "Failed to read graph file '{}': {}", path, source)
+            }
+            FileInputError::Parse(source) => {
+                write!(f, "Failed to parse graph file content: {}", source)
+            }
+        }
+    }
+}
+
+impl Error for FileInputError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            FileInputError::Io { source, .. } => Some(source),
+            FileInputError::Parse(source) => Some(source),
+        }
+    }
+}
+
 // _____ Public endpoint of the file input module _____
 
 /// Reads a graph definition file and parses it into one concrete graph result.
@@ -191,7 +237,7 @@ impl FileInputGraphResult {
 /// # Returns
 ///
 /// - `Ok(FileInputGraphResult)` if file reading and parsing succeeds.
-/// - `Err(Box<dyn Error>)` if the file cannot be read or if parsing/validation fails.
+/// - `Err(FileInputError)` if the file cannot be read or if parsing/validation fails.
 ///
 /// # Errors
 ///
@@ -200,6 +246,10 @@ impl FileInputGraphResult {
 /// - the file content cannot be decoded as UTF-8 text,
 /// - the input lines do not follow the expected syntax,
 /// - or graph generation fails due to semantic validation errors.
+///
+/// Error variants:
+/// - [`FileInputError::Io`] wraps filesystem failures with path context.
+/// - [`FileInputError::Parse`] wraps parser failures from [`ParseError`].
 ///
 /// # Example
 ///
@@ -211,56 +261,83 @@ impl FileInputGraphResult {
 /// ```
 pub fn retrieve_graph_data_from_file(
     file_path: &str,
-) -> Result<FileInputGraphResult, Box<dyn Error>> {
+) -> Result<FileInputGraphResult, FileInputError> {
     // create relative file path like "../example.txt"
     let rel_path = Path::new(file_path);
 
     // read contents from the file -> cover occuring errors
-    let file_content = match fs::read_to_string(rel_path) {
-        Ok(contents) => contents,
-        Err(err) => return Err(Box::new(err)),
-    };
+    let file_content = fs::read_to_string(rel_path).map_err(|source| FileInputError::Io {
+        path: file_path.to_string(),
+        source,
+    })?;
 
-    let res = match generate_graph_from_file(file_content) {
-        Ok(graphs) => graphs,
-        Err(err) => return Err(Box::new(err)),
-    };
+    let res = generate_graph_from_file(file_content).map_err(FileInputError::Parse)?;
 
     Ok(res)
 }
 
 // ______________________________________
 
+/// Compiles all regexes required for line-syntax validation.
+///
+/// # Errors
+///
+/// Returns [`ParseError::RegexCompilationFailed`] when any static regex pattern
+/// cannot be compiled.
+fn compile_line_syntax_regexes() -> Result<LineSyntaxRegexes, ParseError> {
+    let directed = Regex::new(r"^[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+$")
+        .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
+    let undirected = Regex::new(r"^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$")
+        .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
+    let two_dimensional = Regex::new(r"^[A-Za-z0-9]+:[0-9]+,[0-9]+-[A-Za-z0-9]+:[0-9]+,[0-9]+$")
+        .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
+
+    Ok(LineSyntaxRegexes {
+        directed,
+        undirected,
+        two_dimensional,
+    })
+}
+
 /// Validates whether a single line matches one supported graph-line syntax.
 ///
 /// # Parameters
 ///
 /// - `line`: Raw text line to validate.
+/// - `graph_type`: Detected graph kind for strict, graph-specific validation.
+/// - `regexes`: Precompiled regexes used for matching.
 ///
 /// # Returns
 ///
-/// - `true` if the line matches any configured regex for directed, undirected, or two-dimensional
-///   patterns.
+/// - `true` if the line fully matches the expected syntax for the current graph type.
 /// - `false` otherwise.
 ///
 /// # Notes
 ///
-/// This function only checks lexical format. Semantic consistency (such as graph-type consistency
-/// across lines) is validated in higher-level parsing functions.
-fn validate_line_syntax(line: &str) -> bool {
-    // MAKE SURE THIS CONTAINS ALL REGEXs OF ALL GRAPHS
-    let reg_exps = vec![
-        r"[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+",
-        r"[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+",
-        r"[A-Za-z0-9]+:[0-9]+,[0-9]+-[A-Za-z0-9]+:[0-9]+,[0-9]+", // A:2,6 - B:5,5
-    ];
-    for exp in reg_exps {
-        let reg = Regex::new(exp).unwrap();
-        if reg.is_match(line) {
-            return true;
+/// This function only checks lexical format for the currently selected graph
+/// type. Semantic validation is handled in higher-level parsing functions.
+fn validate_line_syntax(
+    line: &str,
+    graph_type: &FoundGraphType,
+    regexes: &LineSyntaxRegexes,
+) -> bool {
+    let line = line.trim();
+    match graph_type {
+        FoundGraphType::D => regexes.directed.is_match(line),
+        FoundGraphType::UN => regexes.undirected.is_match(line),
+        FoundGraphType::TD => regexes.two_dimensional.is_match(line),
+    }
+}
+
+/// Returns user-facing syntax guidance for each graph type.
+fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
+    match graph_type {
+        FoundGraphType::D => "Expected directed syntax '<from>-><to>:<weight>' (example: A->B:5).",
+        FoundGraphType::UN => "Expected undirected syntax '<from>-<to>:<weight>' (example: A-B:5).",
+        FoundGraphType::TD => {
+            "Expected two-dimensional syntax '<from>:x,y-<to>:x,y' (example: A:0,0-B:4,2)."
         }
     }
-    false
 }
 
 /// Converts one validated edge line into typed node/weight data.
@@ -281,7 +358,7 @@ fn validate_line_syntax(line: &str) -> bool {
 ///
 /// Returns:
 /// - [`ParseError::InvalidLineSyntax`] when separators or token counts are invalid,
-/// - [`ParseError::InvalidInteger`] when a 1D weight token cannot be parsed,
+/// - [`ParseError::InvalidWeightInteger`] when a 1D weight token cannot be parsed,
 /// - [`ParseError::InvalidGraphType`] when no conversion branch is available.
 ///
 /// # Examples
@@ -316,7 +393,7 @@ fn convert_line_to_graph_data(
             let second_node = DefaultNode::new(second_split_results[0].to_string());
             let weight: u16 = match second_split_results[1].parse() {
                 Ok(w) => w,
-                Err(_) => return Err(ParseError::InvalidInteger),
+                Err(_) => return Err(ParseError::InvalidWeightInteger),
             };
             Ok((
                 NodeType::DefaultNode(first_node),
@@ -352,26 +429,27 @@ fn convert_line_to_graph_data(
 ///
 /// # Returns
 ///
-/// The inferred [`FoundGraphType`] if the line syntax is valid and a known graph abbreviation
-/// prefix is detected.
+/// The inferred [`FoundGraphType`] if the line is an exact supported graph header.
 ///
 /// The first line is expected to be a graph-type marker such as `D`, `UN`, or `TD`.
 ///
 /// # Errors
 ///
-/// Returns [`ParseError::InvalidDataInput`] if the line does not match any supported syntax or if
-/// no graph prefix can be resolved.
+/// Returns [`ParseError::InvalidDataInput`] if the line is not exactly `D`, `UN`, or `TD`.
 fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
-    if first_line.starts_with(&DirectedGraph::abbreviation()) {
+    let header = first_line.trim();
+
+    if header.eq_ignore_ascii_case(&DirectedGraph::abbreviation()) {
         Ok(FoundGraphType::D)
-    } else if first_line.starts_with(&UndirectedGraph::abbreviation()) {
+    } else if header.eq_ignore_ascii_case(&UndirectedGraph::abbreviation()) {
         Ok(FoundGraphType::UN)
-    } else if first_line.starts_with(&TwoDimensionalCoordinateGraph::abbreviation()) {
+    } else if header.eq_ignore_ascii_case(&TwoDimensionalCoordinateGraph::abbreviation()) {
         Ok(FoundGraphType::TD)
     } else {
-        Err(ParseError::InvalidDataInput(
-            "Couldn't convert the first line to a valid edge of a graph because of an unknown reason!".to_string(),
-        ))
+        Err(ParseError::InvalidDataInput(format!(
+            "Invalid graph header '{}'. Expected exactly one of: D, UN, TD.",
+            header
+        )))
     }
 }
 
@@ -388,6 +466,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 ///
 /// - Detects graph type from the first line.
 /// - Parses all remaining non-empty lines as edges of that same graph type.
+/// - Trims surrounding whitespace before per-line validation/parsing.
 /// - Inserts missing nodes before edge insertion.
 /// - Skips duplicate edges.
 /// - Returns an error for invalid syntax or incompatible parsed node/weight variants.
@@ -404,6 +483,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 /// Two-dimensional graph parsing is supported in this function.
 fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, ParseError> {
     let mut lines_iter = lines.lines();
+    let syntax_regexes = compile_line_syntax_regexes()?;
 
     // there must be atleast one line to create a graph
     let first_line = match lines_iter.next() {
@@ -421,19 +501,29 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
         FoundGraphType::D => {
             let mut graph = DirectedGraph::default();
             let graph_type = FoundGraphType::D;
-            for line in lines_iter {
+            for (index, raw_line) in lines_iter.enumerate() {
+                let line_number = index + 2;
+                let line = raw_line.trim();
                 if line.is_empty() {
                     continue;
                 }
 
-                if !validate_line_syntax(line) {
+                if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
                     return Err(ParseError::InvalidDataInput(format!(
-                        "Invalid line syntax on the line {}! Please use only 'A->B:2' or 'A-B:5' to stay consistent!",
-                        line
+                        "Invalid syntax at line {} ('{}'). {}",
+                        line_number,
+                        raw_line,
+                        expected_syntax_message(&graph_type)
                     )));
                 }
 
-                let (from, to, weight) = convert_line_to_graph_data(line, &graph_type)?;
+                let (from, to, weight) =
+                    convert_line_to_graph_data(line, &graph_type).map_err(|err| {
+                        ParseError::InvalidDataInput(format!(
+                            "Failed to parse line {} ('{}'): {}",
+                            line_number, raw_line, err
+                        ))
+                    })?;
                 let from = match from {
                     NodeType::DefaultNode(node) => node,
                     _ => {
@@ -474,25 +564,36 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             }
 
             FileInputGraphResult::new(Some(graph), None, None).ok_or(ParseError::InvalidDataInput(
-                "There can only be two graphs at the same time!".to_string(),
+                "Exactly one parsed graph variant must be present in FileInputGraphResult."
+                    .to_string(),
             ))
         }
         FoundGraphType::UN => {
             let mut graph = UndirectedGraph::default();
             let graph_type = FoundGraphType::UN;
-            for line in lines_iter {
+            for (index, raw_line) in lines_iter.enumerate() {
+                let line_number = index + 2;
+                let line = raw_line.trim();
                 if line.is_empty() {
                     continue;
                 }
 
-                if !validate_line_syntax(line) {
+                if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
                     return Err(ParseError::InvalidDataInput(format!(
-                        "Invalid line syntax on the line {}! Please use only 'A->B:2' or 'A-B:5' to stay consistent!",
-                        line
+                        "Invalid syntax at line {} ('{}'). {}",
+                        line_number,
+                        raw_line,
+                        expected_syntax_message(&graph_type)
                     )));
                 }
 
-                let (from, to, weight) = convert_line_to_graph_data(line, &graph_type)?;
+                let (from, to, weight) =
+                    convert_line_to_graph_data(line, &graph_type).map_err(|err| {
+                        ParseError::InvalidDataInput(format!(
+                            "Failed to parse line {} ('{}'): {}",
+                            line_number, raw_line, err
+                        ))
+                    })?;
                 let from = match from {
                     NodeType::DefaultNode(node) => node,
                     _ => {
@@ -535,25 +636,36 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             }
 
             FileInputGraphResult::new(None, Some(graph), None).ok_or(ParseError::InvalidDataInput(
-                "There can only be two graphs at the same time!".to_string(),
+                "Exactly one parsed graph variant must be present in FileInputGraphResult."
+                    .to_string(),
             ))
         }
         FoundGraphType::TD => {
             let mut graph = TwoDimensionalCoordinateGraph::default();
             let graph_type = FoundGraphType::TD;
-            for line in lines_iter {
+            for (index, raw_line) in lines_iter.enumerate() {
+                let line_number = index + 2;
+                let line = raw_line.trim();
                 if line.is_empty() {
                     continue;
                 }
 
-                if !validate_line_syntax(line) {
+                if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
                     return Err(ParseError::InvalidDataInput(format!(
-                        "Invalid line syntax on the line {}! Please use only 'A->B:2' or 'A-B:5' to stay consistent!",
-                        line
+                        "Invalid syntax at line {} ('{}'). {}",
+                        line_number,
+                        raw_line,
+                        expected_syntax_message(&graph_type)
                     )));
                 }
 
-                let (node_a, node_b, _) = convert_line_to_graph_data(line, &graph_type)?;
+                let (node_a, node_b, _) =
+                    convert_line_to_graph_data(line, &graph_type).map_err(|err| {
+                        ParseError::InvalidDataInput(format!(
+                            "Failed to parse line {} ('{}'): {}",
+                            line_number, raw_line, err
+                        ))
+                    })?;
                 let node_a = match node_a {
                     NodeType::TwoDimensionalNode(node) => node,
                     _ => {
@@ -586,7 +698,8 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
                 }
             }
             FileInputGraphResult::new(None, None, Some(graph)).ok_or(ParseError::InvalidDataInput(
-                "There can only be two graphs at the same time!".to_string(),
+                "Exactly one parsed graph variant must be present in FileInputGraphResult."
+                    .to_string(),
             ))
         }
     }
