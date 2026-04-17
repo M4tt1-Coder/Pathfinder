@@ -50,7 +50,7 @@ Quality and automation:
 - src/data_input/file_input.rs: graph-file parsing and validation
 - src/algorithms/: algorithm traits and implementations
 - src/graphs/: graph trait and concrete graph types
-- benches/: benchmark targets
+- benches/: benchmark targets, including direct Dijkstra vs A* comparisons
 
 ### Challenges & Feature
 
@@ -189,6 +189,22 @@ cargo test --workspace --all-targets --locked --verbose
 ```sh
 cargo test --workspace --doc --locked --verbose
 ```
+
+### Benchmarking
+
+Run the algorithm benchmark target to compare all currently implemented runtime
+algorithms (Dijkstra and A*) on shared benchmark scenarios:
+
+```sh
+cargo bench --bench pathfinder
+```
+
+The benchmark includes:
+
+- Shared coordinate-graph construction cost
+- Dijkstra vs A* instance creation cost on the same graph model
+- Dijkstra vs A* shortest-path runtime on sparse grids
+- Dijkstra vs A* shortest-path runtime on denser grids with diagonal shortcuts
 
 ### Automated releases
 
