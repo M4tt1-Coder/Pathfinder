@@ -1,6 +1,6 @@
 [package]
 name = "shortest_path_finder"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Matthis Geißler <matthisgeissler@gmail.com>"]
 license-file = "LICENSE"
@@ -16,7 +16,7 @@ exclude = ["target", "examples", "tests", "test_files", "benches", ".github", ".
 env_logger = "^0.11.10"
 log = "^0.4.29"
 regex = { version = "^1.12.3", features = [ "logging" ] }
-uuid = { version = "^1.23.0", features = [ 'v4' ] }
+uuid = { version = "^1.23.1", features = [ 'v4' ] }
 strum = "0.28.0"
 strum_macros = "0.28.0"
 
