@@ -59,6 +59,7 @@ use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseE
 /// This guard prevents obviously incomplete invocations from entering detailed
 /// flag parsing logic.
 const MIN_ARGUMENT_COUNT: usize = 4;
+
 /// Default file path used when `--graph-file` is not provided.
 const DEFAULT_GRAPH_FILE: &str = "graph.txt";
 
@@ -189,14 +190,18 @@ impl ParsedCliValues {
 /// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times.
 fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError> {
     let mut parsed = ParsedCliValues::default();
+    // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
         0
     } else {
         1
     };
 
+    // Process tokens in pairs: flag followed by value.
     while index < args.len() {
         let token = &args[index];
+
+        // Validate that the current token is a flag.
         if !token.starts_with("--") {
             return Err(ConfigParseError::UnexpectedArgument {
                 value: token.clone(),
@@ -214,6 +219,7 @@ fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError
             }
         };
 
+        // Validate that the flag is followed by a usable value.
         let maybe_value = args.get(index + 1);
         let value = match maybe_value {
             Some(value) if !value.is_empty() && !value.starts_with("--") => value,
