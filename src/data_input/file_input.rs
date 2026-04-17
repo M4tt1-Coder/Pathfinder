@@ -251,13 +251,29 @@ impl Error for FileInputError {
 /// - [`FileInputError::Io`] wraps filesystem failures with path context.
 /// - [`FileInputError::Parse`] wraps parser failures from [`ParseError`].
 ///
-/// # Example
+/// # Examples
+///
+/// Successful parsing:
 ///
 /// ```no_run
 /// use shortest_path_finder::data_input::file_input::retrieve_graph_data_from_file;
 ///
 /// let result = retrieve_graph_data_from_file("test_files/undirected_graph.txt");
 /// assert!(result.is_ok());
+/// ```
+///
+/// I/O failure classification:
+///
+/// ```rust
+/// use shortest_path_finder::data_input::file_input::{
+///     retrieve_graph_data_from_file,
+///     FileInputError,
+/// };
+///
+/// let err = retrieve_graph_data_from_file(".")
+///     .expect_err("a directory path cannot be read as graph file text");
+///
+/// assert!(matches!(err, FileInputError::Io { .. }));
 /// ```
 pub fn retrieve_graph_data_from_file(
     file_path: &str,

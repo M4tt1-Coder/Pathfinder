@@ -54,9 +54,19 @@
 
 use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
 
+/// Minimum argument count required before parsing is attempted.
+///
+/// This guard prevents obviously incomplete invocations from entering detailed
+/// flag parsing logic.
 const MIN_ARGUMENT_COUNT: usize = 4;
+/// Default file path used when `--graph-file` is not provided.
 const DEFAULT_GRAPH_FILE: &str = "graph.txt";
 
+/// Internal representation of supported CLI flags.
+///
+/// This enum centralizes known flags so parser logic can map raw tokens to a
+/// fixed set of configuration slots and produce structured errors for unknown
+/// switches.
 #[derive(Copy, Clone, Debug)]
 enum KnownFlag {
     GraphFile,
@@ -67,6 +77,7 @@ enum KnownFlag {
 }
 
 impl KnownFlag {
+    /// Converts a raw CLI token to a known flag discriminator.
     fn from_token(token: &str) -> Option<Self> {
         match token {
             "--graph-file" => Some(Self::GraphFile),
@@ -78,6 +89,7 @@ impl KnownFlag {
         }
     }
 
+    /// Returns the canonical string spelling for a known flag.
     fn as_str(self) -> &'static str {
         match self {
             Self::GraphFile => "--graph-file",
@@ -89,6 +101,10 @@ impl KnownFlag {
     }
 }
 
+/// Parsed key-value storage for all supported CLI options.
+///
+/// Each field stores the original flag index and its associated value, which
+/// enables precise duplicate-flag diagnostics.
 #[derive(Default, Debug)]
 struct ParsedCliValues {
     graph_file: Option<(usize, String)>,
@@ -99,6 +115,7 @@ struct ParsedCliValues {
 }
 
 impl ParsedCliValues {
+    /// Stores one parsed flag value and rejects duplicate occurrences.
     fn set_value(
         slot: &mut Option<(usize, String)>,
         flag: KnownFlag,
@@ -117,6 +134,7 @@ impl ParsedCliValues {
         Ok(())
     }
 
+    /// Routes one parsed flag/value pair into the corresponding storage slot.
     fn insert(
         &mut self,
         flag: KnownFlag,
@@ -153,6 +171,22 @@ impl ParsedCliValues {
     }
 }
 
+/// Parses raw CLI arguments into validated key-value pairs.
+///
+/// # Behavior
+///
+/// - Accepts argument vectors both with and without executable name prefix.
+/// - Requires every option token to start with `--`.
+/// - Requires every known flag to be followed by a non-empty, non-flag value.
+/// - Rejects unknown and duplicate flags.
+///
+/// # Errors
+///
+/// Returns:
+/// - [`ConfigParseError::UnexpectedArgument`] for non-flag tokens,
+/// - [`ConfigParseError::UnknownFlag`] for unsupported switches,
+/// - [`ConfigParseError::MissingValueForFlag`] when a flag has no usable value,
+/// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times.
 fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError> {
     let mut parsed = ParsedCliValues::default();
     let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
@@ -353,6 +387,14 @@ impl AppConfig {
     /// - unknown or duplicate flags are provided,
     /// - or unexpected non-flag tokens appear.
     ///
+    /// Concrete variant mapping:
+    /// - [`ConfigParseError::TooFewArguments`]
+    /// - [`ConfigParseError::MissingRequiredFlag`]
+    /// - [`ConfigParseError::MissingValueForFlag`]
+    /// - [`ConfigParseError::UnknownFlag`]
+    /// - [`ConfigParseError::DuplicateFlag`]
+    /// - [`ConfigParseError::UnexpectedArgument`]
+    ///
     /// # Examples
     ///
     /// Successful parsing with defaults:
@@ -398,6 +440,29 @@ impl AppConfig {
     /// let result = AppConfig::setup_config(args);
     /// assert!(result.is_err());
     /// ```
+    ///
+    /// Failed parsing because of an unknown flag:
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::AppConfig;
+    /// use shortest_path_finder::error::config_error::ConfigParseError;
+    ///
+    /// let args = vec![
+    ///     "pathfinder",
+    ///     "--whoops",
+    ///     "x",
+    ///     "--start",
+    ///     "A",
+    ///     "--end",
+    ///     "B",
+    /// ]
+    /// .into_iter()
+    /// .map(String::from)
+    /// .collect();
+    ///
+    /// let err = AppConfig::setup_config(args).expect_err("unknown flag should fail");
+    /// assert!(matches!(err, ConfigParseError::UnknownFlag { .. }));
+    /// ```
     pub fn setup_config(args: Vec<String>) -> Result<Self, ConfigParseError> {
         if args.len() < MIN_ARGUMENT_COUNT {
             return Err(ConfigParseError::TooFewArguments {
@@ -430,12 +495,22 @@ impl AppConfig {
         })
     }
 
+    /// Converts optional algorithm text into a concrete [`Algorithms`] value.
+    ///
+    /// Falls back to [`Algorithms::Dijkstra`] when the algorithm flag is not
+    /// provided.
     fn retrieve_algorithm(raw_algorithm: Option<&str>) -> Algorithms {
         raw_algorithm
             .map(Algorithms::get_from_string)
             .unwrap_or(Algorithms::Dijkstra)
     }
 
+    /// Resolves input origin with compatibility fallback.
+    ///
+    /// Resolution order:
+    /// 1. `--origin` value,
+    /// 2. legacy `--algo` values `file`/`cmd-line`,
+    /// 3. [`InputOrigin::File`] default.
     fn retrieve_data_input(parsed: &ParsedCliValues, raw_algorithm: Option<&str>) -> InputOrigin {
         if let Some(origin) = parsed.origin_value() {
             return InputOrigin::get_from_string(&origin);
