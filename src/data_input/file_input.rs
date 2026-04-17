@@ -296,6 +296,13 @@ pub fn retrieve_graph_data_from_file(
 
 /// Compiles all regexes required for line-syntax validation.
 ///
+/// # Node ID constraint
+///
+/// All three formats restrict node IDs to the character class `[A-Za-z0-9]+`.
+/// IDs containing other characters (e.g. `Station-42`, `node_1`) are **not**
+/// supported in file input and will fail validation. Keep node names to letters
+/// and digits only when using file-based graph input.
+///
 /// # Errors
 ///
 /// Returns [`ParseError::RegexCompilationFailed`] when any static regex pattern

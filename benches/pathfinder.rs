@@ -53,8 +53,14 @@ enum ComparedAlgorithm {
     AStar,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 struct BenchWeight(f32);
+
+impl PartialEq for BenchWeight {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.to_bits() == other.0.to_bits()
+    }
+}
 
 impl Eq for BenchWeight {}
 
