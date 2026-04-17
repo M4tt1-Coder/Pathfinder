@@ -337,7 +337,7 @@ impl TwoDimensionalEdge {
     ///
     /// Computed `f32` weight value used internally by the graph.
     fn retrieve_actual_weight(&self) -> f32 {
-        // Current implementation applies XOR-based transformation to deltas.
+        // Euclidean distance: sqrt((x1 - x2)^2 + (y1 - y2)^2).
         let height = (self.node_one.get_x() - self.node_two.get_x()).pow(2);
         let width = (self.node_one.get_y() - self.node_two.get_y()).pow(2);
 

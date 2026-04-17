@@ -305,7 +305,7 @@ fn compile_line_syntax_regexes() -> Result<LineSyntaxRegexes, ParseError> {
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
     let undirected = Regex::new(r"^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$")
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
-    let two_dimensional = Regex::new(r"^[A-Za-z0-9]+:[0-9]+,[0-9]+-[A-Za-z0-9]+:[0-9]+,[0-9]+$")
+    let two_dimensional = Regex::new(r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+-[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$")
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
 
     Ok(LineSyntaxRegexes {

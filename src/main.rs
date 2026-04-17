@@ -12,7 +12,8 @@
 //!
 //! - `InputOrigin::File` is implemented and used in production flow.
 //! - `InputOrigin::CommandLine` is currently `unimplemented!()`.
-//! - Algorithm selection currently supports Dijkstra in runtime wiring.
+//! - Algorithm selection: Dijkstra for directed (`D`) and undirected (`UN`)
+//!   graphs; A* for two-dimensional (`TD`) graphs.
 //!
 //! # CLI Example
 //!

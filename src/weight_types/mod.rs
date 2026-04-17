@@ -11,7 +11,7 @@
 //! use shortest_path_finder::graphs::graph::GraphWeight;
 //!
 //! assert_eq!(u16::zero(), 0);
-//! assert!(u16::max_value() > 1000);
+//! assert!(<u16 as GraphWeight>::max_value() > 1000);
 //! ```
 
 pub mod impl_weights;

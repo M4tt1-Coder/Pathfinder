@@ -17,8 +17,8 @@
 //!
 //! Current implementation details:
 //! - `f32`: multiplies by `0.001`.
-//! - `i32`: multiplies by `0.001 as i32` (which is `0`), resulting in `0` for
-//!   all inputs.
+//! - `i32`: converts to `f32`, multiplies by `0.001`, rounds, then converts
+//!   back to `i32`.
 //!
 //! # Usage
 //!
@@ -61,7 +61,7 @@ impl NumericDatatype for i32 {
     }
 
     fn adjust_for_heuristic(&self) -> Self {
-        *self * HEURISTIC_ADJUSTMENT_FACTOR as i32
+        (*self as f32 * HEURISTIC_ADJUSTMENT_FACTOR).round() as i32
     }
 
     fn to_f32(&self) -> f32 {

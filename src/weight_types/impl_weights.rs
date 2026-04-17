@@ -18,7 +18,7 @@
 //! assert!(matches!(weight, WeightType::U16(7)));
 //!
 //! assert_eq!(u16::zero(), 0);
-//! assert!(u16::max_value() > 1_000);
+//! assert!(<u16 as GraphWeight>::max_value() > 1_000);
 //! ```
 
 use crate::graphs::graph::GraphWeight;
