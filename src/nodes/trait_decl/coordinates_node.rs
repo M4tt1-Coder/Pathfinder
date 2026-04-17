@@ -1,7 +1,16 @@
-//! # CoordinatesNode Trait
+//! Coordinate-bearing node contract.
 //!
-//! The `CoordinatesNode` trait extends the `GraphNode` trait by adding spatial coordinate information.
-//! It is designed for graph nodes that have associated coordinates, such as nodes in a spatial graph or map.
+//! # Overview
+//!
+//! [`CoordinatesNode`] extends [`crate::graphs::graph::GraphNode`] with x/y
+//! coordinate accessors. It is used by coordinate-aware graph models and by
+//! A* implementations that require geometric information.
+//!
+//! # Coordinate Semantics
+//!
+//! The trait does not enforce a specific coordinate system (cartesian, grid,
+//! map projection, etc.). It only guarantees that callers can retrieve two
+//! scalar values via [`CoordinatesNode::get_x`] and [`CoordinatesNode::get_y`].
 //!
 //! # Usage
 //!
@@ -31,40 +40,56 @@
 //!
 //! impl CoordinatesNode for MapNode {
 //!     type CoordinateType = i32;
-//!     
+//!
 //!     fn get_x(&self) -> Self::CoordinateType {
 //!         self.x
 //!     }
-//!     
+//!
 //!     fn get_y(&self) -> Self::CoordinateType {
 //!         self.y
 //!     }
 //! }
-//! ```
 //!
+//! fn manhattan_distance<N: CoordinatesNode<CoordinateType = i32>>(a: &N, b: &N) -> i32 {
+//!     (a.get_x() - b.get_x()).abs() + (a.get_y() - b.get_y()).abs()
+//! }
+//!
+//! let a = MapNode { id: "A".to_string(), x: 0, y: 0 };
+//! let b = MapNode { id: "B".to_string(), x: 3, y: 4 };
+//! assert_eq!(manhattan_distance(&a, &b), 7);
+//! ```
 
 use crate::{graphs::graph::GraphNode, weight_types::numeric_datatype::NumericDatatype};
 
-/// `CoordinatesNode` is a trait for graph nodes that have spatial coordinate information, extending `GraphNode`.
+/// Trait for nodes that expose two coordinates in addition to an identifier.
 ///
-/// It introduces an associated type `CoordinateType` which must implement `GraphWeight`, allowing flexibility
-/// in the type used for coordinates (e.g., `f32`, `f64`, `i32`, etc.).
+/// # Associated Types
 ///
-/// The trait provides methods to retrieve the x and y coordinates of the node.
+/// - [`CoordinatesNode::CoordinateType`]: scalar type used for x/y values.
 ///
-/// # Type Parameters
-/// - `CoordinateType`: The type used for the node's coordinates, must implement `GraphWeight`.
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::nodes::{
+///     trait_decl::coordinates_node::CoordinatesNode,
+///     two_dimensional_node::TwoDimensionalNode,
+/// };
+///
+/// let node = TwoDimensionalNode::new(5, 8, "P".to_string()).unwrap();
+/// assert_eq!(node.get_x(), 5);
+/// assert_eq!(node.get_y(), 8);
+/// ```
 pub trait CoordinatesNode: GraphNode {
     /// The type used for the node's coordinates.
     type CoordinateType: NumericDatatype;
 
-    /// Retrieves the x-coordinate of the node.
+    /// Returns the x-coordinate of the node.
     ///
     /// # Returns
     /// The x-coordinate of type `Self::CoordinateType`.
     fn get_x(&self) -> Self::CoordinateType;
 
-    /// Retrieves the y-coordinate of the node.
+    /// Returns the y-coordinate of the node.
     ///
     /// # Returns
     /// The y-coordinate of type `Self::CoordinateType`.

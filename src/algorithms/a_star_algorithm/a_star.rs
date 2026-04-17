@@ -27,7 +27,7 @@
 //!
 //! # Usage Example
 //!
-//! ```ignore
+//! ```no_run
 //! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 //! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -71,9 +71,9 @@ use crate::{
 ///
 /// # Type Parameters
 ///
-/// - `ND`: numeric datatype used for both graph edge weights and costs.
-/// - `N`: node type implementing [`CoordinatesNode`] with `CoordinateType = ND`.
-/// - `G`: graph type implementing [`Graph<Node = N, Weight = ND>`].
+/// - `WD`: numeric datatype used for graph edge weights and path costs.
+/// - `N`: node type implementing [`CoordinatesNode`] for heuristic coordinates.
+/// - `G`: graph type implementing [`Graph<Node = N, Weight = WD>`].
 ///
 /// # Responsibilities
 ///
@@ -83,7 +83,7 @@ use crate::{
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```no_run
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
@@ -93,11 +93,8 @@ use crate::{
 /// let _algorithm = AStar::new(graph);
 /// ```
 #[derive(Debug)]
-pub struct AStar<
-    ND: NumericDatatype,
-    N: CoordinatesNode<CoordinateType = ND>,
-    G: Graph<Node = N, Weight = ND> + Display,
-> {
+pub struct AStar<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display>
+{
     /// Graph instance used as the search domain.
     ///
     /// This field is public to keep interoperability with existing integration
@@ -107,13 +104,10 @@ pub struct AStar<
 
 // ----- Implementation of the 'A_Star' struct -----
 
-impl<
-    ND: NumericDatatype,
-    N: CoordinatesNode<CoordinateType = ND>,
-    G: Graph<Node = N, Weight = ND> + Display,
-> Algorithm for AStar<ND, N, G>
+impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display> Algorithm
+    for AStar<WD, N, G>
 {
-    type AlgorithmSearchResult = AStarSearchResult<ND, N>;
+    type AlgorithmSearchResult = AStarSearchResult<WD, N>;
 
     type NodeOfUsedGraph = N;
 
@@ -142,7 +136,7 @@ impl<
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```no_run
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
@@ -183,19 +177,19 @@ impl<
 
         // "open" queue with nodes that haven't been visited yet
         // add the start node to the queue
-        let mut open_queue: BinaryHeap<AStarQueueElement<ND, N>> = BinaryHeap::new();
+        let mut open_queue: BinaryHeap<AStarQueueElement<WD, N>> = BinaryHeap::new();
 
         open_queue.push(AStarQueueElement::new(
             start_node,
-            ND::zero(),
+            WD::zero(),
             self.heuristic(start_node, end_node, start_node),
             None,
         ));
 
         // "closed" queue -> nodes that have been visited
-        let mut closed_queue: Vec<AStarQueueElement<ND, N>> = Vec::new();
+        let mut closed_queue: Vec<AStarQueueElement<WD, N>> = Vec::new();
 
-        let mut g_costs: HashMap<String, ND> = prepare_g_cost_map(&self.graph, start_node.get_id());
+        let mut g_costs: HashMap<String, WD> = prepare_g_cost_map(&self.graph, start_node.get_id());
 
         // while open is not empty -> continue
         while let Some(AStarQueueElement {
@@ -283,11 +277,8 @@ impl<
     }
 }
 
-impl<
-    ND: NumericDatatype,
-    N: CoordinatesNode<CoordinateType = ND>,
-    G: Graph<Node = N, Weight = ND> + Display,
-> AStar<ND, N, G>
+impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display>
+    AStar<WD, N, G>
 {
     /// Creates a new [`AStar`] instance bound to `graph`.
     ///
@@ -301,7 +292,7 @@ impl<
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```no_run
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
@@ -319,7 +310,8 @@ impl<
     /// Uses a cross-product magnitude based estimate:
     /// - build vectors `(current -> goal)` and `(start -> goal)`,
     /// - compute their cross-product magnitude,
-    /// - apply `adjust_for_heuristic()`.
+    /// - scale the value for heuristic usage,
+    /// - convert the estimate to the graph weight type.
     ///
     /// # Parameters
     ///
@@ -338,19 +330,17 @@ impl<
     /// // It is not part of the public API.
     /// let estimate = a_star.heuristic(start, goal, current);
     /// ```
-    fn heuristic(&self, start: &N, goal: &N, current: &N) -> ND {
-        let dx1 = current.get_x() - goal.get_x();
-        let dy1 = current.get_y() - goal.get_y();
-        let dx2 = start.get_x() - goal.get_x();
-        let dy2 = start.get_y() - goal.get_y();
+    fn heuristic(&self, start: &N, goal: &N, current: &N) -> WD {
+        let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
+        let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();
+        let dx2 = start.get_x().to_f32() - goal.get_x().to_f32();
+        let dy2 = start.get_y().to_f32() - goal.get_y().to_f32();
 
-        // Cross product magnitude for heuristic estimation
+        // Cross product magnitude for heuristic estimation in coordinate space.
         let cross = (dx1 * dy2 - dx2 * dy1).abs();
 
-        // Adjust the heuristic to ensure admissibility and prevent overestimation
-        cross.adjust_for_heuristic()
-        // You can multiply by a small factor like 0.001 if needed to fine-tune the heuristic
-        // * 0.001
+        // Convert the scaled heuristic to the graph's weight datatype.
+        WD::from_f32(cross.adjust_for_heuristic())
     }
 }
 
@@ -378,9 +368,9 @@ impl<
 /// assert_eq!(result.get_path().len(), 2);
 /// ```
 #[derive(Debug)]
-pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
+pub struct AStarSearchResult<WD: NumericDatatype, N: CoordinatesNode> {
     /// Total distance from one node A to node B.
-    distance: ND,
+    distance: WD,
     /// List of nodes in order of the nodes that where visited to get the shortest path from the
     /// start to the destination node.
     ///
@@ -388,7 +378,7 @@ pub struct AStarSearchResult<ND: NumericDatatype, N: CoordinatesNode<CoordinateT
     path: Vec<N>,
 }
 
-impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchResult<ND, N> {
+impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// Creates a validated [`AStarSearchResult`] instance.
     ///
     /// # Validation Rules
@@ -426,14 +416,14 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
     /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
     /// ```
-    pub fn new(distance: ND, path: Vec<N>) -> Result<Self, String> {
+    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, String> {
         // path needs to have at least 1 node
         if path.is_empty() {
             return Err("A valid result must have at least one representative node!".to_string());
         }
 
         // the distance must not be negative
-        if distance < ND::zero() {
+        if distance < WD::zero() {
             return Err(
                 "A distance from a node A to B can not be less smaller then 0!".to_string(),
             );
@@ -443,11 +433,9 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> AStarSearchRe
     }
 }
 
-impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Display
-    for AStarSearchResult<ND, N>
-{
+impl<WD: NumericDatatype, N: CoordinatesNode> Display for AStarSearchResult<WD, N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut formatted_path = format!("{}", self.path[0]);
+        let mut formatted_path = self.path[0].get_id().to_string();
         for node in &self.path[1..] {
             formatted_path = format!("{} -> {}", formatted_path, node.get_id())
         }
@@ -455,12 +443,10 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Display
     }
 }
 
-impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
-    for AStarSearchResult<ND, N>
-{
+impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult<WD, N> {
     type Node = N;
 
-    type Distance = ND;
+    type Distance = WD;
 
     fn get_path(&self) -> &Vec<Self::Node> {
         &self.path
@@ -489,8 +475,7 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
 ///
 /// # Type Parameters
 ///
-/// - `'n`: lifetime of referenced graph nodes.
-/// - `ND`: numeric cost type implementing [`NumericDatatype`].
+/// - `WD`: numeric cost type implementing [`NumericDatatype`].
 /// - `N`: coordinate-based node type.
 ///
 /// # Example
@@ -509,7 +494,7 @@ impl<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> SearchResult
 /// assert_eq!(element.get_predecessor().unwrap().get_id(), "B");
 /// ```
 #[derive(Debug)]
-pub struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> {
+pub struct AStarQueueElement<'n, WD: NumericDatatype, N: CoordinatesNode> {
     /// Reference to the current node in the graph.
     ///
     /// This points to the node data structure representing the current position in the graph.
@@ -524,22 +509,21 @@ pub struct AStarQueueElement<'n, ND: NumericDatatype, N: CoordinatesNode<Coordin
     /// Cost from the start node to this node (`g(n)`).
     ///
     /// Represents the accumulated cost along the path from the start to this node.
-    g_cost: ND,
+    g_cost: WD,
 
     /// Estimated cost from this node to the goal (`h(n)`).
     ///
     /// Typically calculated using a heuristic function (e.g., Euclidean distance).
-    h_cost: ND,
+    h_cost: WD,
 
     /// Total estimated cost of the path through this node (`f(n) = g(n) + h(n)`).
     ///
     /// This value is public so that priority queues can access and compare it directly.
     /// It may be adjusted for weighted graphs by applying a weight factor.
-    pub f_cost: ND,
+    pub f_cost: WD,
 }
-impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
-    AStarQueueElement<'n, ND, N>
-{
+
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> AStarQueueElement<'n, WD, N> {
     /// Creates a queue element with precomputed score components.
     ///
     /// # Parameters
@@ -550,7 +534,7 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
     ///
     /// # Returns
     /// Queue element where `f_cost = g_cost + h_cost`.
-    pub fn new(node: &'n N, g_cost: ND, h_cost: ND, predecessor: Option<&'n N>) -> Self {
+    pub fn new(node: &'n N, g_cost: WD, h_cost: WD, predecessor: Option<&'n N>) -> Self {
         // Calculate the total estimated cost for this node.
         let f_cost = g_cost + h_cost;
         AStarQueueElement {
@@ -593,7 +577,7 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
     /// # Returns
     ///
     /// Cost from start to current node.
-    pub fn get_g_cost(&self) -> ND {
+    pub fn get_g_cost(&self) -> WD {
         self.g_cost
     }
 
@@ -602,14 +586,12 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>
     /// # Returns
     ///
     /// Heuristic estimate from current node to goal.
-    pub fn get_h_cost(&self) -> ND {
+    pub fn get_h_cost(&self) -> WD {
         self.h_cost
     }
 }
 
-impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Ord
-    for AStarQueueElement<'n, ND, N>
-{
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> Ord for AStarQueueElement<'n, WD, N> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.f_cost.partial_cmp(&other.f_cost) {
             Some(ordering) => ordering.reverse(), // Reverse for min-heap behavior
@@ -621,26 +603,19 @@ impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Ord
     }
 }
 
-impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> PartialOrd
-    for AStarQueueElement<'n, ND, N>
-{
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialOrd for AStarQueueElement<'n, WD, N> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> PartialEq
-    for AStarQueueElement<'n, ND, N>
-{
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialEq for AStarQueueElement<'n, WD, N> {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node && self.f_cost == other.f_cost
     }
 }
 
-impl<'n, ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>> Eq
-    for AStarQueueElement<'n, ND, N>
-{
-}
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> Eq for AStarQueueElement<'n, WD, N> {}
 
 // ----- Implementation of the 'AStarExecutionError' struct -----
 

@@ -1,7 +1,7 @@
 # PathFinder
 
 PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
-The runtime currently uses Dijkstra, with A* present in the codebase and under active integration.
+The runtime currently supports Dijkstra for directed/undirected graphs and A* for two-dimensional graphs.
 
 ## Description
 
@@ -19,10 +19,10 @@ The repository provides:
 
 - File-based input is implemented and used by the CLI
 - Command-line graph input mode is defined but not implemented in runtime flow
-- The `--origin` flag is present in CLI syntax, but current compatibility behavior still reads input origin from `--algo`
+- Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
 - Dijkstra is fully wired in the executable
-- A* is available in modules but not yet enabled in the final CLI execution path
-- Two-dimensional (`TD`) graph files are parsed, but the CLI execution path currently handles directed and undirected graph runs only
+- A* is wired for two-dimensional (`TD`) graph execution in the CLI path
+- A* now supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
 
 ### Technologies
 
@@ -50,7 +50,7 @@ Quality and automation:
 - src/data_input/file_input.rs: graph-file parsing and validation
 - src/algorithms/: algorithm traits and implementations
 - src/graphs/: graph trait and concrete graph types
-- benches/: benchmark targets
+- benches/: benchmark targets, including direct Dijkstra vs A* comparisons
 
 ### Challenges & Feature
 
@@ -110,8 +110,9 @@ pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <alg
 
 Compatibility note:
 
-- In the current implementation, input-origin parsing still reads from `--algo` (not `--origin`).
-- `--origin cmd-line` is therefore not active in executable flow yet.
+- Input origin now reads from `--origin` when present.
+- For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
+- The CLI parser now rejects unknown flags, duplicate flags, missing flag values, and unexpected non-flag tokens with explicit errors.
 
 ### CLI argument examples
 
@@ -131,9 +132,11 @@ Explicit file and algorithm example:
 
 The current parser format (used by the provided test files) is header plus edge lines:
 
-- Line 1 is a graph-type header: `D`, `UN`, or `TD`.
+- Line 1 is a graph-type header and must be exactly one of: `D`, `UN`, or `TD`.
 - Only lines after line 1 are converted into edges.
 - Line 1 is not inserted as an edge.
+- Whitespace-only lines after the header are ignored.
+- Parse errors include file-line context and graph-type-specific expected syntax.
 
 Directed example:
 
@@ -186,6 +189,22 @@ cargo test --workspace --all-targets --locked --verbose
 ```sh
 cargo test --workspace --doc --locked --verbose
 ```
+
+### Benchmarking
+
+Run the algorithm benchmark target to compare all currently implemented runtime
+algorithms (Dijkstra and A*) on shared benchmark scenarios:
+
+```sh
+cargo bench --bench pathfinder
+```
+
+The benchmark includes:
+
+- Shared coordinate-graph construction cost
+- Dijkstra vs A* instance creation cost on the same graph model
+- Dijkstra vs A* shortest-path runtime on sparse grids
+- Dijkstra vs A* shortest-path runtime on denser grids with diagonal shortcuts
 
 ### Automated releases
 

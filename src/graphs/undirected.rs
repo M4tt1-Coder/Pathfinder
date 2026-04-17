@@ -1,3 +1,32 @@
+//! Undirected graph implementation.
+//!
+//! # Overview
+//!
+//! This module provides:
+//! - [`UndirectedGraph`] as a weighted, non-directional graph container,
+//! - [`UndirectedEdge`] as an edge connecting two nodes symmetrically,
+//! - [`UndirectedGraphInsertionError`] for insertion failures.
+//!
+//! # File Abbreviation
+//!
+//! The graph abbreviation used in file input is `UN`.
+//!
+//! # Usage
+//!
+//! ```rust
+//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::graphs::undirected::{UndirectedEdge, UndirectedGraph};
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//!
+//! let mut graph = UndirectedGraph::default();
+//! let a = DefaultNode::new("A".to_string());
+//! let b = DefaultNode::new("B".to_string());
+//! graph.insert_node(a.clone());
+//! graph.insert_node(b.clone());
+//! assert!(graph.insert_edge(UndirectedEdge::new(a, b, 2)).is_none());
+//! assert!(!graph.is_directed());
+//! ```
+
 use std::{error::Error, fmt::Display};
 
 use uuid::Uuid;
@@ -7,18 +36,22 @@ use crate::{
     nodes::default_node::DefaultNode,
 };
 
-/// Undirected graphs don't have the restriction that you can't go along some edges from a specific
-/// direction. Here you go along all ways.
+/// Undirected weighted graph implementation.
 ///
-/// Its abbreviation is 'UN' used in files to identify the graph data for an undirected graph.
+/// # File-format marker
 ///
-/// # Fields
+/// This graph is represented by the abbreviation `UN` in file-input headers.
 ///
-/// * 'nodes' -> The nodes of the graph.
-/// * 'edges' -> The edges of the graph.
+/// # Invariants
+///
+/// - Duplicate nodes are ignored on insertion.
+/// - Duplicate edges are rejected regardless of endpoint order (`A-B` equals `B-A`).
+/// - Edges can only be inserted if both endpoint nodes already exist.
 #[derive(Debug, Clone)]
 pub struct UndirectedGraph {
+    /// Nodes currently contained in the graph.
     pub nodes: Vec<DefaultNode>,
+    /// Undirected edges currently contained in the graph.
     pub edges: Vec<UndirectedEdge>,
 }
 
@@ -124,16 +157,26 @@ impl Graph for UndirectedGraph {
 }
 
 impl UndirectedGraph {
-    /// Creates a new instance of a 'UndirectedGraph' struct.
+    /// Creates a new undirected graph from node and edge vectors.
     ///
     /// # Arguments
     ///
-    /// - 'nodes' -> List of nodes.
-    /// - 'edges' -> Array of edges
+    /// - `nodes`: list of graph nodes.
+    /// - `edges`: list of undirected edges.
     ///
     /// # Returns
     ///
-    /// => A new instance of the 'UndirectedGraph'.
+    /// A new [`UndirectedGraph`] value.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::undirected::UndirectedGraph;
+    ///
+    /// let graph = UndirectedGraph::new(vec![], vec![]);
+    /// assert_eq!(graph.nodes.len(), 0);
+    /// assert_eq!(graph.edges.len(), 0);
+    /// ```
     pub fn new(nodes: Vec<DefaultNode>, edges: Vec<UndirectedEdge>) -> Self {
         Self { nodes, edges }
     }
@@ -153,23 +196,56 @@ impl Default for UndirectedGraph {
 
 // ----- Implementation of the 'UndirectedEdge' struct -----
 
-/// The edge of a undirected graph, where you can either come from 'A' or 'B'.
+/// Edge connecting two nodes in an undirected graph.
+///
+/// # Semantics
+///
+/// Endpoint order does not change edge meaning: `(A, B)` and `(B, A)` are
+/// treated as equivalent by duplicate checks.
 ///
 /// # Fields
 ///
-/// * 'a_node' -> One node of the edge ...
-/// * 'b_node' -> Other node of the edge ...
-/// * 'weight' -> Fictional 'length' of the edge
+/// - [`UndirectedEdge::a_node`]: first endpoint.
+/// - [`UndirectedEdge::b_node`]: second endpoint.
+/// - [`UndirectedEdge::weight`]: traversal cost.
 #[derive(Clone, PartialEq, Debug)]
 pub struct UndirectedEdge {
+    /// First endpoint of the edge.
     pub a_node: DefaultNode,
+    /// Second endpoint of the edge.
     pub b_node: DefaultNode,
+    /// Cost/weight associated with traversing this edge.
     pub weight: u16,
     id: Uuid,
 }
 
 impl UndirectedEdge {
-    /// Create a new instance of the 'UndirectedEdge' struct.
+    /// Creates a new undirected edge.
+    ///
+    /// # Parameters
+    ///
+    /// - `a_node`: first endpoint of the edge.
+    /// - `b_node`: second endpoint of the edge.
+    /// - `weight`: edge weight.
+    ///
+    /// # Returns
+    ///
+    /// A new [`UndirectedEdge`] with a generated UUID.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::undirected::UndirectedEdge;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let edge = UndirectedEdge::new(
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    ///     9,
+    /// );
+    ///
+    /// assert_eq!(edge.weight, 9);
+    /// ```
     pub fn new(a_node: DefaultNode, b_node: DefaultNode, weight: u16) -> Self {
         Self {
             a_node,
@@ -204,18 +280,29 @@ impl GraphEdge for UndirectedEdge {
 
 // ----- Implementation of the 'UndirectedGraphInsertionError' struct -----
 
-/// Represents an error that occured when an edge or node was inserted into the undirected graph.
+/// Error returned when undirected graph insertion fails.
 ///
-/// # Fields
+/// # Typical causes
 ///
-/// - 'message' -> Description of what caused the error to occur.
+/// - duplicate edge insertion,
+/// - inserting an edge for nodes that are missing in the graph.
 #[derive(Debug)]
 pub struct UndirectedGraphInsertionError {
+    /// Human-readable explanation of the insertion failure.
     pub message: String,
 }
 
 impl UndirectedGraphInsertionError {
-    /// Create a new 'UndirectedGraphInsertionError' instance.
+    /// Creates a new insertion error with a descriptive message.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::graphs::undirected::UndirectedGraphInsertionError;
+    ///
+    /// let err = UndirectedGraphInsertionError::new("duplicate edge".to_string());
+    /// assert_eq!(err.to_string(), "duplicate edge");
+    /// ```
     pub fn new(message: String) -> Self {
         Self { message }
     }

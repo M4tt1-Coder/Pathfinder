@@ -16,8 +16,11 @@
 //!
 //! - Missing `--graph-file` defaults to `graph.txt`.
 //! - Missing or unknown `--algo` defaults to `Dijkstra`.
-//! - Current compatibility behavior: input-origin parsing reads from `--algo`
-//!   (not from `--origin`) in [`AppConfig::retrieve_data_input`].
+//! - Input-origin parsing primarily reads from `--origin`.
+//! - Compatibility fallback: if `--origin` is absent, parser also accepts legacy
+//!   origin values from `--algo` (`file` or `cmd-line`).
+//! - Unknown flags, duplicate flags, missing values, and unexpected tokens are
+//!   rejected with structured [`ConfigParseError`] values.
 //!
 //! # Example
 //!
@@ -49,10 +52,191 @@
 //! assert!(matches!(config.data_input, InputOrigin::File));
 //! ```
 
-use crate::algorithms::algorithm::Algorithms;
+use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
 
-// TODO: Implement a more complex error handling system for the setup process. (Maybe with an enum
-// of different error types?)
+/// Minimum argument count required before parsing is attempted.
+///
+/// This guard prevents obviously incomplete invocations from entering detailed
+/// flag parsing logic.
+const MIN_ARGUMENT_COUNT: usize = 4;
+
+/// Default file path used when `--graph-file` is not provided.
+const DEFAULT_GRAPH_FILE: &str = "graph.txt";
+
+/// Internal representation of supported CLI flags.
+///
+/// This enum centralizes known flags so parser logic can map raw tokens to a
+/// fixed set of configuration slots and produce structured errors for unknown
+/// switches.
+#[derive(Copy, Clone, Debug)]
+enum KnownFlag {
+    GraphFile,
+    Start,
+    End,
+    Algo,
+    Origin,
+}
+
+impl KnownFlag {
+    /// Converts a raw CLI token to a known flag discriminator.
+    fn from_token(token: &str) -> Option<Self> {
+        match token {
+            "--graph-file" => Some(Self::GraphFile),
+            "--start" => Some(Self::Start),
+            "--end" => Some(Self::End),
+            "--algo" => Some(Self::Algo),
+            "--origin" => Some(Self::Origin),
+            _ => None,
+        }
+    }
+
+    /// Returns the canonical string spelling for a known flag.
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::GraphFile => "--graph-file",
+            Self::Start => "--start",
+            Self::End => "--end",
+            Self::Algo => "--algo",
+            Self::Origin => "--origin",
+        }
+    }
+}
+
+/// Parsed key-value storage for all supported CLI options.
+///
+/// Each field stores the original flag index and its associated value, which
+/// enables precise duplicate-flag diagnostics.
+#[derive(Default, Debug)]
+struct ParsedCliValues {
+    graph_file: Option<(usize, String)>,
+    start: Option<(usize, String)>,
+    end: Option<(usize, String)>,
+    algo: Option<(usize, String)>,
+    origin: Option<(usize, String)>,
+}
+
+impl ParsedCliValues {
+    /// Stores one parsed flag value and rejects duplicate occurrences.
+    fn set_value(
+        slot: &mut Option<(usize, String)>,
+        flag: KnownFlag,
+        index: usize,
+        value: &str,
+    ) -> Result<(), ConfigParseError> {
+        if let Some((first_index, _)) = slot {
+            return Err(ConfigParseError::DuplicateFlag {
+                flag: flag.as_str().to_string(),
+                first_index: *first_index,
+                duplicate_index: index,
+            });
+        }
+
+        *slot = Some((index, value.to_string()));
+        Ok(())
+    }
+
+    /// Routes one parsed flag/value pair into the corresponding storage slot.
+    fn insert(
+        &mut self,
+        flag: KnownFlag,
+        index: usize,
+        value: &str,
+    ) -> Result<(), ConfigParseError> {
+        match flag {
+            KnownFlag::GraphFile => Self::set_value(&mut self.graph_file, flag, index, value),
+            KnownFlag::Start => Self::set_value(&mut self.start, flag, index, value),
+            KnownFlag::End => Self::set_value(&mut self.end, flag, index, value),
+            KnownFlag::Algo => Self::set_value(&mut self.algo, flag, index, value),
+            KnownFlag::Origin => Self::set_value(&mut self.origin, flag, index, value),
+        }
+    }
+
+    fn graph_file_value(&self) -> Option<String> {
+        self.graph_file.as_ref().map(|(_, value)| value.clone())
+    }
+
+    fn start_value(&self) -> Option<String> {
+        self.start.as_ref().map(|(_, value)| value.clone())
+    }
+
+    fn end_value(&self) -> Option<String> {
+        self.end.as_ref().map(|(_, value)| value.clone())
+    }
+
+    fn algorithm_value(&self) -> Option<String> {
+        self.algo.as_ref().map(|(_, value)| value.clone())
+    }
+
+    fn origin_value(&self) -> Option<String> {
+        self.origin.as_ref().map(|(_, value)| value.clone())
+    }
+}
+
+/// Parses raw CLI arguments into validated key-value pairs.
+///
+/// # Behavior
+///
+/// - Accepts argument vectors both with and without executable name prefix.
+/// - Requires every option token to start with `--`.
+/// - Requires every known flag to be followed by a non-empty, non-flag value.
+/// - Rejects unknown and duplicate flags.
+///
+/// # Errors
+///
+/// Returns:
+/// - [`ConfigParseError::UnexpectedArgument`] for non-flag tokens,
+/// - [`ConfigParseError::UnknownFlag`] for unsupported switches,
+/// - [`ConfigParseError::MissingValueForFlag`] when a flag has no usable value,
+/// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times.
+fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError> {
+    let mut parsed = ParsedCliValues::default();
+    // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
+    let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
+        0
+    } else {
+        1
+    };
+
+    // Process tokens in pairs: flag followed by value.
+    while index < args.len() {
+        let token = &args[index];
+
+        // Validate that the current token is a flag.
+        if !token.starts_with("--") {
+            return Err(ConfigParseError::UnexpectedArgument {
+                value: token.clone(),
+                index,
+            });
+        }
+
+        let flag = match KnownFlag::from_token(token) {
+            Some(flag) => flag,
+            None => {
+                return Err(ConfigParseError::UnknownFlag {
+                    flag: token.clone(),
+                    index,
+                });
+            }
+        };
+
+        // Validate that the flag is followed by a usable value.
+        let maybe_value = args.get(index + 1);
+        let value = match maybe_value {
+            Some(value) if !value.is_empty() && !value.starts_with("--") => value,
+            _ => {
+                return Err(ConfigParseError::MissingValueForFlag {
+                    flag: flag.as_str().to_string(),
+                    index,
+                });
+            }
+        };
+
+        parsed.insert(flag, index, value)?;
+        index += 2;
+    }
+
+    Ok(parsed)
+}
 
 /// Declares where graph data should be read from.
 ///
@@ -66,14 +250,14 @@ use crate::algorithms::algorithm::Algorithms;
 /// ```rust
 /// use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
 ///
-/// // The current parser reads input-origin values from `--algo`.
+/// // Input origin is read from `--origin` when provided.
 /// let args = vec![
 ///     "pathfinder",
 ///     "--start",
 ///     "A",
 ///     "--end",
 ///     "B",
-///     "--algo",
+///     "--origin",
 ///     "cmd-line",
 /// ]
 /// .into_iter()
@@ -83,7 +267,7 @@ use crate::algorithms::algorithm::Algorithms;
 /// let config = AppConfig::setup_config(args).unwrap();
 /// assert!(matches!(config.data_input, InputOrigin::CommandLine));
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InputOrigin {
     /// Use file-based data input.
     File,
@@ -198,14 +382,24 @@ impl AppConfig {
     /// # Returns
     ///
     /// - `Ok(AppConfig)` when required information is present.
-    /// - `Err(SetupProcessError)` when required information is missing.
+    /// - `Err(ConfigParseError)` when parsing or validation fails.
     ///
     /// # Errors
     ///
     /// Returns an error if:
     /// - fewer than four arguments are provided,
-    /// - `--start` is missing,
-    /// - `--end` is missing.
+    /// - required flags are missing,
+    /// - a known flag is missing a value,
+    /// - unknown or duplicate flags are provided,
+    /// - or unexpected non-flag tokens appear.
+    ///
+    /// Concrete variant mapping:
+    /// - [`ConfigParseError::TooFewArguments`]
+    /// - [`ConfigParseError::MissingRequiredFlag`]
+    /// - [`ConfigParseError::MissingValueForFlag`]
+    /// - [`ConfigParseError::UnknownFlag`]
+    /// - [`ConfigParseError::DuplicateFlag`]
+    /// - [`ConfigParseError::UnexpectedArgument`]
     ///
     /// # Examples
     ///
@@ -252,234 +446,93 @@ impl AppConfig {
     /// let result = AppConfig::setup_config(args);
     /// assert!(result.is_err());
     /// ```
-    pub fn setup_config(args: Vec<String>) -> Result<Self, SetupProcessError> {
-        if args.len() < 4 {
-            return Err(SetupProcessError::new(
-                "Not enough arguments passed! ('pathfinder [ --origin <file / cmd-line> --graph-file <path_to_file> --algo <algorithm_name>] --start <node> --end <node>')".to_string(),
-            ));
+    ///
+    /// Failed parsing because of an unknown flag:
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::AppConfig;
+    /// use shortest_path_finder::error::config_error::ConfigParseError;
+    ///
+    /// let args = vec![
+    ///     "pathfinder",
+    ///     "--whoops",
+    ///     "x",
+    ///     "--start",
+    ///     "A",
+    ///     "--end",
+    ///     "B",
+    /// ]
+    /// .into_iter()
+    /// .map(String::from)
+    /// .collect();
+    ///
+    /// let err = AppConfig::setup_config(args).expect_err("unknown flag should fail");
+    /// assert!(matches!(err, ConfigParseError::UnknownFlag { .. }));
+    /// ```
+    pub fn setup_config(args: Vec<String>) -> Result<Self, ConfigParseError> {
+        if args.len() < MIN_ARGUMENT_COUNT {
+            return Err(ConfigParseError::TooFewArguments {
+                provided: args.len(),
+                minimum: MIN_ARGUMENT_COUNT,
+            });
         }
-        // get all data and settings
-        let file_path = AppConfig::retrieve_file_path(&args);
-        let algorithm = AppConfig::retrieve_algorithm(&args);
-        let data_input = AppConfig::retrieve_data_input(&args);
 
-        // make sure 2 two 'start' and 'end' nodes have been passed
-        let start_node_id: String = match AppConfig::retrieve_node(&args, true) {
-            Some(node) => node,
-            None => {
-                return Err(SetupProcessError::new(
-                    "A start node haven't been specified! ('--start A')".to_string(),
-                ));
-            }
-        };
+        let parsed = parse_cli_values(&args)?;
+        let file_path = parsed
+            .graph_file_value()
+            .unwrap_or_else(|| DEFAULT_GRAPH_FILE.to_string());
+        let algorithm_token = parsed.algorithm_value();
+        let algorithm = AppConfig::retrieve_algorithm(algorithm_token.as_deref());
+        let data_input = AppConfig::retrieve_data_input(&parsed, algorithm_token.as_deref());
 
-        let end_node_id: String = match AppConfig::retrieve_node(&args, false) {
-            Some(node) => node,
-            None => {
-                return Err(SetupProcessError::new(
-                    "A end node haven't been specified! ('--end B')".to_string(),
-                ));
-            }
-        };
+        let start_node_id = parsed
+            .start_value()
+            .ok_or(ConfigParseError::MissingRequiredFlag { flag: "--start" })?;
+        let end_node_id = parsed
+            .end_value()
+            .ok_or(ConfigParseError::MissingRequiredFlag { flag: "--end" })?;
 
-        Ok(AppConfig {
+        Ok(Self {
             file_path,
-            algorithm,
-            data_input,
             start_node_id,
             end_node_id,
+            algorithm,
+            data_input,
         })
     }
 
-    /// Extracts the graph file path from CLI arguments.
+    /// Converts optional algorithm text into a concrete [`Algorithms`] value.
     ///
-    /// # Parameters
-    ///
-    /// - `args`: immutable argument vector slice.
-    ///
-    /// # Returns
-    ///
-    /// - Value after `--graph-file` if present and non-empty.
-    /// - `"graph.txt"` fallback if no valid flag/value pair is present.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `--graph-file` appears as the last argument without a value.
-    fn retrieve_file_path(args: &[String]) -> String {
-        for (i, arg) in args.iter().enumerate() {
-            if arg == "--graph-file" && !args[i + 1].is_empty() {
-                return args[i + 1].clone();
-            }
-        }
-        "graph.txt".to_string()
+    /// Falls back to [`Algorithms::Dijkstra`] when the algorithm flag is not
+    /// provided.
+    fn retrieve_algorithm(raw_algorithm: Option<&str>) -> Algorithms {
+        raw_algorithm
+            .map(Algorithms::get_from_string)
+            .unwrap_or(Algorithms::Dijkstra)
     }
 
-    /// Extracts either the start or end node identifier from CLI arguments.
+    /// Resolves input origin with compatibility fallback.
     ///
-    /// # Parameters
-    ///
-    /// - `args`: immutable argument vector slice.
-    /// - `is_start_node_requested`: `true` for `--start`, `false` for `--end`.
-    ///
-    /// # Returns
-    ///
-    /// - `Some(node_id)` when the requested flag exists and contains a value.
-    /// - `None` when the flag is missing or value is empty.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the requested flag appears as the last argument without a value.
-    fn retrieve_node(args: &[String], is_start_node_requested: bool) -> Option<String> {
-        let flag = if is_start_node_requested {
-            "--start"
-        } else {
-            "--end"
-        };
-        for (i, arg) in args.iter().enumerate() {
-            if arg == flag && !args[i + 1].is_empty() {
-                return Some(args[i + 1].clone());
-            }
+    /// Resolution order:
+    /// 1. `--origin` value,
+    /// 2. legacy `--algo` values `file`/`cmd-line`,
+    /// 3. [`InputOrigin::File`] default.
+    fn retrieve_data_input(parsed: &ParsedCliValues, raw_algorithm: Option<&str>) -> InputOrigin {
+        if let Some(origin) = parsed.origin_value() {
+            return InputOrigin::get_from_string(&origin);
         }
-        None
-    }
 
-    /// Extracts algorithm selection from CLI arguments.
-    ///
-    /// # Parameters
-    ///
-    /// - `args`: immutable argument vector slice.
-    ///
-    /// # Returns
-    ///
-    /// - Parsed algorithm from `--algo`.
-    /// - [`Algorithms::Dijkstra`] fallback if no valid `--algo` value exists.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `--algo` appears as the last argument without a value.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::Algorithms;
-    /// use shortest_path_finder::cmd_line::app_config::AppConfig;
-    ///
-    /// let args = vec![
-    ///     "pathfinder",
-    ///     "--start",
-    ///     "A",
-    ///     "--end",
-    ///     "B",
-    ///     "--algo",
-    ///     "AStar",
-    /// ]
-    /// .into_iter()
-    /// .map(String::from)
-    /// .collect();
-    ///
-    /// let config = AppConfig::setup_config(args).unwrap();
-    /// assert!(matches!(config.algorithm, Algorithms::AStar));
-    /// ```
-    fn retrieve_algorithm(args: &[String]) -> Algorithms {
-        for (i, arg) in args.iter().enumerate() {
-            if arg == "--algo" && !args[i + 1].is_empty() {
-                return Algorithms::get_from_string(&args[i + 1]);
-            }
+        // Keep backward compatibility for existing callers that pass
+        // `--algo cmd-line` or `--algo file` as origin markers.
+        if let Some(algo_token) = raw_algorithm {
+            return InputOrigin::get_from_string(algo_token);
         }
-        Algorithms::Dijkstra
-    }
 
-    /// Extracts input-origin selection from CLI arguments.
-    ///
-    /// # Compatibility behavior
-    ///
-    /// This method currently looks at `--algo` instead of `--origin`.
-    /// The behavior is intentionally preserved to avoid changing runtime logic.
-    ///
-    /// # Parameters
-    ///
-    /// - `args`: immutable argument vector slice.
-    ///
-    /// # Returns
-    ///
-    /// Parsed [`InputOrigin`] from the value behind `--algo`, or
-    /// [`InputOrigin::File`] as fallback.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `--algo` appears as the last argument without a value.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
-    ///
-    /// let args = vec![
-    ///     "pathfinder",
-    ///     "--start",
-    ///     "A",
-    ///     "--end",
-    ///     "B",
-    ///     "--algo",
-    ///     "cmd-line",
-    /// ]
-    /// .into_iter()
-    /// .map(String::from)
-    /// .collect();
-    ///
-    /// let config = AppConfig::setup_config(args).unwrap();
-    /// assert!(matches!(config.data_input, InputOrigin::CommandLine));
-    /// ```
-    fn retrieve_data_input(args: &[String]) -> InputOrigin {
-        for (i, arg) in args.iter().enumerate() {
-            if arg == "--algo" && !args[i + 1].is_empty() {
-                return InputOrigin::get_from_string(&args[i + 1]);
-            }
-        }
         InputOrigin::File
     }
 }
 
-/// Error returned when setup cannot build a valid [`AppConfig`].
+/// Compatibility alias for previous naming in benches/docs.
 ///
-/// # Fields
-///
-/// - `message`: human-readable explanation of the setup failure.
-///
-/// # Example
-///
-/// ```rust
-/// use shortest_path_finder::cmd_line::app_config::SetupProcessError;
-///
-/// let err = SetupProcessError::new("missing --start".to_string());
-/// assert_eq!(err.message, "missing --start");
-/// ```
-#[derive(Debug)]
-pub struct SetupProcessError {
-    /// Detailed error description for display/logging.
-    pub message: String,
-}
-
-impl SetupProcessError {
-    /// Constructs a new [`SetupProcessError`] from a text message.
-    ///
-    /// # Parameters
-    ///
-    /// - `message`: detailed setup failure explanation.
-    ///
-    /// # Returns
-    ///
-    /// A new [`SetupProcessError`] value.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::cmd_line::app_config::SetupProcessError;
-    ///
-    /// let error = SetupProcessError::new("invalid CLI arguments".to_string());
-    /// assert_eq!(error.message, "invalid CLI arguments");
-    /// ```
-    pub fn new(message: String) -> Self {
-        Self { message }
-    }
-}
+/// New code should use [`ConfigParseError`] directly.
+pub type SetupProcessError = ConfigParseError;

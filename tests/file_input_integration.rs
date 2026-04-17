@@ -83,7 +83,7 @@ fn parser_rejects_unknown_graph_header() {
         Err(err) => err,
     };
 
-    assert!(err.to_string().contains("Couldn't convert the first line"));
+    assert!(err.to_string().contains("Invalid graph header"));
 }
 
 #[test]
@@ -109,5 +109,36 @@ fn parser_rejects_invalid_line_syntax() {
         Err(err) => err,
     };
 
-    assert!(err.to_string().contains("Invalid line syntax"));
+    let message = err.to_string();
+    assert!(message.contains("line 2"));
+    assert!(message.contains("Expected directed syntax"));
+}
+
+#[test]
+fn parser_ignores_whitespace_only_lines() {
+    let file = write_temp_graph("D\nA->B:4\n   \n\t\nB->C:2\n");
+    let path = file.path().to_string_lossy().into_owned();
+
+    let result = retrieve_graph_data_from_file(&path)
+        .expect("whitespace-only lines should be skipped during parsing");
+
+    let graph = result.directed_graph.expect("directed graph must exist");
+    assert_eq!(graph.get_all_nodes().len(), 3);
+    assert_eq!(graph.edges.len(), 2);
+}
+
+#[test]
+fn parser_rejects_prefixed_graph_header() {
+    let file = write_temp_graph("D_extra\nA->B:4\n");
+    let path = file.path().to_string_lossy().into_owned();
+
+    let err = match retrieve_graph_data_from_file(&path) {
+        Ok(_) => panic!("prefixed header should be invalid"),
+        Err(err) => err,
+    };
+
+    assert!(
+        err.to_string()
+            .contains("Expected exactly one of: D, UN, TD")
+    );
 }

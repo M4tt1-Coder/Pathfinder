@@ -1,5 +1,23 @@
+//! Benchmarks for command-line configuration parsing components.
+//!
+//! # Overview
+//!
+//! This target benchmarks creation and parsing behavior for:
+//! - `InputOrigin` conversion,
+//! - `AppConfig` setup across argument sets,
+//! - `ConfigParseError` construction.
+//!
+//! # Run
+//!
+//! ```text
+//! cargo bench --bench pathfinder_cmd_line
+//! ```
+
 use divan::{Bencher, bench};
-use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin, SetupProcessError};
+use shortest_path_finder::{
+    cmd_line::app_config::{AppConfig, InputOrigin},
+    error::config_error::ConfigParseError,
+};
 
 fn main() {
     divan::main();
@@ -40,9 +58,9 @@ fn create_app_config_instance(args: &Vec<&str>) {
     let _config = AppConfig::setup_config(args_string).unwrap();
 }
 
-// ----- Benchmarks 'SetupProcessError' struct -----
+// ----- Benchmarks 'ConfigParseError' enum -----
 
 #[bench]
 fn create_setup_process_error_instance() {
-    let _err = SetupProcessError::new("Some error message!".to_string());
+    let _err = ConfigParseError::MissingRequiredFlag { flag: "--start" };
 }

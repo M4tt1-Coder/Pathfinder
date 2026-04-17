@@ -1,17 +1,33 @@
-//! Utility functions for graph algorithms and data structures.
+//! Internal helper utilities used by the A* implementation.
 //!
-//! This module provides various helper functions to facilitate operations on graphs,
-//! such as initializing cost maps, heuristic calculations, path reconstructions, and more.
+//! # Overview
 //!
-//! Functions included are designed to support algorithms like A*, Dijkstra, and other graph traversals.
+//! This module currently provides two core helpers:
+//! - [`prepare_g_cost_map`]: initializes the per-node $g(n)$ map.
+//! - [`determine_path_cost`]: reconstructs path and total cost from visited
+//!   queue elements after search completion.
 //!
-//! # Dependencies
-//! - Rust standard library: `std::collections::HashMap`
-//! - Custom traits and types from your crate (`Graph`, `GraphNode`, `NumericDatatype`, etc.)
+//! # Intended Scope
 //!
-//! # Usage
-//! Import the functions as needed and call them with your graph structures and parameters.
-//! These utilities help streamline common graph operations and improve code modularity.
+//! Functions in this module are public for testability and composability, but
+//! they are designed as algorithm-internal building blocks rather than stable
+//! high-level APIs.
+//!
+//! # Usage Example
+//!
+//! ```ignore
+//! use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
+//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//!
+//! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+//! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+//! let costs = prepare_g_cost_map(&graph, "A");
+//!
+//! assert_eq!(costs["A"], 0.0_f32);
+//! assert_eq!(costs["B"], f32::MAX);
+//! ```
 
 use std::collections::HashMap;
 
@@ -22,16 +38,37 @@ use crate::{
     weight_types::numeric_datatype::NumericDatatype,
 };
 
-/// Prepares the initial G-cost map for all nodes in the graph.
+/// Prepares the initial `g(n)` map for A* processing.
 ///
-/// Sets the start node's G-cost to zero and all others to the maximum value.
+/// # Behavior
 ///
-/// # Arguments
-/// - `graph`: Reference to the graph containing nodes.
-/// - `start_node_id`: The ID of the start node as a string slice.
+/// - The node with ID `start_node_id` receives `ND::zero()`.
+/// - Every other node receives `ND::max_value()`.
+///
+/// # Parameters
+///
+/// - `graph`: graph whose nodes should be initialized.
+/// - `start_node_id`: start-node identifier.
 ///
 /// # Returns
-/// - A `HashMap` mapping node IDs (`String`) to their G-cost (`ND`).
+///
+/// Map from node ID to initialized g-cost.
+///
+/// # Examples
+///
+/// ```ignore
+/// use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
+/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+///
+/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+/// let b = TwoDimensionalNode::new(2, 0, "B".to_string()).unwrap();
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+///
+/// let g_costs = prepare_g_cost_map(&graph, "A");
+/// assert_eq!(g_costs["A"], 0.0_f32);
+/// assert_eq!(g_costs["B"], f32::MAX);
+/// ```
 pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
     graph: &G,
     start_node_id: &str,
@@ -54,37 +91,53 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
     g_cost_map
 }
 
-/// Determines the total path and cost from a sequence of visited nodes in an A* search.
+/// Reconstructs path and total cost from visited A* queue elements.
 ///
-/// This function reconstructs the path from the goal node back to the start node by
-/// following the chain of predecessors stored in each node. It also calculates the
-/// total cost (distance) of this path.
+/// # Reconstruction Model
 ///
-/// # Arguments
-/// - `visited_nodes`: A vector of `AStarQueueElement` representing the nodes visited during the search,
-///   typically the contents of the closed set or the sequence of expanded nodes.
+/// The function expects the destination node to be the last entry in
+/// `visited_nodes`. It then follows predecessor references backwards until the
+/// start node is reached.
+///
+/// # Parameters
+///
+/// - `visited_nodes`: expanded queue elements, typically the closed set in
+///   visit order.
 ///
 /// # Returns
-/// - `Ok((path, total_cost))`: A tuple containing the vector of nodes representing the path from start to goal,
-///   and the total cost of this path.
-/// - `Err(AStarExecutionError)`: If a predecessor is not found in the visited nodes during reconstruction,
-///   indicating an inconsistency in the search data.
 ///
-/// # Type Parameters
-/// - `ND`: A type that implements `NumericDatatype`, representing the cost type (e.g., `f64`, `i32`).
-/// - `N`: A type that implements `CoordinatesNode<CoordinateType = ND>`, representing nodes in the graph.
+/// - `Ok((path, total_cost))` with nodes ordered start -> destination.
+/// - `Err(AStarExecutionError)` if predecessor links are inconsistent.
 ///
-/// # Example
+/// # Examples
+///
 /// ```ignore
-/// // This helper is used internally by the A* implementation once
-/// // the visited queue has been populated during search execution.
-/// let (path, cost) = determine_path_cost(visited_nodes).unwrap();
+/// use shortest_path_finder::algorithms::a_star_algorithm::{
+///     a_star::AStarQueueElement,
+///     utils::determine_path_cost,
+/// };
+/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+///
+/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+/// let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
+///
+/// let visited = vec![
+///     AStarQueueElement::new(&a, 0_i32, 0_i32, None),
+///     AStarQueueElement::new(&b, 5_i32, 0_i32, Some(&a)),
+/// ];
+///
+/// let (path, cost) = determine_path_cost(visited).unwrap();
+/// assert_eq!(cost, 5_i32);
+/// assert_eq!(path.len(), 2);
+/// assert_eq!(path[0].get_id(), "A");
+/// assert_eq!(path[1].get_id(), "B");
 /// ```
-pub fn determine_path_cost<ND: NumericDatatype, N: CoordinatesNode<CoordinateType = ND>>(
-    visited_nodes: Vec<AStarQueueElement<ND, N>>,
-) -> Result<(Vec<N>, ND), AStarExecutionError> {
+pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
+    visited_nodes: Vec<AStarQueueElement<WD, N>>,
+) -> Result<(Vec<N>, WD), AStarExecutionError> {
     let mut path: Vec<N> = Vec::new();
-    let mut distance = ND::zero();
+    let mut distance = WD::zero();
     if let Some(visited_node) = visited_nodes.last() {
         let mut current_node = visited_node;
         distance = current_node.get_g_cost();
