@@ -59,8 +59,6 @@ use shortest_path_finder::{
 // TODO: Refactor code -> check if in some cases references are better then cloning (if possible),
 // apply best practices, apply better error handling -> for each file indiviually
 
-// TODO: 'A*' -> benchmark it against Dijkstra's algorithm
-
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
 // way, the user can choose which features to include in their project and which not (e.g. if they
