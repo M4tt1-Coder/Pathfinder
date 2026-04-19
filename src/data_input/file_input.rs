@@ -430,11 +430,11 @@ fn convert_line_to_graph_data(
             if initial_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);
             }
-            let first_node = TwoDimensionalNode::from_str(initial_split_results[0].trim())?;
+            let first_node = TwoDimensionalNode::<i32>::from_str(initial_split_results[0].trim())?;
             // ___________________________
             // split the second node and weight
             // create nodes and weight values and return them
-            let second_node = TwoDimensionalNode::from_str(initial_split_results[1].trim())?;
+            let second_node = TwoDimensionalNode::<i32>::from_str(initial_split_results[1].trim())?;
             // return the nodes and weight values
             Ok((
                 NodeType::TwoDimensionalNode(first_node),

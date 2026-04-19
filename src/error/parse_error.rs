@@ -23,7 +23,7 @@
 //!
 //! - [`ParseError::MissingColon`]: Input line does not contain exactly one colon separating node id and coordinates.
 //! - [`ParseError::InvalidCoordinates`]: Coordinates are not two comma-separated values.
-//! - [`ParseError::InvalidInteger`]: Coordinates are not valid integers.
+//! - [`ParseError::InvalidInteger`]: Coordinates are not valid numeric values for the selected coordinate datatype.
 //! - [`ParseError::InvalidWeightInteger`]: Edge weight token is not a valid integer.
 //! - [`ParseError::EmptyId`]: Node id is empty.
 //! - [`ParseError::NodeConstructionFailed`]: Node construction failed due to internal validation.
@@ -51,9 +51,10 @@ pub enum ParseError {
     ///
     /// Expected format: `<x>,<y>` (e.g., `1,2`)
     InvalidCoordinates,
-    /// The x or y coordinate could not be parsed as an integer.
+    /// The x or y coordinate could not be parsed as a numeric value.
     ///
-    /// This occurs if either coordinate is not a valid integer value.
+    /// This occurs if either coordinate is not a valid value for the selected
+    /// coordinate datatype of the node being parsed.
     InvalidInteger,
     /// The edge weight token could not be parsed as an integer.
     ///
@@ -98,9 +99,11 @@ impl fmt::Display for ParseError {
                 "Input must contain exactly one colon separating id and coordinates"
             ),
             ParseError::InvalidCoordinates => {
-                write!(f, "Coordinates must be two comma-separated integers")
+                write!(f, "Coordinates must be two comma-separated values")
             }
-            ParseError::InvalidInteger => write!(f, "Coordinates must be valid integers"),
+            ParseError::InvalidInteger => {
+                write!(f, "Coordinates must be valid numeric values")
+            }
             ParseError::InvalidWeightInteger => {
                 write!(f, "Edge weight must be a valid integer")
             }

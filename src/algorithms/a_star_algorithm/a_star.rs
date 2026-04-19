@@ -63,7 +63,9 @@ use crate::{
         algorithm::{Algorithm, SearchResult},
     },
     graphs::graph::Graph,
-    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    nodes::trait_decl::{
+        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
+    },
     weight_types::numeric_datatype::NumericDatatype,
 };
 
