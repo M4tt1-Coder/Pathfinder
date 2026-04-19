@@ -6,10 +6,11 @@
 use shortest_path_finder::{
     graphs::{
         directed::{DirectedEdge, DirectedGraph},
-        graph::Graph,
+        graph::{Graph, GraphNode},
+        two_dimensional_coordinate_graph::{TwoDimensionalCoordinateGraph, TwoDimensionalEdge},
         undirected::{UndirectedEdge, UndirectedGraph},
     },
-    nodes::default_node::DefaultNode,
+    nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode},
 };
 
 fn node(id: &str) -> DefaultNode {
@@ -127,4 +128,45 @@ fn undirected_graph_neighbors_include_both_directions() {
     neighbors.sort_by(|left, right| left.0.cmp(&right.0));
 
     assert_eq!(neighbors, vec![("B".to_string(), 4), ("C".to_string(), 6)]);
+}
+
+#[test]
+fn two_dimensional_graph_supports_f32_coordinates_and_computes_edge_weight() {
+    let a = TwoDimensionalNode::<f32>::new(0.0, 0.0, "A".to_string())
+        .expect("node A construction should succeed");
+    let b = TwoDimensionalNode::<f32>::new(3.0, 4.0, "B".to_string())
+        .expect("node B construction should succeed");
+
+    let mut graph = TwoDimensionalCoordinateGraph::<f32>::new(vec![a.clone(), b.clone()], vec![]);
+    let edge = TwoDimensionalEdge::new(a, b);
+
+    assert!((edge.get_weight() - 5.0).abs() < 1e-6);
+    assert!(graph.insert_edge(edge).is_none());
+
+    let start = graph
+        .get_node_by_id("A")
+        .expect("graph should contain node A");
+    let neighbors: Vec<(String, f32)> = graph
+        .neighbors(start)
+        .map(|(node, weight)| (node.get_id().to_string(), weight))
+        .collect();
+
+    assert_eq!(neighbors.len(), 1);
+    assert_eq!(neighbors[0].0, "B");
+    assert!((neighbors[0].1 - 5.0).abs() < 1e-6);
+}
+
+#[test]
+fn two_dimensional_graph_rejects_duplicate_coordinates_even_with_different_ids() {
+    let mut graph = TwoDimensionalCoordinateGraph::<f32>::default();
+
+    let first = TwoDimensionalNode::<f32>::new(7.0, 11.0, "N1".to_string())
+        .expect("first node construction should succeed");
+    let second = TwoDimensionalNode::<f32>::new(7.0, 11.0, "N2".to_string())
+        .expect("second node construction should succeed");
+
+    graph.insert_node(first);
+    graph.insert_node(second);
+
+    assert_eq!(graph.get_all_nodes().len(), 1);
 }

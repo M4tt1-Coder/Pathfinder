@@ -10,6 +10,19 @@
 //! The graph implements the shared [`Graph`](crate::graphs::graph::Graph)
 //! trait and can be consumed by coordinate-aware algorithms such as A*.
 //!
+//! # Coordinate Type
+//!
+//! All main data structures in this module are generic over coordinate type
+//! `C`, defaulting to `i32`:
+//! - [`TwoDimensionalCoordinateGraph<C>`]
+//! - [`TwoDimensionalEdge<C>`]
+//! - [`TwoDimensionalGraphInsertionError<C>`]
+//!
+//! `C` must implement
+//! [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//! Library users can therefore build coordinate graphs with types such as
+//! `i32`, `f32`, or `u8`.
+//!
 //! # File Abbreviation
 //!
 //! The graph abbreviation used in file input is `TD`.
@@ -28,6 +41,11 @@
 //! let mut graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b.clone()], vec![]);
 //! assert!(graph.insert_edge(TwoDimensionalEdge::new(a, b)).is_none());
 //! assert!(!graph.is_directed());
+//!
+//! let c = TwoDimensionalNode::<f32>::new(0.5, 1.5, "C".to_string()).unwrap();
+//! let d = TwoDimensionalNode::<f32>::new(1.5, 3.0, "D".to_string()).unwrap();
+//! let graph_f32 = TwoDimensionalCoordinateGraph::<f32>::new(vec![c, d], vec![]);
+//! assert_eq!(graph_f32.get_all_nodes().len(), 2);
 //! ```
 
 use std::{error::Error, fmt::Display};
@@ -38,7 +56,8 @@ use uuid::Uuid;
 use crate::{
     graphs::graph::{Graph, GraphEdge, GraphNode},
     nodes::{
-        trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
+        trait_decl::{coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode},
+        two_dimensional_node::TwoDimensionalNode,
     },
 };
 
@@ -53,21 +72,25 @@ use crate::{
 /// - Duplicate nodes are rejected based on coordinates or ID.
 /// - Duplicate edges are rejected in either endpoint order.
 /// - Edge insertion requires both endpoint nodes to already exist.
+///
+/// # Type Parameter
+///
+/// - `C`: coordinate scalar type used by graph nodes, defaulting to `i32`.
 #[derive(Debug, Clone, Default)]
-pub struct TwoDimensionalCoordinateGraph {
+pub struct TwoDimensionalCoordinateGraph<C: CoordinateDatatype = i32> {
     /// ----- Private field -----
     ///
     /// List of 'TwoDimensionalNode' placed in the graph.
-    nodes: Vec<TwoDimensionalNode>,
+    nodes: Vec<TwoDimensionalNode<C>>,
     ///  ----- Private field -----
     ///
     /// All existing edges in the graph.
     ///
     /// Number of edges is bounded by the undirected complete-graph limit.
-    edges: Vec<TwoDimensionalEdge>,
+    edges: Vec<TwoDimensionalEdge<C>>,
 }
 
-impl TwoDimensionalCoordinateGraph {
+impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
     /// Creates a new two-dimensional graph from node and edge vectors.
     ///
     /// # Arguments
@@ -90,17 +113,17 @@ impl TwoDimensionalCoordinateGraph {
     /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
     /// assert_eq!(graph.get_all_nodes().len(), 1);
     /// ```
-    pub fn new(nodes: Vec<TwoDimensionalNode>, edges: Vec<TwoDimensionalEdge>) -> Self {
+    pub fn new(nodes: Vec<TwoDimensionalNode<C>>, edges: Vec<TwoDimensionalEdge<C>>) -> Self {
         Self { nodes, edges }
     }
 }
 
-impl Graph for TwoDimensionalCoordinateGraph {
+impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
     // types
-    type Node = TwoDimensionalNode;
-    type Edge = TwoDimensionalEdge;
+    type Node = TwoDimensionalNode<C>;
+    type Edge = TwoDimensionalEdge<C>;
     type Weight = f32;
-    type InsertionError = TwoDimensionalGraphInsertionError;
+    type InsertionError = TwoDimensionalGraphInsertionError<C>;
 
     // methods
     fn neighbors<'a>(
@@ -214,7 +237,7 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
 }
 
-impl Display for TwoDimensionalCoordinateGraph {
+impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // use template strings to display the nodes and edges in a clear manner
         // nodes
@@ -247,20 +270,20 @@ impl Display for TwoDimensionalCoordinateGraph {
 /// The edge weight is calculated eagerly at construction and cached in the
 /// struct for fast access during pathfinding.
 #[derive(Debug, PartialEq, Clone)]
-pub struct TwoDimensionalEdge {
+pub struct TwoDimensionalEdge<C: CoordinateDatatype = i32> {
     /// Unique identifier of the edge.
     ///
     /// UUID
     id: Uuid,
     /// First endpoint of the edge.
-    pub node_one: TwoDimensionalNode,
+    pub node_one: TwoDimensionalNode<C>,
     /// Second endpoint of the edge.
-    pub node_two: TwoDimensionalNode,
+    pub node_two: TwoDimensionalNode<C>,
     /// Cached weight computed from endpoint coordinates at construction time.
     weight: f32,
 }
 
-impl TwoDimensionalEdge {
+impl<C: CoordinateDatatype> TwoDimensionalEdge<C> {
     /// Creates a new edge and computes its cached weight.
     ///
     /// # Arguments
@@ -283,7 +306,7 @@ impl TwoDimensionalEdge {
     /// let edge = TwoDimensionalEdge::new(a, b);
     /// assert!(edge.get_weight().is_finite());
     /// ```
-    pub fn new(node_one: TwoDimensionalNode, node_two: TwoDimensionalNode) -> Self {
+    pub fn new(node_one: TwoDimensionalNode<C>, node_two: TwoDimensionalNode<C>) -> Self {
         let mut edge: Self = Self {
             id: Uuid::new_v4(),
             node_one,
@@ -322,12 +345,12 @@ impl TwoDimensionalEdge {
     /// # Implementation Detail
     ///
     /// The current implementation computes:
-    /// - `dx = x1 - x2`
-    /// - `dy = y1 - y2`
-    /// - `sqrt(dx.pow(2) + dy.pow(2))`
+    /// - `dx = x1.to_f32() - x2.to_f32()`
+    /// - `dy = y1.to_f32() - y2.to_f32()`
+    /// - `sqrt(dx * dx + dy * dy)`
     ///
-    /// which corresponds to the Euclidean distance formula for integer
-    /// coordinates.
+    /// This corresponds to the Euclidean distance formula and works uniformly
+    /// for all coordinate datatypes implementing [`CoordinateDatatype`].
     ///
     /// # Arguments
     ///
@@ -338,18 +361,16 @@ impl TwoDimensionalEdge {
     /// Computed `f32` weight value used internally by the graph.
     fn retrieve_actual_weight(&self) -> f32 {
         // Euclidean distance: sqrt((x1 - x2)^2 + (y1 - y2)^2).
-        let height = (self.node_one.get_x() - self.node_two.get_x()).pow(2);
-        let width = (self.node_one.get_y() - self.node_two.get_y()).pow(2);
+        let dx = self.node_one.get_x().to_f32() - self.node_two.get_x().to_f32();
+        let dy = self.node_one.get_y().to_f32() - self.node_two.get_y().to_f32();
+        let sum = dx * dx + dy * dy;
 
-        // take the square root of the height and width
-        let temp_sum = (height + width) as f32;
-
-        temp_sum.sqrt()
+        sum.sqrt()
     }
 }
 
 // Implement the 'GraphEdge' trait for the 'TwoDimensionalEdge'
-impl GraphEdge for TwoDimensionalEdge {
+impl<C: CoordinateDatatype> GraphEdge for TwoDimensionalEdge<C> {
     type ID = Uuid;
 
     fn get_id(&self) -> Self::ID {
@@ -357,7 +378,7 @@ impl GraphEdge for TwoDimensionalEdge {
     }
 }
 
-impl Display for TwoDimensionalEdge {
+impl<C: CoordinateDatatype> Display for TwoDimensionalEdge<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -376,17 +397,21 @@ impl Display for TwoDimensionalEdge {
 /// - `message`: human-readable error description.
 /// - `cause_edge`: edge payload that may have caused the error.
 /// - `cause_nodes`: node pair that may have caused the error.
+///
+/// # Type Parameter
+///
+/// - `C`: coordinate scalar type used by node payloads in this error.
 #[derive(Debug)]
-pub struct TwoDimensionalGraphInsertionError {
+pub struct TwoDimensionalGraphInsertionError<C: CoordinateDatatype = i32> {
     /// Detailed description of the error
     pub message: String,
     /// A 'TwoDimensionalEdge' instance which potentially be what caused the error.
-    cause_edge: Option<TwoDimensionalEdge>,
+    cause_edge: Option<TwoDimensionalEdge<C>>,
     /// Two nodes passed when they caused the issue.
-    cause_nodes: Option<[TwoDimensionalNode; 2]>,
+    cause_nodes: Option<[TwoDimensionalNode<C>; 2]>,
 }
 
-impl TwoDimensionalGraphInsertionError {
+impl<C: CoordinateDatatype> TwoDimensionalGraphInsertionError<C> {
     /// Creates a new insertion error value.
     ///
     /// If `message` is empty, a default fallback message is used.
@@ -416,8 +441,8 @@ impl TwoDimensionalGraphInsertionError {
     /// ```
     pub fn new(
         message: String,
-        edge: Option<TwoDimensionalEdge>,
-        nodes: Option<[TwoDimensionalNode; 2]>,
+        edge: Option<TwoDimensionalEdge<C>>,
+        nodes: Option<[TwoDimensionalNode<C>; 2]>,
     ) -> Self {
         // if an empty message was provided -> apply default message BUT log info saying no error
         // message provided
@@ -438,7 +463,7 @@ impl TwoDimensionalGraphInsertionError {
     }
 }
 
-impl Display for TwoDimensionalGraphInsertionError {
+impl<C: CoordinateDatatype> Display for TwoDimensionalGraphInsertionError<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // check if data was passed with the error
         let mut cause_string = String::new();
@@ -454,4 +479,4 @@ impl Display for TwoDimensionalGraphInsertionError {
     }
 }
 
-impl Error for TwoDimensionalGraphInsertionError {}
+impl<C: CoordinateDatatype> Error for TwoDimensionalGraphInsertionError<C> {}

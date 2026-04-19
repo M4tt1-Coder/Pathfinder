@@ -43,6 +43,10 @@
 //! - The first line is consumed for type detection and is not inserted as an edge.
 //! - Two-dimensional file input is parsed and inserted into
 //!   [`TwoDimensionalCoordinateGraph`] in [`generate_graph_from_file`].
+//! - Two-dimensional parsing currently uses
+//!   [`crate::nodes::two_dimensional_node::TwoDimensionalNode<i32>`] and
+//!   therefore produces
+//!   [`crate::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph<i32>`].
 //!
 //! # Usage Example
 //!
@@ -467,7 +471,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
         Ok(FoundGraphType::D)
     } else if header.eq_ignore_ascii_case(&UndirectedGraph::abbreviation()) {
         Ok(FoundGraphType::UN)
-    } else if header.eq_ignore_ascii_case(&TwoDimensionalCoordinateGraph::abbreviation()) {
+    } else if header.eq_ignore_ascii_case(&TwoDimensionalCoordinateGraph::<i32>::abbreviation()) {
         Ok(FoundGraphType::TD)
     } else {
         Err(ParseError::InvalidDataInput(format!(

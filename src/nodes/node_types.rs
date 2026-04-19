@@ -43,9 +43,11 @@ use crate::nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimension
 ///
 /// - [`NodeType::DefaultNode`] is used by directed and undirected graph parsing.
 /// - [`NodeType::TwoDimensionalNode`] is used by two-dimensional coordinate graph parsing.
+///   This parser boundary currently stores the default specialization
+///   [`TwoDimensionalNode<i32>`].
 #[derive(Debug)]
 pub enum NodeType {
-    /// A node with two-dimensional coordinates (e.g., for grid graphs).
+    /// A node with two-dimensional coordinates (`TwoDimensionalNode<i32>` at parser boundaries).
     TwoDimensionalNode(TwoDimensionalNode),
     /// A generic node type, typically identified by a label or ID.
     DefaultNode(DefaultNode),
