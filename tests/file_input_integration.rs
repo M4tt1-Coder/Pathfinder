@@ -7,12 +7,7 @@
 use std::io::Write;
 
 use shortest_path_finder::{
-    data_input::file_input::{
-        retrieve_graph_data_from_file,
-        retrieve_two_dimensional_graph_from_file_with_coordinate_type,
-    },
-    graphs::graph::Graph,
-    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    data_input::file_input::retrieve_graph_data_from_file, graphs::graph::Graph,
 };
 use tempfile::NamedTempFile;
 
@@ -146,43 +141,4 @@ fn parser_rejects_prefixed_graph_header() {
         err.to_string()
             .contains("Expected exactly one of: D, UN, TD")
     );
-}
-
-#[test]
-fn parser_reads_two_dimensional_graph_with_f32_coordinates_via_generic_api() {
-    let file = write_temp_graph("TD\nA:0.5,1.25-B:3.0,4.0\n");
-    let path = file.path().to_string_lossy().into_owned();
-
-    let graph = retrieve_two_dimensional_graph_from_file_with_coordinate_type::<f32>(&path)
-        .expect("generic two-dimensional parsing should succeed");
-
-    assert_eq!(graph.get_all_nodes().len(), 2);
-    let node = graph
-        .get_node_by_id("A")
-        .expect("node A should exist in parsed graph");
-    assert!((node.get_x() - 0.5).abs() < 1e-6);
-    assert!((node.get_y() - 1.25).abs() < 1e-6);
-}
-
-#[test]
-fn generic_two_dimensional_parser_rejects_non_td_header() {
-    let file = write_temp_graph("D\nA->B:1\n");
-    let path = file.path().to_string_lossy().into_owned();
-
-    let err = retrieve_two_dimensional_graph_from_file_with_coordinate_type::<f32>(&path)
-        .expect_err("generic two-dimensional parser should reject non-TD header");
-
-    assert!(err.to_string().contains("Expected 'TD' header"));
-}
-
-#[test]
-fn generic_two_dimensional_parser_rejects_coordinate_type_mismatch() {
-    let file = write_temp_graph("TD\nA:-1,2-B:3,4\n");
-    let path = file.path().to_string_lossy().into_owned();
-
-    let err = retrieve_two_dimensional_graph_from_file_with_coordinate_type::<u8>(&path)
-        .expect_err("u8 parser should reject negative coordinate values");
-
-    let message = err.to_string();
-    assert!(message.contains("Failed to parse line 2"));
 }

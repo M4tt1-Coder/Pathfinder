@@ -497,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "shortest_path_finder"
-version = "0.3.1"
+version = "0.3.0"
 dependencies = [
  "divan",
  "env_logger",

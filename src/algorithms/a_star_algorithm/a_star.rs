@@ -298,7 +298,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
-    /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![], vec![]);
     /// let _a_star = AStar::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {
