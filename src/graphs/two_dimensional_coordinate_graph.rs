@@ -432,7 +432,7 @@ impl<C: CoordinateDatatype> TwoDimensionalGraphInsertionError<C> {
     /// ```rust
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
     ///
-    /// let err = TwoDimensionalGraphInsertionError::new(
+    /// let err = TwoDimensionalGraphInsertionError::<i32>::new(
     ///     "invalid insertion".to_string(),
     ///     None,
     ///     None,

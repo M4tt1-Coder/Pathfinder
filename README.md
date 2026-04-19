@@ -23,7 +23,9 @@ The repository provides:
 - Dijkstra is fully wired in the executable
 - A* is wired for two-dimensional (`TD`) graph execution in the CLI path
 - A* now supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
-- `TwoDimensionalNode`, `TwoDimensionalCoordinateGraph`, and `TwoDimensionalEdge` now support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
+- `TwoDimensionalNode`, `TwoDimensionalCoordinateGraph`, and `TwoDimensionalEdge` now support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`)
+- The default file-input parser (`retrieve_graph_data_from_file`) still uses `i32` coordinates for `TD` graph parsing
+- A dedicated generic file-input API is available for `TD` graphs: `retrieve_two_dimensional_graph_from_file_with_coordinate_type::<C>(...)`
 
 ### Technologies
 

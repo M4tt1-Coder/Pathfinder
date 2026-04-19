@@ -7,7 +7,11 @@
 //! - [`UndirectedGraph`] for undirected, weighted edges,
 //! - [`TwoDimensionalCoordinateGraph`] for two-dimensional coordinate edges.
 //!
-//! The public entrypoint is [`retrieve_graph_data_from_file`].
+//! Public entrypoints:
+//! - [`retrieve_graph_data_from_file`]: legacy/default parser output where `TD`
+//!   coordinates are parsed as `i32`.
+//! - [`retrieve_two_dimensional_graph_from_file_with_coordinate_type`]:
+//!   coordinate-generic parser for `TD` files only.
 //!
 //! # Input Format
 //!
@@ -57,6 +61,18 @@
 //! assert!(parsed.is_ok());
 //! ```
 //!
+//! Generic two-dimensional parsing example:
+//!
+//! ```no_run
+//! use shortest_path_finder::data_input::file_input::
+//!     retrieve_two_dimensional_graph_from_file_with_coordinate_type;
+//!
+//! let parsed = retrieve_two_dimensional_graph_from_file_with_coordinate_type::<f32>(
+//!     "test_files/two_dimensional_graph.txt",
+//! );
+//! assert!(parsed.is_ok());
+//! ```
+//!
 //! The example is marked as `no_run` because it depends on repository-local files at runtime.
 
 use std::{error::Error, fmt, fs, io, path::Path, str::FromStr};
@@ -73,7 +89,9 @@ use crate::{
         undirected::{UndirectedEdge, UndirectedGraph},
     },
     nodes::{
-        default_node::DefaultNode, node_types::NodeType, two_dimensional_node::TwoDimensionalNode,
+        default_node::DefaultNode, node_types::NodeType,
+        trait_decl::coordinate_datatype::CoordinateDatatype,
+        two_dimensional_node::TwoDimensionalNode,
     },
     weight_types::impl_weights::WeightType,
 };
@@ -296,6 +314,57 @@ pub fn retrieve_graph_data_from_file(
     Ok(res)
 }
 
+/// Reads a `TD` graph definition file and parses it using coordinate type `C`.
+///
+/// # Purpose
+///
+/// This function is intended for callers that need two-dimensional file input
+/// with coordinate types other than `i32`, for example `f32`.
+///
+/// # Parameters
+///
+/// - `file_path`: Relative or absolute path to the graph input file.
+///
+/// # Returns
+///
+/// - `Ok(TwoDimensionalCoordinateGraph<C>)` when file reading and parsing
+///   succeed and the header is `TD`.
+/// - `Err(FileInputError)` for I/O failures, non-`TD` headers, or malformed
+///   coordinate lines.
+///
+/// # Errors
+///
+/// Returns:
+/// - [`FileInputError::Io`] when file reading fails.
+/// - [`FileInputError::Parse`] when parsing fails, including non-`TD` headers.
+///
+/// # Examples
+///
+/// ```no_run
+/// use shortest_path_finder::data_input::file_input::
+///     retrieve_two_dimensional_graph_from_file_with_coordinate_type;
+///
+/// let graph = retrieve_two_dimensional_graph_from_file_with_coordinate_type::<f32>(
+///     "test_files/two_dimensional_graph.txt",
+/// );
+/// assert!(graph.is_ok());
+/// ```
+pub fn retrieve_two_dimensional_graph_from_file_with_coordinate_type<C>(
+    file_path: &str,
+) -> Result<TwoDimensionalCoordinateGraph<C>, FileInputError>
+where
+    C: CoordinateDatatype + FromStr,
+{
+    let rel_path = Path::new(file_path);
+
+    let file_content = fs::read_to_string(rel_path).map_err(|source| FileInputError::Io {
+        path: file_path.to_string(),
+        source,
+    })?;
+
+    generate_two_dimensional_graph_from_file::<C>(file_content).map_err(FileInputError::Parse)
+}
+
 // ______________________________________
 
 /// Compiles all regexes required for line-syntax validation.
@@ -316,9 +385,10 @@ fn compile_line_syntax_regexes() -> Result<LineSyntaxRegexes, ParseError> {
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
     let undirected = Regex::new(r"^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$")
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
-    let two_dimensional =
-        Regex::new(r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+-[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$")
-            .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
+    let two_dimensional = Regex::new(
+        r"^[A-Za-z0-9]+:-?[0-9]+(?:\.[0-9]+)?,-?[0-9]+(?:\.[0-9]+)?-[A-Za-z0-9]+:-?[0-9]+(?:\.[0-9]+)?,-?[0-9]+(?:\.[0-9]+)?$",
+    )
+    .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
 
     Ok(LineSyntaxRegexes {
         directed,
@@ -447,6 +517,33 @@ fn convert_line_to_graph_data(
             ))
         }
     }
+}
+
+/// Converts one validated two-dimensional edge line into typed node values.
+///
+/// # Parameters
+///
+/// - `line`: `TD` edge line in `<from>:x,y-<to>:x,y` format.
+///
+/// # Returns
+///
+/// - `Ok((from, to))` with both nodes parsed as [`TwoDimensionalNode<C>`].
+/// - `Err(ParseError)` when tokenization or coordinate parsing fails.
+fn convert_line_to_two_dimensional_nodes<C>(
+    line: &str,
+) -> Result<(TwoDimensionalNode<C>, TwoDimensionalNode<C>), ParseError>
+where
+    C: CoordinateDatatype + FromStr,
+{
+    let initial_split_results: Vec<&str> = line.trim().split('-').collect();
+    if initial_split_results.len() != 2 {
+        return Err(ParseError::InvalidLineSyntax);
+    }
+
+    let first_node = TwoDimensionalNode::<C>::from_str(initial_split_results[0].trim())?;
+    let second_node = TwoDimensionalNode::<C>::from_str(initial_split_results[1].trim())?;
+
+    Ok((first_node, second_node))
 }
 
 /// Detects the graph kind from the first input line.
@@ -731,4 +828,86 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             ))
         }
     }
+}
+
+/// Builds a two-dimensional graph from file text using coordinate type `C`.
+///
+/// # Behavior
+///
+/// - Requires `TD` as first-line header.
+/// - Parses remaining non-empty lines as `<from>:x,y-<to>:x,y`.
+/// - Skips duplicate edges.
+/// - Inserts missing endpoint nodes before edge insertion.
+///
+/// # Errors
+///
+/// Returns [`ParseError`] if:
+/// - input is empty,
+/// - header is not `TD`,
+/// - any line has invalid syntax,
+/// - coordinate parsing into `C` fails,
+/// - graph insertion rejects a parsed edge.
+fn generate_two_dimensional_graph_from_file<C>(
+    lines: String,
+) -> Result<TwoDimensionalCoordinateGraph<C>, ParseError>
+where
+    C: CoordinateDatatype + FromStr,
+{
+    let mut lines_iter = lines.lines();
+    let syntax_regexes = compile_line_syntax_regexes()?;
+
+    let first_line = match lines_iter.next() {
+        Some(line) => line,
+        None => {
+            return Err(ParseError::InvalidDataInput(
+                "The specified file is empty!".to_string(),
+            ));
+        }
+    };
+
+    let detected_graph_type = determine_graph_from_first_line(first_line)?;
+    if detected_graph_type != FoundGraphType::TD {
+        return Err(ParseError::InvalidDataInput(
+            "Expected 'TD' header for two-dimensional coordinate parser.".to_string(),
+        ));
+    }
+
+    let mut graph = TwoDimensionalCoordinateGraph::<C>::new(vec![], vec![]);
+    for (index, raw_line) in lines_iter.enumerate() {
+        let line_number = index + 2;
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        if !validate_line_syntax(line, &FoundGraphType::TD, &syntax_regexes) {
+            return Err(ParseError::InvalidDataInput(format!(
+                "Invalid syntax at line {} ('{}'). {}",
+                line_number,
+                raw_line,
+                expected_syntax_message(&FoundGraphType::TD)
+            )));
+        }
+
+        let (node_a, node_b) = convert_line_to_two_dimensional_nodes::<C>(line).map_err(|err| {
+            ParseError::InvalidDataInput(format!(
+                "Failed to parse line {} ('{}'): {}",
+                line_number, raw_line, err
+            ))
+        })?;
+
+        let two_dimensional_edge = TwoDimensionalEdge::<C>::new(node_a, node_b);
+        if graph.does_edge_already_exist(&two_dimensional_edge) {
+            continue;
+        }
+
+        graph.insert_node(two_dimensional_edge.node_one.clone());
+        graph.insert_node(two_dimensional_edge.node_two.clone());
+
+        if let Some(err) = graph.insert_edge(two_dimensional_edge) {
+            return Err(ParseError::InvalidDataInput(err.message));
+        }
+    }
+
+    Ok(graph)
 }
