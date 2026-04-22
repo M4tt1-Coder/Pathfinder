@@ -24,6 +24,7 @@ The repository provides:
 - A* is wired for two-dimensional (`TD`) graph execution in the CLI path
 - A* now supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
 - `TwoDimensionalNode`, `TwoDimensionalCoordinateGraph`, and `TwoDimensionalEdge` now support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
+- Graph implementations now maintain index-based adjacency lists and edges store endpoint node IDs instead of cloning full node payloads, reducing duplication and improving neighbor lookup efficiency
 
 ### Technologies
 

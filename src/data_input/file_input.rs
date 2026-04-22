@@ -943,14 +943,14 @@ fn generate_two_dimensional_graph_from_file(
             }
         };
 
+        graph.insert_node(node_a.clone());
+        graph.insert_node(node_b.clone());
+
         let two_dimensional_edge = TwoDimensionalEdge::new(node_a, node_b);
         // Skip duplicate edges to keep parser idempotent for repeated lines.
         if graph.does_edge_already_exist(&two_dimensional_edge) {
             continue;
         }
-
-        graph.insert_node(two_dimensional_edge.node_one.clone());
-        graph.insert_node(two_dimensional_edge.node_two.clone());
 
         if let Some(err) = graph.insert_edge(two_dimensional_edge) {
             return Err(ParseError::InvalidDataInput(err.message));
