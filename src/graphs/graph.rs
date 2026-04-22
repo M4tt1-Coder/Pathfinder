@@ -34,11 +34,6 @@ use std::{
     ops::Add,
 };
 
-// TODO: Check for all implementations of the 'Graph' trait if using references for nodes etc. is
-// better than cloning (if possible) and apply it if it is the case. Also, check if there are some
-// cases where using references is better than cloning for the 'GraphWeight' trait and apply it if
-// it is the case.
-
 /// Trait describing the behavior of a graph data structure.
 ///
 /// A graph implementation can be directed or undirected, weighted or unweighted,
