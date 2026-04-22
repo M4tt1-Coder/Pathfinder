@@ -90,11 +90,36 @@ pub struct TwoDimensionalCoordinateGraph<C: CoordinateDatatype = i32> {
 }
 
 impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
+    /// Resolves a node ID to its internal vector index.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: Node identifier.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(index)` when the node is present.
+    /// - `None` when the ID is unknown.
     fn node_index_for_id(&self, id: &str) -> Option<usize> {
         self.node_index_by_id.get(id).copied()
     }
 
+    /// Rebuilds internal lookup and adjacency caches from `nodes` and `edges`.
+    ///
+    /// # Why this matters
+    ///
+    /// `TwoDimensionalCoordinateGraph` stores canonical data in `nodes` and
+    /// `edges`, while `node_index_by_id` and `adjacency` are derived caches for
+    /// fast access. This function refreshes those caches whenever a graph is
+    /// created from pre-populated vectors.
+    ///
+    /// # Behavior
+    ///
+    /// - Re-indexes nodes by ID.
+    /// - Recreates adjacency buckets.
+    /// - Replays each edge bidirectionally (undirected semantics).
     fn rebuild_internal_adjacency(&mut self) {
+        // Build an ID -> index table so node lookups stay O(1).
         self.node_index_by_id = self
             .nodes
             .iter()
@@ -102,9 +127,11 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
             .map(|(index, node)| (node.get_id().to_string(), index))
             .collect();
 
+        // Reset adjacency to one list per node.
         self.adjacency = vec![Vec::new(); self.nodes.len()];
 
         for edge in &self.edges {
+            // Ignore dangling edges that reference missing nodes.
             let Some(node_one_index) = self.node_index_for_id(edge.node_one_id()) else {
                 continue;
             };
@@ -112,6 +139,7 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
                 continue;
             };
 
+            // Coordinate graph edges are undirected, so insert both directions.
             self.adjacency[node_one_index].push((node_two_index, edge.weight));
             self.adjacency[node_two_index].push((node_one_index, edge.weight));
         }
@@ -399,11 +427,26 @@ impl<C: CoordinateDatatype> TwoDimensionalEdge<C> {
         &self.node_two_id
     }
 
-    /// Calculates the edge weight from endpoint coordinate deltas.
+    /// Calculates edge weight using Euclidean distance between endpoints.
+    ///
+    /// # Formula
+    ///
+    /// For endpoint coordinates $(x_1, y_1)$ and $(x_2, y_2)$, this function
+    /// computes:
+    ///
+    /// $$
+    /// \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2}
+    /// $$
+    ///
+    /// # Returns
+    ///
+    /// Non-negative floating-point weight used by shortest-path algorithms.
     fn calculate_weight(node_one: &TwoDimensionalNode<C>, node_two: &TwoDimensionalNode<C>) -> f32 {
+        // Convert coordinates to f32 to perform geometric calculations.
         let dx = node_one.get_x().to_f32() - node_two.get_x().to_f32();
         let dy = node_one.get_y().to_f32() - node_two.get_y().to_f32();
 
+        // Euclidean norm in 2D.
         (dx * dx + dy * dy).sqrt()
     }
 }

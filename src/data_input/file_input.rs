@@ -534,6 +534,7 @@ fn convert_line_to_graph_data(
             };
 
             // Split into `<from>` and `<to>:<weight>`.
+            // Validation runs before this conversion, so the separator split is deterministic.
             let first_split_results: Vec<&str> = line.trim().split(separator).collect();
             if first_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);
@@ -561,6 +562,7 @@ fn convert_line_to_graph_data(
         }
         FoundGraphType::TD => {
             // Split TD lines into exactly two serialized coordinate nodes.
+            // `-` is unambiguous here because node IDs are restricted to [A-Za-z0-9]+.
             let initial_split_results: Vec<&str> = line.trim().split('-').collect();
             if initial_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);

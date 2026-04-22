@@ -214,6 +214,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
             // get all neighbours and check if ... -> add all neighbours to "open_queue" + add
             // current node to the "closed_queue"
             for (neighbour, weight) in self.graph.neighbors(node) {
+                // Candidate g-cost if we reach `neighbour` through `node`.
                 let tentative_g_cost = g_cost + weight;
                 // get the 'g_cost' of the neighbour from the "open_queue" if it exists
                 // if the neighbour is already in the "open_queue" and the 'g_cost' is higher than
@@ -234,6 +235,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     && let Some(o_g_cost) = g_cost_neighbour
                     && tentative_g_cost < *o_g_cost
                 {
+                    // Remove stale entry so the improved version can be inserted below.
                     open_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
@@ -245,6 +247,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     && let Some(c_g_cost) = g_cost_neighbour
                     && tentative_g_cost < *c_g_cost
                 {
+                    // Re-open nodes from closed set when a strictly better route is found.
                     closed_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
@@ -259,7 +262,10 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
                 if !neighbour_is_in_open_queue && !neighbour_is_in_closed_queue {
+                    // Persist best-known g-cost for future comparisons.
                     g_costs.insert(neighbour.get_id().to_string(), tentative_g_cost);
+
+                    // Insert queue element with updated predecessor and heuristic score.
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,

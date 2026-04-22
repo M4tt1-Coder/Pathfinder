@@ -276,6 +276,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         let mut output: HashMap<String, ShortestDistance<N, W>> = HashMap::new();
         for n in self.graph.get_all_nodes() {
             if n.get_id() == start.get_id() {
+                // Start node begins with distance 0 and itself as predecessor sentinel.
                 output.insert(
                     n.get_id().to_string().clone(),
                     ShortestDistance {
@@ -284,6 +285,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                     },
                 );
             } else {
+                // Unknown paths are initialized with "infinite" distance.
                 output.insert(
                     n.get_id().to_string().clone(),
                     ShortestDistance::new(None, W::max_value()),
@@ -321,6 +323,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         });
 
         while let Some(QueueItem { distance, position }) = queue.pop() {
+            // Skip stale queue entries superseded by a shorter known path.
             if distance
                 > match distances.get(position.get_id()) {
                     Some(distance_data) => distance_data.distance,
@@ -344,6 +347,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                     )));
                 }
 
+                // Standard relaxation: candidate distance via the current node.
                 let updated_distance = distance + weight;
 
                 if updated_distance
@@ -357,12 +361,15 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                         }
                     }
                 {
+                    // Persist better path and predecessor for later reconstruction.
                     distances
                         .entry(neighbour.get_id().to_string().clone())
                         .and_modify(|entry| {
                             entry.distance = updated_distance;
                             entry.previous_node = Some(position.clone())
                         });
+
+                    // Re-enqueue neighbor with its improved tentative distance.
                     queue.push(QueueItem::new(updated_distance, neighbour.clone()));
                 }
             }
@@ -399,12 +406,18 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> QueueItem<N, W> {
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord + Eq> PartialOrd for QueueItem<N, W> {
+    /// Defers partial ordering to [`Ord`] for `BinaryHeap` compatibility.
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
+    /// Orders queue entries by distance.
+    ///
+    /// `BinaryHeap` is a max-heap, so this ordering currently yields largest
+    /// distance first. The implementation compensates by skipping stale entries
+    /// when popped, which preserves correctness for this algorithm.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.distance.cmp(&other.distance)
     }

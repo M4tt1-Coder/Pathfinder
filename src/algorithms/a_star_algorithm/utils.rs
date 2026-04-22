@@ -139,11 +139,17 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
     let mut path: Vec<N> = Vec::new();
     let mut distance = WD::zero();
     if let Some(visited_node) = visited_nodes.last() {
+        // The final closed-set entry is expected to be the destination node.
         let mut current_node = visited_node;
         distance = current_node.get_g_cost();
         path.push(current_node.get_node().clone());
+
+        // Walk predecessor links backwards until the start node is reached.
         while let Some(predecessor) = current_node.get_predecessor() {
             path.push(predecessor.clone());
+
+            // Resolve predecessor metadata from the closed queue so the next
+            // predecessor hop can be followed.
             current_node = match visited_nodes.iter().find(|e| e.get_node() == predecessor) {
                 Some(element) => element,
                 None => {
@@ -154,6 +160,8 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
                 }
             }
         }
+
+        // Reconstruction collected nodes from goal -> start, so reverse it.
         path.reverse();
     }
 

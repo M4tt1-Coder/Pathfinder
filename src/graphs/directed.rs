@@ -198,11 +198,35 @@ impl Graph for DirectedGraph {
 }
 
 impl DirectedGraph {
+    /// Looks up the index of a node by its string identifier.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: Node identifier to resolve.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(index)` when the node exists.
+    /// - `None` when the node ID is unknown.
     fn node_index_for_id(&self, id: &str) -> Option<usize> {
         self.node_index_by_id.get(id).copied()
     }
 
+    /// Rebuilds the internal node index map and adjacency list from edge data.
+    ///
+    /// # Why this exists
+    ///
+    /// Constructors can receive pre-populated `nodes` and `edges`. This helper
+    /// restores derived lookup structures so read operations (`neighbors`,
+    /// `get_node_by_id`) remain fast and consistent.
+    ///
+    /// # Behavior
+    ///
+    /// - Recomputes `node_index_by_id` from current node order.
+    /// - Resets adjacency to one bucket per node.
+    /// - Replays each edge into adjacency, skipping dangling endpoints.
     fn rebuild_internal_adjacency(&mut self) {
+        // Build a stable id -> index lookup table from the current node vector.
         self.node_index_by_id = self
             .nodes
             .iter()
@@ -210,9 +234,11 @@ impl DirectedGraph {
             .map(|(index, node)| (node.get_id().to_string(), index))
             .collect();
 
+        // Pre-allocate one adjacency bucket per node.
         self.adjacency = vec![Vec::new(); self.nodes.len()];
 
         for edge in &self.edges {
+            // Skip invalid edges that reference nodes no longer present.
             let Some(from_index) = self.node_index_for_id(edge.from_id()) else {
                 continue;
             };
@@ -220,6 +246,7 @@ impl DirectedGraph {
                 continue;
             };
 
+            // Directed graph: only one direction gets inserted.
             self.adjacency[from_index].push((to_index, edge.weight));
         }
     }

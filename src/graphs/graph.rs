@@ -34,6 +34,10 @@ use std::{
     ops::Add,
 };
 
+// TODO: Consider removing the edge structs from the graphs since they are now represented by
+// adjacency lists. This would simplify the API and reduce redundancy, but may require reworking
+// some algorithms that currently rely on edge objects.
+
 /// Trait describing the behavior of a graph data structure.
 ///
 /// A graph implementation can be directed or undirected, weighted or unweighted,

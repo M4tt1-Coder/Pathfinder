@@ -175,11 +175,33 @@ impl Graph for UndirectedGraph {
 }
 
 impl UndirectedGraph {
+    /// Looks up the index of a node by its identifier.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: Node identifier to resolve.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(index)` when `id` exists in the graph.
+    /// - `None` otherwise.
     fn node_index_for_id(&self, id: &str) -> Option<usize> {
         self.node_index_by_id.get(id).copied()
     }
 
+    /// Rebuilds lookup and adjacency structures from current nodes and edges.
+    ///
+    /// # Behavior
+    ///
+    /// - Recomputes `node_index_by_id` from the current `nodes` vector.
+    /// - Reinitializes adjacency with one bucket per node.
+    /// - Replays each stored edge in both directions because the graph is
+    ///   undirected.
+    ///
+    /// Edges that reference unknown endpoints are ignored to keep the graph
+    /// internally consistent after partial mutations.
     fn rebuild_internal_adjacency(&mut self) {
+        // Re-index nodes to keep ID lookups in sync with vector positions.
         self.node_index_by_id = self
             .nodes
             .iter()
@@ -187,9 +209,11 @@ impl UndirectedGraph {
             .map(|(index, node)| (node.get_id().to_string(), index))
             .collect();
 
+        // Allocate one neighbor bucket for each node index.
         self.adjacency = vec![Vec::new(); self.nodes.len()];
 
         for edge in &self.edges {
+            // Skip edges that point to nodes no longer available in the graph.
             let Some(a_index) = self.node_index_for_id(edge.a_node_id()) else {
                 continue;
             };
@@ -197,6 +221,7 @@ impl UndirectedGraph {
                 continue;
             };
 
+            // Undirected graph: persist symmetric adjacency entries.
             self.adjacency[a_index].push((b_index, edge.weight));
             self.adjacency[b_index].push((a_index, edge.weight));
         }
