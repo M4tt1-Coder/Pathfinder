@@ -22,7 +22,7 @@
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
-//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
 //! let costs = prepare_g_cost_map(&graph, "A");
 //!
 //! assert_eq!(costs["A"], 0.0_f32);
@@ -63,7 +63,7 @@ use crate::{
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 /// let b = TwoDimensionalNode::new(2, 0, "B".to_string()).unwrap();
-/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
 ///
 /// let g_costs = prepare_g_cost_map(&graph, "A");
 /// assert_eq!(g_costs["A"], 0.0_f32);

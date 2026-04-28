@@ -19,3 +19,5 @@
 //! let origin = InputOrigin::CommandLine;
 //! assert!(matches!(origin, InputOrigin::CommandLine));
 //! ```
+
+// TODO: Implement terminal-based graph input parsing and construction.

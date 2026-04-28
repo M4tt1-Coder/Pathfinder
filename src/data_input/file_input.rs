@@ -100,10 +100,9 @@ use strum_macros::EnumString;
 use crate::{
     error::parse_error::ParseError,
     graphs::{
-        directed::{DirectedEdge, DirectedGraph},
-        graph::Graph,
-        two_dimensional_coordinate_graph::{TwoDimensionalCoordinateGraph, TwoDimensionalEdge},
-        undirected::{UndirectedEdge, UndirectedGraph},
+        directed::DirectedGraph, graph::Graph,
+        two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
+        undirected::UndirectedGraph,
     },
     nodes::{
         default_node::DefaultNode, node_types::NodeType, two_dimensional_node::TwoDimensionalNode,
@@ -768,16 +767,15 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
             }
         };
 
-        let edge = DirectedEdge::new(from.clone(), to.clone(), weight);
+        graph.insert_node(from.clone());
+        graph.insert_node(to.clone());
+
         // Duplicate edges are ignored to keep insertion idempotent.
-        if graph.does_edge_already_exist(&edge) {
+        if graph.does_edge_already_exist(&from, &to) {
             continue;
         }
 
-        graph.insert_node(from);
-        graph.insert_node(to);
-
-        if let Some(err) = graph.insert_edge(edge) {
+        if let Some(err) = graph.insert_edge(&from, &to, Some(weight)) {
             return Err(ParseError::InvalidDataInput(err.message));
         }
     }
@@ -859,16 +857,15 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
             }
         };
 
-        let edge = UndirectedEdge::new(from.clone(), to.clone(), weight);
+        graph.insert_node(from.clone());
+        graph.insert_node(to.clone());
+
         // Skip duplicates to preserve deterministic graph content.
-        if graph.does_edge_already_exist(&edge) {
+        if graph.does_edge_already_exist(&from, &to) {
             continue;
         }
 
-        graph.insert_node(from);
-        graph.insert_node(to);
-
-        if let Some(err) = graph.insert_edge(edge) {
+        if let Some(err) = graph.insert_edge(&from, &to, Some(weight)) {
             return Err(ParseError::InvalidDataInput(err.message));
         }
     }
@@ -891,7 +888,6 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
 ///
 /// - Validates each non-empty line against TD syntax (`A:0,0-B:4,2`).
 /// - Parses both endpoints as `TwoDimensionalNode<i32>`.
-/// - Builds each edge via [`TwoDimensionalEdge::new`].
 /// - Inserts both endpoint nodes before edge insertion.
 /// - Silently skips duplicate edges.
 fn generate_two_dimensional_graph_from_file(
@@ -948,13 +944,12 @@ fn generate_two_dimensional_graph_from_file(
         graph.insert_node(node_a.clone());
         graph.insert_node(node_b.clone());
 
-        let two_dimensional_edge = TwoDimensionalEdge::new(node_a, node_b);
         // Skip duplicate edges to keep parser idempotent for repeated lines.
-        if graph.does_edge_already_exist(&two_dimensional_edge) {
+        if graph.does_edge_already_exist(&node_a, &node_b) {
             continue;
         }
 
-        if let Some(err) = graph.insert_edge(two_dimensional_edge) {
+        if let Some(err) = graph.insert_edge(&node_a, &node_b, None) {
             return Err(ParseError::InvalidDataInput(err.message));
         }
     }

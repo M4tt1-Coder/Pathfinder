@@ -34,7 +34,7 @@
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
 //! let start = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-//! let graph = TwoDimensionalCoordinateGraph::new(vec![start], vec![]);
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![start]);
 //! let algorithm = AStar::new(graph);
 //!
 //! // Minimal valid query where start and destination are identical.
@@ -91,7 +91,7 @@ use crate::{
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
 /// let n = TwoDimensionalNode::new(1, 2, "S".to_string()).unwrap();
-/// let graph = TwoDimensionalCoordinateGraph::new(vec![n], vec![]);
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![n]);
 /// let _algorithm = AStar::new(graph);
 /// ```
 #[derive(Debug)]
@@ -145,7 +145,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);
     /// let a_star = AStar::new(graph);
     ///
     /// let result = a_star.shortest_path("A", "A").unwrap();
@@ -304,7 +304,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
-    /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![]);
     /// let _a_star = AStar::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {

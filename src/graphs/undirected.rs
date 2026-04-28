@@ -4,7 +4,7 @@
 //!
 //! This module provides:
 //! - [`UndirectedGraph`] as a weighted, non-directional graph container,
-//! - [`UndirectedEdge`] as an edge connecting two nodes symmetrically,
+//! - adjacency lists for undirected neighbor traversal,
 //! - [`UndirectedGraphInsertionError`] for insertion failures.
 //!
 //! # File Abbreviation
@@ -15,7 +15,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::graphs::undirected::{UndirectedEdge, UndirectedGraph};
+//! use shortest_path_finder::graphs::undirected::UndirectedGraph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let mut graph = UndirectedGraph::default();
@@ -23,16 +23,14 @@
 //! let b = DefaultNode::new("B".to_string());
 //! graph.insert_node(a.clone());
 //! graph.insert_node(b.clone());
-//! assert!(graph.insert_edge(UndirectedEdge::new(a, b, 2)).is_none());
+//! assert!(graph.insert_edge(&a, &b, Some(2)).is_none());
 //! assert!(!graph.is_directed());
 //! ```
 
 use std::{collections::HashMap, error::Error, fmt::Display};
 
-use uuid::Uuid;
-
 use crate::{
-    graphs::graph::{Graph, GraphEdge, GraphNode},
+    graphs::graph::{Graph, GraphNode},
     nodes::default_node::DefaultNode,
 };
 
@@ -52,8 +50,6 @@ use crate::{
 pub struct UndirectedGraph {
     /// Nodes currently contained in the graph.
     pub nodes: Vec<DefaultNode>,
-    /// Undirected edges currently contained in the graph.
-    pub edges: Vec<UndirectedEdge>,
     /// Fast ID-to-index lookup for node access.
     node_index_by_id: HashMap<String, usize>,
     /// Adjacency list storing `(neighbor_index, weight)` for each node index.
@@ -63,8 +59,6 @@ pub struct UndirectedGraph {
 impl Graph for UndirectedGraph {
     type Node = DefaultNode;
 
-    type Edge = UndirectedEdge;
-
     type Weight = u16;
 
     type InsertionError = UndirectedGraphInsertionError;
@@ -73,14 +67,23 @@ impl Graph for UndirectedGraph {
         self.node_index_by_id.contains_key(node.get_id())
     }
 
-    fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
-        for existing in &self.edges {
-            if (existing.a_node_id == edge.a_node_id && existing.b_node_id == edge.b_node_id)
-                || (existing.b_node_id == edge.a_node_id && existing.a_node_id == edge.b_node_id)
+    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+        if let (Some(from_index), Some(to_index)) = (
+            self.node_index_for_id(from.get_id()),
+            self.node_index_for_id(to.get_id()),
+        ) {
+            // Check for an edge in either direction since the graph is undirected.
+            if self.adjacency[from_index]
+                .iter()
+                .any(|(neighbor_index, _)| *neighbor_index == to_index)
+                && self.adjacency[to_index]
+                    .iter()
+                    .any(|(neighbor_index, _)| *neighbor_index == from_index)
             {
                 return true;
-            }
+            };
         }
+
         false
     }
 
@@ -115,38 +118,57 @@ impl Graph for UndirectedGraph {
         self.adjacency.push(Vec::new());
     }
 
-    fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
-        if self.does_edge_already_exist(&edge) {
+    fn insert_edge(
+        &mut self,
+        from: &Self::Node,
+        to: &Self::Node,
+        weight: Option<Self::Weight>,
+    ) -> Option<Self::InsertionError> {
+        if self.does_edge_already_exist(from, to) {
             return Some(UndirectedGraphInsertionError::new(format!(
-                "The edge {} already exists in the graph!",
-                edge
+                "The edge between '{}' and '{}' already exists in the graph!",
+                from.get_id(),
+                to.get_id()
             )));
         }
 
-        let a_index = match self.node_index_for_id(edge.a_node_id()) {
+        let a_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
                 return Some(UndirectedGraphInsertionError::new(format!(
-                    "The node '{}' in edge {} isn't part of the graph!",
-                    edge.a_node_id(),
-                    edge
-                )));
-            }
-        };
-        let b_index = match self.node_index_for_id(edge.b_node_id()) {
-            Some(index) => index,
-            None => {
-                return Some(UndirectedGraphInsertionError::new(format!(
-                    "The node '{}' in edge {} isn't part of the graph!",
-                    edge.b_node_id(),
-                    edge
+                    "The node '{}' in the edge from {} to {} isn't part of the graph!",
+                    from.get_id(),
+                    from.get_id(),
+                    to.get_id()
                 )));
             }
         };
 
-        self.adjacency[a_index].push((b_index, edge.weight));
-        self.adjacency[b_index].push((a_index, edge.weight));
-        self.edges.push(edge);
+        let b_index = match self.node_index_for_id(to.get_id()) {
+            Some(index) => index,
+            None => {
+                return Some(UndirectedGraphInsertionError::new(format!(
+                    "The node '{}' in the edge from {} to {} isn't part of the graph!",
+                    to.get_id(),
+                    from.get_id(),
+                    to.get_id()
+                )));
+            }
+        };
+
+        let weight = match weight {
+            Some(w) => w,
+            None => {
+                return Some(UndirectedGraphInsertionError::new(format!(
+                    "The edge from {} to {} is missing a weight!",
+                    from.get_id(),
+                    to.get_id()
+                )));
+            }
+        };
+
+        self.adjacency[a_index].push((b_index, weight));
+        self.adjacency[b_index].push((a_index, weight));
 
         None
     }
@@ -155,10 +177,6 @@ impl Graph for UndirectedGraph {
         self.node_index_by_id
             .get(id)
             .and_then(|&index| self.nodes.get(index))
-    }
-
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        self.edges.iter().find(|&e| &e.id == id).map(|v| v as _)
     }
 
     fn get_all_nodes(&self) -> &Vec<DefaultNode> {
@@ -189,18 +207,13 @@ impl UndirectedGraph {
         self.node_index_by_id.get(id).copied()
     }
 
-    /// Rebuilds lookup and adjacency structures from current nodes and edges.
+    /// Rebuilds lookup and adjacency structures from current nodes.
     ///
     /// # Behavior
     ///
     /// - Recomputes `node_index_by_id` from the current `nodes` vector.
     /// - Reinitializes adjacency with one bucket per node.
-    /// - Replays each stored edge in both directions because the graph is
-    ///   undirected.
-    ///
-    /// Edges that reference unknown endpoints are ignored to keep the graph
-    /// internally consistent after partial mutations.
-    fn rebuild_internal_adjacency(&mut self) {
+    fn prepare_internal_adjacency(&mut self) {
         // Re-index nodes to keep ID lookups in sync with vector positions.
         self.node_index_by_id = self
             .nodes
@@ -211,28 +224,13 @@ impl UndirectedGraph {
 
         // Allocate one neighbor bucket for each node index.
         self.adjacency = vec![Vec::new(); self.nodes.len()];
-
-        for edge in &self.edges {
-            // Skip edges that point to nodes no longer available in the graph.
-            let Some(a_index) = self.node_index_for_id(edge.a_node_id()) else {
-                continue;
-            };
-            let Some(b_index) = self.node_index_for_id(edge.b_node_id()) else {
-                continue;
-            };
-
-            // Undirected graph: persist symmetric adjacency entries.
-            self.adjacency[a_index].push((b_index, edge.weight));
-            self.adjacency[b_index].push((a_index, edge.weight));
-        }
     }
 
-    /// Creates a new undirected graph from node and edge vectors.
+    /// Creates a new undirected graph from a node vector.
     ///
     /// # Arguments
     ///
     /// - `nodes`: list of graph nodes.
-    /// - `edges`: list of undirected edges.
     ///
     /// # Returns
     ///
@@ -243,123 +241,42 @@ impl UndirectedGraph {
     /// ```rust
     /// use shortest_path_finder::graphs::undirected::UndirectedGraph;
     ///
-    /// let graph = UndirectedGraph::new(vec![], vec![]);
+    /// let graph = UndirectedGraph::new(vec![]);
     /// assert_eq!(graph.nodes.len(), 0);
-    /// assert_eq!(graph.edges.len(), 0);
+    /// assert_eq!(graph.nodes.len(), 0);
     /// ```
-    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<UndirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>) -> Self {
         let mut graph = Self {
             nodes,
-            edges,
             node_index_by_id: HashMap::new(),
             adjacency: Vec::new(),
         };
-        graph.rebuild_internal_adjacency();
+        graph.prepare_internal_adjacency();
         graph
     }
 }
 
 impl Display for UndirectedGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nodes: {:?}, Edges: {:?}", self.nodes, self.edges)
+        writeln!(f, "UndirectedGraph with {} nodes:", self.nodes.len())?;
+        for node in &self.nodes {
+            writeln!(f, "- Node '{}'", node.get_id())?;
+        }
+        writeln!(f, "Edges:")?;
+        for (index, neighbors) in self.adjacency.iter().enumerate() {
+            let node_id = &self.nodes[index].get_id();
+            for (neighbor_index, weight) in neighbors {
+                let neighbor_id = &self.nodes[*neighbor_index].get_id();
+                writeln!(f, "- {} --({})--> {}", node_id, weight, neighbor_id)?;
+            }
+        }
+        Ok(())
     }
 }
 
 impl Default for UndirectedGraph {
     fn default() -> Self {
-        Self::new(vec![], vec![])
-    }
-}
-
-// ----- Implementation of the 'UndirectedEdge' struct -----
-
-/// Edge connecting two nodes in an undirected graph.
-///
-/// # Semantics
-///
-/// Endpoint order does not change edge meaning: `(A, B)` and `(B, A)` are
-/// treated as equivalent by duplicate checks.
-///
-/// # Fields
-///
-/// - [`UndirectedEdge::a_node_id`]: first endpoint ID.
-/// - [`UndirectedEdge::b_node_id`]: second endpoint ID.
-/// - [`UndirectedEdge::weight`]: traversal cost.
-#[derive(Clone, PartialEq, Debug)]
-pub struct UndirectedEdge {
-    /// First endpoint ID of the edge.
-    pub a_node_id: String,
-    /// Second endpoint ID of the edge.
-    pub b_node_id: String,
-    /// Cost/weight associated with traversing this edge.
-    pub weight: u16,
-    id: Uuid,
-}
-
-impl UndirectedEdge {
-    /// Creates a new undirected edge.
-    ///
-    /// # Parameters
-    ///
-    /// - `a_node`: first endpoint of the edge.
-    /// - `b_node`: second endpoint of the edge.
-    /// - `weight`: edge weight.
-    ///
-    /// # Returns
-    ///
-    /// A new [`UndirectedEdge`] with a generated UUID.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::undirected::UndirectedEdge;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
-    ///
-    /// let edge = UndirectedEdge::new(
-    ///     DefaultNode::new("A".to_string()),
-    ///     DefaultNode::new("B".to_string()),
-    ///     9,
-    /// );
-    ///
-    /// assert_eq!(edge.weight, 9);
-    /// assert_eq!(edge.a_node_id(), "A");
-    /// assert_eq!(edge.b_node_id(), "B");
-    /// ```
-    pub fn new(a_node: DefaultNode, b_node: DefaultNode, weight: u16) -> Self {
-        Self {
-            a_node_id: a_node.id,
-            b_node_id: b_node.id,
-            weight,
-            id: Uuid::new_v4(),
-        }
-    }
-
-    /// Returns the first endpoint ID.
-    pub fn a_node_id(&self) -> &str {
-        &self.a_node_id
-    }
-
-    /// Returns the second endpoint ID.
-    pub fn b_node_id(&self) -> &str {
-        &self.b_node_id
-    }
-}
-
-impl Display for UndirectedEdge {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "\n            Node a: {},\n            Node b: {},\n            weight: {}\n        ",
-            self.a_node_id, self.b_node_id, self.weight
-        )
-    }
-}
-
-impl GraphEdge for UndirectedEdge {
-    type ID = Uuid;
-
-    fn get_id(&self) -> Self::ID {
-        self.id
+        Self::new(vec![])
     }
 }
 

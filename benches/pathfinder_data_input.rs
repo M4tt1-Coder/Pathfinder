@@ -27,7 +27,12 @@ fn main() {
 // ----- Benchmarks for the 'FileInputGraphResult' struct -----
 
 #[bench(
-    args = [(None, None), (Some(UndirectedGraph::new(vec![], vec![])), Some(DirectedGraph::new(vec![],vec![]))), (None, Some(DirectedGraph::new(vec![], vec![]))), (Some(UndirectedGraph::new(vec![], vec![])), None)]
+    args = [
+        (None, None),
+        (Some(UndirectedGraph::new(vec![])), Some(DirectedGraph::new(vec![]))),
+        (None, Some(DirectedGraph::new(vec![]))),
+        (Some(UndirectedGraph::new(vec![])), None)
+    ]
 )]
 fn create_file_input_grap_result(graphs: &(Option<UndirectedGraph>, Option<DirectedGraph>)) {
     let _file_input_graph_result =

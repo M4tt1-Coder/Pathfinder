@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! This module provides a concrete weighted directed graph type:
-//! - [`DirectedGraph`] stores [`DefaultNode`] values and [`DirectedEdge`] edges.
+//! - [`DirectedGraph`] stores [`DefaultNode`] values and adjacency data.
 //! - [`DirectedGraphInsertionError`] reports insertion failures.
 //!
 //! It implements the shared [`Graph`](crate::graphs::graph::Graph) trait and
@@ -16,7 +16,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+//! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
@@ -25,21 +25,20 @@
 //! let b = DefaultNode::new("B".to_string());
 //! graph.insert_node(a.clone());
 //! graph.insert_node(b.clone());
-//! assert!(graph.insert_edge(DirectedEdge::new(a, b, 5)).is_none());
+//! assert!(graph.insert_edge(&a, &b, Some(5)).is_none());
 //! assert!(graph.is_directed());
 //! ```
 
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use log::info;
-use uuid::Uuid;
 
 use crate::{
-    graphs::graph::{Graph, GraphEdge, GraphNode},
+    graphs::graph::{Graph, GraphNode},
     nodes::default_node::DefaultNode,
 };
 
-/// Directed weighted graph using [`DefaultNode`] nodes and [`DirectedEdge`] edges.
+/// Directed weighted graph using [`DefaultNode`] nodes and adjacency lists.
 ///
 /// # File-format marker
 ///
@@ -54,29 +53,24 @@ use crate::{
 ///
 /// # Example
 /// ```
-/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+/// use shortest_path_finder::graphs::directed::DirectedGraph;
+/// use shortest_path_finder::graphs::graph::Graph;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
-/// let graph = DirectedGraph::new(
-///     vec![
-///         DefaultNode::new("A".to_string()),
-///         DefaultNode::new("B".to_string()),
-///     ],
-///     vec![DirectedEdge::new(
-///         DefaultNode::new("A".to_string()),
-///         DefaultNode::new("B".to_string()),
-///         4,
-///     )],
-/// );
+/// let mut graph = DirectedGraph::new(vec![
+///     DefaultNode::new("A".to_string()),
+///     DefaultNode::new("B".to_string()),
+/// ]);
+/// let from = DefaultNode::new("A".to_string());
+/// let to = DefaultNode::new("B".to_string());
+/// graph.insert_edge(&from, &to, Some(4));
 /// assert_eq!(graph.nodes.len(), 2);
-/// assert_eq!(graph.edges.len(), 1);
+/// assert_eq!(graph.neighbors(&from).count(), 1);
 /// ```
 #[derive(Debug, Clone)]
 pub struct DirectedGraph {
     /// All nodes currently contained in the graph.
     pub nodes: Vec<DefaultNode>,
-    /// All directed edges currently contained in the graph.
-    pub edges: Vec<DirectedEdge>,
     /// Fast ID-to-index lookup for node access.
     node_index_by_id: HashMap<String, usize>,
     /// Adjacency list storing `(to_index, weight)` for each source node index.
@@ -87,8 +81,6 @@ impl Graph for DirectedGraph {
     type Node = DefaultNode;
 
     type Weight = u16;
-
-    type Edge = DirectedEdge;
 
     type InsertionError = DirectedGraphInsertionError;
 
@@ -123,59 +115,73 @@ impl Graph for DirectedGraph {
         self.adjacency.push(Vec::new());
     }
 
-    fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
-        if self.does_edge_already_exist(&edge) {
+    fn insert_edge(
+        &mut self,
+        from: &Self::Node,
+        to: &Self::Node,
+        weight: Option<Self::Weight>,
+    ) -> Option<Self::InsertionError> {
+        if self.does_edge_already_exist(from, to) {
             return Some(DirectedGraphInsertionError::new(format!(
-                "The edge {} already exists in the graph!",
-                edge
+                "Edge from '{}' to '{}' already exists!",
+                from.get_id(),
+                to.get_id()
             )));
         }
 
-        let from_index = match self.node_index_for_id(edge.from_id()) {
+        let from_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
                 return Some(DirectedGraphInsertionError::new(format!(
-                    "The source node '{}' in edge {} doesn't exist!",
-                    edge.from_id(),
-                    edge
+                    "The source node '{}' in edge from '{}' to '{}' doesn't exist!",
+                    from.get_id(),
+                    from.get_id(),
+                    to.get_id()
                 )));
             }
         };
-        let to_index = match self.node_index_for_id(edge.to_id()) {
+        let to_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
                 return Some(DirectedGraphInsertionError::new(format!(
-                    "The destination node '{}' in edge {} doesn't exist!",
-                    edge.to_id(),
-                    edge
+                    "The destination node '{}' in edge from '{}' to '{}' doesn't exist!",
+                    to.get_id(),
+                    from.get_id(),
+                    to.get_id()
                 )));
             }
         };
 
-        self.adjacency[from_index].push((to_index, edge.weight));
-        self.edges.push(edge);
+        let weight = match weight {
+            Some(w) => w,
+            None => {
+                return Some(DirectedGraphInsertionError::new(format!(
+                    "Edge from '{}' to '{}' must have a weight!",
+                    from.get_id(),
+                    to.get_id()
+                )));
+            }
+        };
+
+        self.adjacency[from_index].push((to_index, weight));
 
         None
     }
 
-    fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
-        for existing in &self.edges {
-            if existing.from_id == edge.from_id && existing.to_id == edge.to_id {
-                return true;
-            }
+    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+        if let (Some(from_index), Some(to_index)) = (
+            self.node_index_for_id(from.get_id()),
+            self.node_index_for_id(to.get_id()),
+        ) {
+            return self.adjacency[from_index]
+                .iter()
+                .any(|(neighbor_index, _)| *neighbor_index == to_index);
         }
         false
     }
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
         self.node_index_by_id.contains_key(node.get_id())
-    }
-
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        self.edges
-            .iter()
-            .find(|&e| &e.get_id() == id)
-            .map(|v| v as _)
     }
 
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
@@ -212,20 +218,19 @@ impl DirectedGraph {
         self.node_index_by_id.get(id).copied()
     }
 
-    /// Rebuilds the internal node index map and adjacency list from edge data.
+    /// Rebuilds the internal node index map and adjacency list from node data.
     ///
     /// # Why this exists
     ///
-    /// Constructors can receive pre-populated `nodes` and `edges`. This helper
-    /// restores derived lookup structures so read operations (`neighbors`,
-    /// `get_node_by_id`) remain fast and consistent.
+    /// Constructors can receive pre-populated `nodes`. This helper restores
+    /// derived lookup structures so read operations (`neighbors`, `get_node_by_id`)
+    /// remain fast and consistent.
     ///
     /// # Behavior
     ///
     /// - Recomputes `node_index_by_id` from current node order.
     /// - Resets adjacency to one bucket per node.
-    /// - Replays each edge into adjacency, skipping dangling endpoints.
-    fn rebuild_internal_adjacency(&mut self) {
+    fn prepare_internal_adjacency(&mut self) {
         // Build a stable id -> index lookup table from the current node vector.
         self.node_index_by_id = self
             .nodes
@@ -236,27 +241,13 @@ impl DirectedGraph {
 
         // Pre-allocate one adjacency bucket per node.
         self.adjacency = vec![Vec::new(); self.nodes.len()];
-
-        for edge in &self.edges {
-            // Skip invalid edges that reference nodes no longer present.
-            let Some(from_index) = self.node_index_for_id(edge.from_id()) else {
-                continue;
-            };
-            let Some(to_index) = self.node_index_for_id(edge.to_id()) else {
-                continue;
-            };
-
-            // Directed graph: only one direction gets inserted.
-            self.adjacency[from_index].push((to_index, edge.weight));
-        }
     }
 
-    /// Creates a new directed graph from node and edge vectors.
+    /// Creates a new directed graph from a node vector.
     ///
     /// # Parameters
     ///
     /// - `nodes`: initial node list.
-    /// - `edges`: initial directed edge list.
     ///
     /// # Returns
     ///
@@ -267,25 +258,28 @@ impl DirectedGraph {
     /// ```rust
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
     ///
-    /// let graph = DirectedGraph::new(vec![], vec![]);
+    /// let graph = DirectedGraph::new(vec![]);
     /// assert_eq!(graph.nodes.len(), 0);
-    /// assert_eq!(graph.edges.len(), 0);
+    /// assert_eq!(graph.nodes.len(), 0);
     /// ```
-    pub fn new(nodes: Vec<DefaultNode>, edges: Vec<DirectedEdge>) -> Self {
+    pub fn new(nodes: Vec<DefaultNode>) -> Self {
         let mut graph = Self {
             nodes,
-            edges,
             node_index_by_id: HashMap::new(),
             adjacency: Vec::new(),
         };
-        graph.rebuild_internal_adjacency();
+        graph.prepare_internal_adjacency();
         graph
     }
 }
 
 impl Display for DirectedGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nodes: {:?}, Edges: {:?}", self.nodes, self.edges)
+        write!(
+            f,
+            "Nodes: {:?}, Adjacency: {:?}",
+            self.nodes, self.adjacency
+        )
     }
 }
 
@@ -299,101 +293,9 @@ impl Default for DirectedGraph {
     ///
     /// let graph = DirectedGraph::default();
     /// assert!(graph.nodes.is_empty());
-    /// assert!(graph.edges.is_empty());
     /// ```
     fn default() -> Self {
-        Self::new(vec![], vec![])
-    }
-}
-
-// ----- Implementation of the 'DirectedEdge' struct -----
-
-/// Directed edge from one node to another.
-///
-/// # Semantics
-///
-/// An edge `A -> B` is not equivalent to `B -> A`.
-///
-/// # Fields
-///
-/// - [`DirectedEdge::from_id`]: source node ID.
-/// - [`DirectedEdge::to_id`]: destination node ID.
-/// - [`DirectedEdge::weight`]: edge traversal cost.
-#[derive(Clone, PartialEq, Debug)]
-pub struct DirectedEdge {
-    /// Source node ID of the directed edge.
-    pub from_id: String,
-    /// Destination node ID of the directed edge.
-    pub to_id: String,
-    /// Cost/weight associated with traversing this edge.
-    pub weight: u16,
-    id: Uuid,
-}
-
-impl DirectedEdge {
-    /// Creates a new directed edge.
-    ///
-    /// # Parameters
-    ///
-    /// - `from`: edge source node.
-    /// - `to`: edge destination node.
-    /// - `weight`: edge weight.
-    ///
-    /// # Returns
-    ///
-    /// A new [`DirectedEdge`] with a generated UUID.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedEdge;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
-    ///
-    /// let edge = DirectedEdge::new(
-    ///     DefaultNode::new("A".to_string()),
-    ///     DefaultNode::new("B".to_string()),
-    ///     8,
-    /// );
-    ///
-    /// assert_eq!(edge.weight, 8);
-    /// assert_eq!(edge.from_id(), "A");
-    /// assert_eq!(edge.to_id(), "B");
-    /// ```
-    pub fn new(from: DefaultNode, to: DefaultNode, weight: u16) -> Self {
-        Self {
-            from_id: from.id,
-            to_id: to.id,
-            weight,
-            id: Uuid::new_v4(),
-        }
-    }
-
-    /// Returns the source node ID.
-    pub fn from_id(&self) -> &str {
-        &self.from_id
-    }
-
-    /// Returns the destination node ID.
-    pub fn to_id(&self) -> &str {
-        &self.to_id
-    }
-}
-
-impl Display for DirectedEdge {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "\n            from: {},\n            to: {},\n            weight: {}\n        ",
-            self.from_id, self.to_id, self.weight
-        )
-    }
-}
-
-impl GraphEdge for DirectedEdge {
-    type ID = Uuid;
-
-    fn get_id(&self) -> Self::ID {
-        self.id
+        Self::new(vec![])
     }
 }
 

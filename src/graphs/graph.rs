@@ -4,7 +4,6 @@
 //! graph-related algorithms rely on:
 //! - [`Graph`] for graph containers and operations,
 //! - [`GraphNode`] for node identity,
-//! - [`GraphEdge`] for edge identity,
 //! - [`GraphWeight`] for numeric edge weights.
 //!
 //! The traits are designed to support both directed and undirected graphs.
@@ -15,14 +14,14 @@
 //! # Quick Example
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+//! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let a = DefaultNode::new("A".to_string());
 //! let b = DefaultNode::new("B".to_string());
-//! let edge = DirectedEdge::new(a.clone(), b.clone(), 5);
-//! let graph = DirectedGraph::new(vec![a, b], vec![edge]);
+//! let mut graph = DirectedGraph::new(vec![a.clone(), b.clone()]);
+//! graph.insert_edge(&a, &b, Some(5));
 //!
 //! assert!(graph.is_directed());
 //! assert!(graph.is_weighted());
@@ -34,35 +33,29 @@ use std::{
     ops::Add,
 };
 
-// TODO: Consider removing the edge structs from the graphs since they are now represented by
-// adjacency lists. This would simplify the API and reduce redundancy, but may require reworking
-// some algorithms that currently rely on edge objects.
-
 /// Trait describing the behavior of a graph data structure.
 ///
 /// A graph implementation can be directed or undirected, weighted or unweighted,
-/// and can expose custom node/edge types as long as those types satisfy the
-/// associated trait bounds.
+/// and can expose custom node and weight types as long as those types satisfy
+/// the associated trait bounds.
 ///
 /// # Design Notes
 /// - Nodes are represented by [`Graph::Node`] and are identified by stable IDs.
-/// - Edges are represented by [`Graph::Edge`] and carry a weight of type
-///   [`Graph::Weight`].
+/// - Edges are represented implicitly through adjacency lists using the weight
+///   type [`Graph::Weight`].
 /// - Neighbor traversal returns `(neighbor, weight)` pairs.
 ///
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+/// use shortest_path_finder::graphs::directed::DirectedGraph;
 /// use shortest_path_finder::graphs::graph::{Graph, GraphNode};
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
 /// let a = DefaultNode::new("A".to_string());
 /// let b = DefaultNode::new("B".to_string());
-/// let graph = DirectedGraph::new(
-///     vec![a.clone(), b.clone()],
-///     vec![DirectedEdge::new(a, b, 1)],
-/// );
+/// let mut graph = DirectedGraph::new(vec![a.clone(), b.clone()]);
+/// graph.insert_edge(&a, &b, Some(1));
 ///
 /// let node_a = graph.get_node_by_id("A").unwrap();
 /// let neighbors: Vec<_> = graph.neighbors(node_a).collect();
@@ -110,29 +103,6 @@ pub trait Graph {
     /// ```
     type Weight: GraphWeight;
 
-    /// Edge type used by this graph.
-    ///
-    /// Must satisfy [`GraphEdge`] so edge identity can be accessed in a uniform way.
-    ///
-    /// # Example
-    /// ```rust
-    /// use shortest_path_finder::graphs::graph::GraphEdge;
-    ///
-    /// #[derive(Clone, PartialEq)]
-    /// struct Edge {
-    ///     id: u32,
-    /// }
-    ///
-    /// impl GraphEdge for Edge {
-    ///     type ID = u32;
-    ///
-    ///     fn get_id(&self) -> Self::ID {
-    ///         self.id
-    ///     }
-    /// }
-    /// ```
-    type Edge: GraphEdge;
-
     /// Error type used by insertion/mutation operations.
     ///
     /// Should contain enough context to explain why a mutation failed.
@@ -152,19 +122,18 @@ pub trait Graph {
     ///
     /// ```rust
     /// use shortest_path_finder::graphs::{
-    ///     directed::{DirectedEdge, DirectedGraph},
+    ///     directed::DirectedGraph,
     ///     graph::{Graph, GraphNode},
     /// };
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// let graph = DirectedGraph::new(
-    ///     vec![DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string())],
-    ///     vec![DirectedEdge::new(
-    ///         DefaultNode::new("A".to_string()),
-    ///         DefaultNode::new("B".to_string()),
-    ///         6,
-    ///     )],
-    /// );
+    /// let mut graph = DirectedGraph::new(vec![
+    ///     DefaultNode::new("A".to_string()),
+    ///     DefaultNode::new("B".to_string()),
+    /// ]);
+    /// let from = DefaultNode::new("A".to_string());
+    /// let to = DefaultNode::new("B".to_string());
+    /// graph.insert_edge(&from, &to, Some(6));
     ///
     /// let node = DefaultNode::new("A".to_string());
     ///
@@ -189,7 +158,7 @@ pub trait Graph {
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
     /// use shortest_path_finder::graphs::graph::Graph;
     ///
-    /// let graph = DirectedGraph::new(vec![], vec![]);
+    /// let graph = DirectedGraph::new(vec![]);
     /// assert!(graph.is_directed());
     /// ```
     fn is_directed(&self) -> bool;
@@ -209,7 +178,7 @@ pub trait Graph {
     /// use shortest_path_finder::graphs::graph::Graph;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// let mut graph = DirectedGraph::new(vec![], vec![]);
+    /// let mut graph = DirectedGraph::new(vec![]);
     /// graph.insert_node(DefaultNode::new("A".to_string()));
     /// assert!(graph.get_node_by_id("A").is_some());
     /// ```
@@ -225,7 +194,12 @@ pub trait Graph {
     ///
     /// - `None` if insertion succeeded.
     /// - `Some(Self::InsertionError)` if insertion failed.
-    fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError>;
+    fn insert_edge(
+        &mut self,
+        from: &Self::Node,
+        to: &Self::Node,
+        weight: Option<Self::Weight>,
+    ) -> Option<Self::InsertionError>;
 
     /// Checks whether a semantically equivalent edge already exists.
     ///
@@ -236,7 +210,7 @@ pub trait Graph {
     /// # Returns
     ///
     /// `true` if an equivalent edge is already present.
-    fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool;
+    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool;
 
     /// Checks whether a semantically equivalent node already exists.
     ///
@@ -268,23 +242,11 @@ pub trait Graph {
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let node = DefaultNode::new("A".to_string());
-    /// let graph = DirectedGraph::new(vec![node], vec![]);
+    /// let graph = DirectedGraph::new(vec![node]);
     /// assert_eq!(graph.get_node_by_id("A").unwrap().get_id(), "A");
     /// assert!(graph.get_node_by_id("missing").is_none());
     /// ```
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node>;
-
-    /// Retrieves an edge by ID.
-    ///
-    /// # Parameters
-    ///
-    /// - `id`: Edge identifier.
-    ///
-    /// # Returns
-    ///
-    /// - `Some(&Self::Edge)` if found.
-    /// - `None` otherwise.
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge>;
 
     /// Returns all nodes currently contained in the graph.
     ///
@@ -376,40 +338,6 @@ pub trait GraphWeight:
     /// # Returns
     /// The zero value of the implementing type.
     fn zero() -> Self;
-}
-
-/// Trait for graph edges with stable identifiers.
-///
-/// Edges are required to be cloneable and comparable so graph containers can
-/// perform duplicate checks and return references safely.
-///
-/// # Example
-///
-/// ```rust
-/// use shortest_path_finder::graphs::graph::GraphEdge;
-///
-/// #[derive(Clone, PartialEq)]
-/// struct Edge {
-///     id: u64,
-/// }
-///
-/// impl GraphEdge for Edge {
-///     type ID = u64;
-///
-///     fn get_id(&self) -> Self::ID {
-///         self.id
-///     }
-/// }
-///
-/// let edge = Edge { id: 42 };
-/// assert_eq!(edge.get_id(), 42);
-/// ```
-pub trait GraphEdge: Clone + PartialEq {
-    /// Identifier type of the edge.
-    type ID: Eq + PartialEq + Copy;
-
-    /// Returns the edge identifier.
-    fn get_id(&self) -> Self::ID;
 }
 
 /// Trait for node values stored in graph implementations.
