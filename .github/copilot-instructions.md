@@ -40,6 +40,9 @@
 - Existing CI checks only build and test via Cargo.
 - There are benchmark targets under `benches/`, but they are not part of standard CI gating.
 - No dedicated lint workflow is configured in GitHub Actions.
+- Always run all test suites before committing and before finishing a task:
+   - `cargo test --workspace --all-targets --locked`
+   - `cargo test --workspace --doc --locked`
 
 ## Rust documentation requirements
 

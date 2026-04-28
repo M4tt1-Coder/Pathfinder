@@ -263,7 +263,6 @@ pub trait Graph {
     ///
     /// let graph = DirectedGraph::new(
     ///     vec![DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string())],
-    ///     vec![],
     /// );
     /// assert_eq!(graph.get_all_nodes().len(), 2);
     /// ```

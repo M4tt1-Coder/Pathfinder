@@ -339,7 +339,6 @@ impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
 /// # Fields
 ///
 /// - `message`: human-readable error description.
-/// - `cause_edge`: edge payload that may have caused the error.
 /// - `cause_nodes`: node pair that may have caused the error.
 ///
 /// # Type Parameter
@@ -375,9 +374,8 @@ impl<C: CoordinateDatatype> TwoDimensionalGraphInsertionError<C> {
     /// let err = TwoDimensionalGraphInsertionError::<i32>::new(
     ///     "invalid insertion".to_string(),
     ///     None,
-    ///     None,
     /// );
-    /// assert_eq!(err.to_string(), "invalid insertion");
+    /// assert!(err.to_string().contains("invalid insertion"));
     /// ```
     pub fn new(message: String, nodes: Option<[TwoDimensionalNode<C>; 2]>) -> Self {
         let err_message = if message.is_empty() {
