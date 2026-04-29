@@ -153,6 +153,12 @@ impl Graph for DirectedGraph {
             }
         };
 
+        // Allow self-loops with zero weight, even if the graph is weighted.
+        if from_index == to_index {
+            self.adjacency[from_index].push((to_index, 0));
+            return None;
+        }
+
         let weight = match weight {
             Some(w) => w,
             None => {

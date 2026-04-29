@@ -234,7 +234,8 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
         };
 
         if node_one_index == node_two_index {
-            self.adjacency[node_one_index].push((node_two_index, weight));
+            self.adjacency[node_one_index].push((node_two_index, 0.0)); // Store self-loop with zero
+            // weight.
             return None;
         }
 
