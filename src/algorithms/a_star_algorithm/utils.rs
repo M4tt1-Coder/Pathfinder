@@ -15,7 +15,7 @@
 //!
 //! # Usage Example
 //!
-//! ```ignore
+//! ```rust
 //! use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
@@ -56,7 +56,7 @@ use crate::{
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
@@ -111,7 +111,7 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::{
 ///     a_star::AStarQueueElement,
 ///     utils::determine_path_cost,

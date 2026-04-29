@@ -221,6 +221,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                 // the 'tentative_g_cost' -> update the 'g_cost' of the neighbour in the
                 // "open_queue" and set the current node as the predecessor of the neighbour
 
+                // Track membership so we can reopen nodes when a cheaper path appears.
                 let mut neighbour_is_in_open_queue = open_queue
                     .iter()
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
@@ -239,10 +240,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     open_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
-                // if the neighbour is already in the "closed_queue" and the 'g_cost' is higher
-                // than the 'tentative_g_cost' -> update the 'g_cost' of the neighbour in the
-                // "closed_queue" and set the current node as the predecessor of the neighbour
-                // let g_cost_neighbour_closed_queue = g_costs.get(neighbour.get_id());
+                // If a cheaper route is found for a closed node, move it back to open.
                 if neighbour_is_in_closed_queue
                     && let Some(c_g_cost) = g_cost_neighbour
                     && tentative_g_cost < *c_g_cost
@@ -331,13 +329,10 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// Heuristic estimate from `current` toward `goal`.
     ///
-    /// # Example
+    /// # Notes
     ///
-    /// ```ignore
-    /// // Internal helper called during queue expansion.
-    /// // It is not part of the public API.
-    /// let estimate = a_star.heuristic(start, goal, current);
-    /// ```
+    /// This helper is private and is called during `shortest_path` queue
+    /// expansion to compute the heuristic term.
     fn heuristic(&self, start: &N, goal: &N, current: &N) -> WD {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();

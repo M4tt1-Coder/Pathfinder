@@ -73,13 +73,12 @@ impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
     /// # Returns
     /// A new [`ShortestDistance`] value.
     ///
-    /// # Example (internal-only helper)
-    /// ```ignore
-    /// // Used by Dijkstra's internal state map.
-    /// let start_node = None;
-    /// let initial_distance = 0u16;
-    /// let node = ShortestDistance::new(start_node, initial_distance);
-    /// ```
+    /// # Notes
+    ///
+    /// This helper is used internally while building the distance map for
+    /// [`DijkstraAlgorithm`]. External callers should rely on
+    /// [`DijkstraAlgorithm::shortest_path`] instead of constructing
+    /// `ShortestDistance` entries directly.
     fn new(previous_node: Option<N>, distance: W) -> Self {
         Self {
             previous_node,
@@ -194,7 +193,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
         let distances = self.calculate_distances(start)?;
 
-        // search for the shortest route from the 'start' to the 'end' node
+        // Reconstruct the shortest route by walking predecessors from end to start.
         let mut path: Vec<N> = vec![];
         let mut current_node = end.clone();
         let mut output_distance = W::zero();
@@ -214,6 +213,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 }
             };
             if start.get_id() == prev.get_id() {
+                // The start node references itself as predecessor sentinel.
                 path.push(start.clone());
                 break;
             }
@@ -225,6 +225,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             return Err(DijkstraError::new("A path could not be found!".to_string()));
         }
 
+        // Path is collected from end to start; reverse to return start -> end.
         path.reverse();
 
         Ok(match DijkstraSearchResult::new(path, output_distance) {

@@ -4,8 +4,8 @@
 //!
 //! This namespace contains:
 //! - [`a_star`]: public A* implementation and related types.
-//! - `utils`: internal helper functions used by A* path reconstruction and
-//!   cost bookkeeping.
+//! - [`utils`]: public helper utilities (intended for internal use and tests)
+//!   used by A* path reconstruction and cost bookkeeping.
 //!
 //! # Usage
 //!
@@ -21,4 +21,4 @@
 //! ```
 
 pub mod a_star;
-mod utils;
+pub mod utils;
