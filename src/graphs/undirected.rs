@@ -43,13 +43,15 @@ use crate::{
 /// # Invariants
 ///
 /// - Duplicate nodes are ignored on insertion.
+/// - Duplicate nodes provided at construction time are ignored.
 /// - Duplicate edges are rejected regardless of endpoint order (`A-B` equals `B-A`).
 /// - Edges can only be inserted if both endpoint nodes already exist.
+/// - Self-loop edges are stored once.
 /// - Neighbor traversal is backed by an index-based adjacency list.
 #[derive(Debug, Clone)]
 pub struct UndirectedGraph {
     /// Nodes currently contained in the graph.
-    pub nodes: Vec<DefaultNode>,
+    nodes: Vec<DefaultNode>,
     /// Fast ID-to-index lookup for node access.
     node_index_by_id: HashMap<String, usize>,
     /// Adjacency list storing `(neighbor_index, weight)` for each node index.
@@ -72,16 +74,13 @@ impl Graph for UndirectedGraph {
             self.node_index_for_id(from.get_id()),
             self.node_index_for_id(to.get_id()),
         ) {
-            // Check for an edge in either direction since the graph is undirected.
-            if self.adjacency[from_index]
+            // Treat an edge as present if either adjacency list contains it.
+            return self.adjacency[from_index]
                 .iter()
                 .any(|(neighbor_index, _)| *neighbor_index == to_index)
-                && self.adjacency[to_index]
+                || self.adjacency[to_index]
                     .iter()
-                    .any(|(neighbor_index, _)| *neighbor_index == from_index)
-            {
-                return true;
-            };
+                    .any(|(neighbor_index, _)| *neighbor_index == from_index);
         }
 
         false
@@ -167,6 +166,11 @@ impl Graph for UndirectedGraph {
             }
         };
 
+        if a_index == b_index {
+            self.adjacency[a_index].push((b_index, weight));
+            return None;
+        }
+
         self.adjacency[a_index].push((b_index, weight));
         self.adjacency[b_index].push((a_index, weight));
 
@@ -207,30 +211,12 @@ impl UndirectedGraph {
         self.node_index_by_id.get(id).copied()
     }
 
-    /// Rebuilds lookup and adjacency structures from current nodes.
-    ///
-    /// # Behavior
-    ///
-    /// - Recomputes `node_index_by_id` from the current `nodes` vector.
-    /// - Reinitializes adjacency with one bucket per node.
-    fn prepare_internal_adjacency(&mut self) {
-        // Re-index nodes to keep ID lookups in sync with vector positions.
-        self.node_index_by_id = self
-            .nodes
-            .iter()
-            .enumerate()
-            .map(|(index, node)| (node.get_id().to_string(), index))
-            .collect();
-
-        // Allocate one neighbor bucket for each node index.
-        self.adjacency = vec![Vec::new(); self.nodes.len()];
-    }
-
     /// Creates a new undirected graph from a node vector.
     ///
     /// # Arguments
     ///
     /// - `nodes`: list of graph nodes.
+    ///   Duplicate node IDs are ignored.
     ///
     /// # Returns
     ///
@@ -239,19 +225,24 @@ impl UndirectedGraph {
     /// # Example
     ///
     /// ```rust
+    /// use shortest_path_finder::graphs::graph::Graph;
     /// use shortest_path_finder::graphs::undirected::UndirectedGraph;
     ///
     /// let graph = UndirectedGraph::new(vec![]);
-    /// assert_eq!(graph.nodes.len(), 0);
-    /// assert_eq!(graph.nodes.len(), 0);
+    /// assert_eq!(graph.get_all_nodes().len(), 0);
+    /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// ```
     pub fn new(nodes: Vec<DefaultNode>) -> Self {
         let mut graph = Self {
-            nodes,
+            nodes: Vec::new(),
             node_index_by_id: HashMap::new(),
             adjacency: Vec::new(),
         };
-        graph.prepare_internal_adjacency();
+
+        for node in nodes {
+            graph.insert_node(node);
+        }
+
         graph
     }
 }

@@ -56,7 +56,7 @@ use shortest_path_finder::{
 // algorithm. The user can then call this method after calling the 'shortest_path' method to see the
 // visualization of the algorithm's execution.
 
-// TODO: Refactor code -> check if in some cases references are better then cloning (if possible),
+// TODO: (Refactor) Refactor code -> check if in some cases references are better then cloning (if possible),
 // apply best practices, apply better error handling -> for each file indiviually, improve the
 // visibility of the code + modulization
 
@@ -67,6 +67,11 @@ use shortest_path_finder::{
 
 // TODO: Feature that graphs can be selected to be none weighted -> each edge has weight of one.
 // information is stored and the algorithm is executed accordingly.
+
+// TODO: (Refactor) Let AI give feedback on new graph logic without edge structs and the new adjacency list
+// implementation. Maybe it can give some insights on how to improve the code and make it more
+// efficient (e.g. by using a different data structure for the graph, by implementing a different
+// algorithm, ...).
 
 /// Runs the Pathfinder CLI application lifecycle.
 ///

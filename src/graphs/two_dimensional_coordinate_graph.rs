@@ -69,7 +69,10 @@ use crate::{
 /// # Invariants
 ///
 /// - Duplicate nodes are rejected based on coordinates or ID.
+/// - Duplicate nodes provided at construction time are ignored.
 /// - Duplicate edges are rejected in either endpoint order.
+/// - Self-loop edges are stored once.
+/// - Explicit edge weights are ignored; weights are computed from coordinates.
 /// - Edge insertion requires both endpoint nodes to already exist.
 /// - Neighbor traversal is backed by an index-based adjacency list.
 ///
@@ -101,37 +104,12 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
         self.node_index_by_id.get(id).copied()
     }
 
-    /// Rebuilds internal lookup and adjacency caches from `nodes`.
-    ///
-    /// # Why this matters
-    ///
-    /// `TwoDimensionalCoordinateGraph` stores canonical data in `nodes`, while
-    /// `node_index_by_id` and `adjacency` are derived caches for fast access.
-    /// This function refreshes those caches whenever a graph is created from
-    /// pre-populated vectors.
-    ///
-    /// # Behavior
-    ///
-    /// - Re-indexes nodes by ID.
-    /// - Recreates adjacency buckets.
-    fn prepare_internal_adjacency(&mut self) {
-        // Build an ID -> index table so node lookups stay O(1).
-        self.node_index_by_id = self
-            .nodes
-            .iter()
-            .enumerate()
-            .map(|(index, node)| (node.get_id().to_string(), index))
-            .collect();
-
-        // Reset adjacency to one list per node.
-        self.adjacency = vec![Vec::new(); self.nodes.len()];
-    }
-
     /// Creates a new two-dimensional graph from a node vector.
     ///
     /// # Arguments
     ///
     /// - `nodes`: initial node set.
+    ///   Duplicate IDs or coordinates are ignored.
     ///
     /// # Returns
     ///
@@ -150,11 +128,15 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
     /// ```
     pub fn new(nodes: Vec<TwoDimensionalNode<C>>) -> Self {
         let mut graph = Self {
-            nodes,
+            nodes: Vec::new(),
             node_index_by_id: HashMap::new(),
             adjacency: Vec::new(),
         };
-        graph.prepare_internal_adjacency();
+
+        for node in nodes {
+            graph.insert_node(node);
+        }
+
         graph
     }
 }
@@ -246,10 +228,15 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
                     "Explicit weight {} provided for edge from {} to {}, but coordinate graphs compute weights automatically!",
                     w, from, to
                 );
-                w
+                calculate_weight(from, to)
             }
             None => calculate_weight(from, to),
         };
+
+        if node_one_index == node_two_index {
+            self.adjacency[node_one_index].push((node_two_index, weight));
+            return None;
+        }
 
         self.adjacency[node_one_index].push((node_two_index, weight));
         self.adjacency[node_two_index].push((node_one_index, weight));
@@ -272,12 +259,15 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
     }
 
     fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
-        if let Some(from_index) = self.node_index_for_id(from.get_id()) {
-            if let Some(to_index) = self.node_index_for_id(to.get_id()) {
-                return self.adjacency[from_index]
+        if let Some(from_index) = self.node_index_for_id(from.get_id())
+            && let Some(to_index) = self.node_index_for_id(to.get_id())
+        {
+            return self.adjacency[from_index]
+                .iter()
+                .any(|(neighbor_index, _)| *neighbor_index == to_index)
+                || self.adjacency[to_index]
                     .iter()
-                    .any(|(neighbor_index, _)| *neighbor_index == to_index);
-            }
+                    .any(|(neighbor_index, _)| *neighbor_index == from_index);
         }
         false
     }
@@ -327,7 +317,7 @@ impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
                 );
             }
         }
-        graph_string.push_str("}");
+        graph_string.push('}');
         write!(f, "{}", graph_string)
     }
 }

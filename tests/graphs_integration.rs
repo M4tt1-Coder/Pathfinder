@@ -38,7 +38,7 @@ fn directed_graph_skips_duplicate_nodes_and_prevents_duplicate_edges() {
     graph.insert_node(node("A"));
     graph.insert_node(node("B"));
 
-    assert_eq!(graph.nodes.len(), 2);
+    assert_eq!(graph.get_all_nodes().len(), 2);
 
     let from = node("A");
     let to = node("B");

@@ -47,6 +47,7 @@ use crate::{
 /// # Invariants
 ///
 /// - Duplicate nodes are ignored on insertion.
+/// - Duplicate nodes provided at construction time are ignored.
 /// - Duplicate edges (same `from` and `to`) are rejected.
 /// - Edges can only be inserted if both endpoint nodes exist in the graph.
 /// - Neighbor traversal is backed by an index-based adjacency list.
@@ -64,13 +65,13 @@ use crate::{
 /// let from = DefaultNode::new("A".to_string());
 /// let to = DefaultNode::new("B".to_string());
 /// graph.insert_edge(&from, &to, Some(4));
-/// assert_eq!(graph.nodes.len(), 2);
+/// assert_eq!(graph.get_all_nodes().len(), 2);
 /// assert_eq!(graph.neighbors(&from).count(), 1);
 /// ```
 #[derive(Debug, Clone)]
 pub struct DirectedGraph {
     /// All nodes currently contained in the graph.
-    pub nodes: Vec<DefaultNode>,
+    nodes: Vec<DefaultNode>,
     /// Fast ID-to-index lookup for node access.
     node_index_by_id: HashMap<String, usize>,
     /// Adjacency list storing `(to_index, weight)` for each source node index.
@@ -218,36 +219,12 @@ impl DirectedGraph {
         self.node_index_by_id.get(id).copied()
     }
 
-    /// Rebuilds the internal node index map and adjacency list from node data.
-    ///
-    /// # Why this exists
-    ///
-    /// Constructors can receive pre-populated `nodes`. This helper restores
-    /// derived lookup structures so read operations (`neighbors`, `get_node_by_id`)
-    /// remain fast and consistent.
-    ///
-    /// # Behavior
-    ///
-    /// - Recomputes `node_index_by_id` from current node order.
-    /// - Resets adjacency to one bucket per node.
-    fn prepare_internal_adjacency(&mut self) {
-        // Build a stable id -> index lookup table from the current node vector.
-        self.node_index_by_id = self
-            .nodes
-            .iter()
-            .enumerate()
-            .map(|(index, node)| (node.get_id().to_string(), index))
-            .collect();
-
-        // Pre-allocate one adjacency bucket per node.
-        self.adjacency = vec![Vec::new(); self.nodes.len()];
-    }
-
     /// Creates a new directed graph from a node vector.
     ///
     /// # Parameters
     ///
     /// - `nodes`: initial node list.
+    ///   Duplicate node IDs are ignored.
     ///
     /// # Returns
     ///
@@ -257,18 +234,23 @@ impl DirectedGraph {
     ///
     /// ```rust
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
-    /// assert_eq!(graph.nodes.len(), 0);
-    /// assert_eq!(graph.nodes.len(), 0);
+    /// assert_eq!(graph.get_all_nodes().len(), 0);
+    /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// ```
     pub fn new(nodes: Vec<DefaultNode>) -> Self {
         let mut graph = Self {
-            nodes,
+            nodes: Vec::new(),
             node_index_by_id: HashMap::new(),
             adjacency: Vec::new(),
         };
-        graph.prepare_internal_adjacency();
+
+        for node in nodes {
+            graph.insert_node(node);
+        }
+
         graph
     }
 }
@@ -290,9 +272,10 @@ impl Default for DirectedGraph {
     ///
     /// ```rust
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::graph::Graph;
     ///
     /// let graph = DirectedGraph::default();
-    /// assert!(graph.nodes.is_empty());
+    /// assert!(graph.get_all_nodes().is_empty());
     /// ```
     fn default() -> Self {
         Self::new(vec![])
