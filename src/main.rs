@@ -108,7 +108,7 @@ fn main() {
             let graphs = match retrieve_graph_data_from_file(&app_config.file_path) {
                 Ok(graph) => graph,
                 Err(err) => {
-                    error!("Here: {}", err);
+                    error!("{}", err);
                     process::exit(1);
                 }
             };

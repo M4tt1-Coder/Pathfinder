@@ -403,9 +403,6 @@ pub fn retrieve_graph_data_from_file(
     Ok(res)
 }
 
-// Two-dimensional file input uses the `=>` separator between coordinate nodes to avoid
-// ambiguity with negative coordinate values.
-
 /// Compiles all regexes required for line-syntax validation.
 ///
 /// # Node ID constraint
