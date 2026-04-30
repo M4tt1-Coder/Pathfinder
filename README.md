@@ -162,8 +162,8 @@ Two-dimensional format currently recognized by parser:
 
 ```text
 TD
-A:0,0-B:2,1
-B:2,1-C:4,1
+A:0,0=>B:2,1
+B:2,1=>C:4,1
 ```
 
 ### Development workflow

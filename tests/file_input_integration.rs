@@ -69,7 +69,7 @@ fn parser_reads_undirected_graph_from_file() {
 
 #[test]
 fn parser_reads_two_dimensional_graph_from_file() {
-    let file = write_temp_graph("TD\nA:0,0-B:3,4\nB:3,4-C:6,8\n");
+    let file = write_temp_graph("TD\nA:0,0=>B:3,4\nB:3,4=>C:6,8\n");
     let path = file.path().to_string_lossy().into_owned();
 
     let result =

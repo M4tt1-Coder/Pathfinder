@@ -29,7 +29,7 @@
 //! Header line:  D | UN | TD
 //! Directed:     <from>-><to>:<weight>         (example: A->B:7)
 //! Undirected:   <from>-<to>:<weight>          (example: A-B:7)
-//! 2D edge line: <from>:x,y-<to>:x,y           (example: A:0,0-B:4,2)
+//! 2D edge line: <from>:x,y=><to>:x,y          (example: A:0,0=>B:4,2)
 //! ```
 //!
 //! # Validation and consistency rules
@@ -158,7 +158,7 @@ struct LineSyntaxRegexes {
     directed: Regex,
     /// Regex for undirected lines (`A-B:7`).
     undirected: Regex,
-    /// Regex for two-dimensional lines (`A:0,0-B:4,2`).
+    /// Regex for two-dimensional lines (`A:0,0=>B:4,2`).
     two_dimensional: Regex,
 }
 
@@ -403,7 +403,8 @@ pub fn retrieve_graph_data_from_file(
     Ok(res)
 }
 
-// ______________________________________
+// Two-dimensional file input uses the `=>` separator between coordinate nodes to avoid
+// ambiguity with negative coordinate values.
 
 /// Compiles all regexes required for line-syntax validation.
 ///
@@ -418,7 +419,7 @@ pub fn retrieve_graph_data_from_file(
 ///
 /// - Directed: `^[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+$`
 /// - Undirected: `^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$`
-/// - Two-dimensional: `^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+-[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$`
+/// - Two-dimensional: `^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+=>[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$`
 ///
 /// # Errors
 ///
@@ -430,7 +431,7 @@ fn compile_line_syntax_regexes() -> Result<LineSyntaxRegexes, ParseError> {
     let undirected = Regex::new(r"^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$")
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
     let two_dimensional =
-        Regex::new(r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+-[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$")
+        Regex::new(r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+=>[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$")
             .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
 
     Ok(LineSyntaxRegexes {
@@ -479,7 +480,7 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
         FoundGraphType::D => "Expected directed syntax '<from>-><to>:<weight>' (example: A->B:5).",
         FoundGraphType::UN => "Expected undirected syntax '<from>-<to>:<weight>' (example: A-B:5).",
         FoundGraphType::TD => {
-            "Expected two-dimensional syntax '<from>:x,y-<to>:x,y' (example: A:0,0-B:4,2)."
+            "Expected two-dimensional syntax '<from>:x,y=><to>:x,y' (example: A:0,0=>B:4,2)."
         }
     }
 }
@@ -510,7 +511,7 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
 /// ```text
 /// Directed edge line:   A->B:12
 /// Undirected edge line: A-B:12
-/// 2D edge line:         A:0,0-B:4,2
+/// 2D edge line:         A:0,0=>B:4,2
 /// ```
 ///
 /// # Parsing strategy
@@ -518,7 +519,7 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
 /// - For one-dimensional graph types (`D`, `UN`): split line by edge separator,
 ///   then split the right side by `:` to obtain destination and integer weight.
 /// - For two-dimensional graph type (`TD`): split the line into two serialized
-///   coordinate nodes and parse each node with [`TwoDimensionalNode::from_str`].
+///   coordinate nodes using `=>` and parse each node with [`TwoDimensionalNode::from_str`].
 fn convert_line_to_graph_data(
     line: &str,
     detected_graph_type: &FoundGraphType,
@@ -561,8 +562,8 @@ fn convert_line_to_graph_data(
         }
         FoundGraphType::TD => {
             // Split TD lines into exactly two serialized coordinate nodes.
-            // `-` is unambiguous here because node IDs are restricted to [A-Za-z0-9]+.
-            let initial_split_results: Vec<&str> = line.trim().split('-').collect();
+            // `=>` avoids ambiguity with negative coordinate values.
+            let initial_split_results: Vec<&str> = line.trim().split("=>").collect();
             if initial_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);
             }
@@ -886,7 +887,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
 ///
 /// # Behavior details
 ///
-/// - Validates each non-empty line against TD syntax (`A:0,0-B:4,2`).
+/// - Validates each non-empty line against TD syntax (`A:0,0=>B:4,2`).
 /// - Parses both endpoints as `TwoDimensionalNode<i32>`.
 /// - Inserts both endpoint nodes before edge insertion.
 /// - Silently skips duplicate edges.
