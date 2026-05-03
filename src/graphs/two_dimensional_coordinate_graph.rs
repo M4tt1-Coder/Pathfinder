@@ -222,15 +222,19 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
             }
         };
 
+        // Use canonical nodes from the graph to ensure weight is consistent with stored coordinates.
+        let canonical_from = &self.nodes[node_one_index];
+        let canonical_to = &self.nodes[node_two_index];
+
         let weight = match weight {
             Some(w) => {
                 warn!(
                     "Explicit weight {} provided for edge from {} to {}, but coordinate graphs compute weights automatically!",
                     w, from, to
                 );
-                calculate_weight(from, to)
+                calculate_weight(canonical_from, canonical_to)
             }
-            None => calculate_weight(from, to),
+            None => calculate_weight(canonical_from, canonical_to),
         };
 
         if node_one_index == node_two_index {
