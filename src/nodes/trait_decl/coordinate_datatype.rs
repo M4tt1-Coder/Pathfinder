@@ -13,9 +13,15 @@
 //! Implementors must support:
 //! - copying by value,
 //! - ordering/equality checks,
-//! - subtraction,
+//! - subtraction (signed semantics required — unsigned types such as `u8`
+//!   cannot implement this trait because `a - b` underflows before `abs()`
+//!   can run when `a < b`),
 //! - absolute value,
 //! - conversion to and from `f32` for geometry helpers.
+//!
+//! # Provided implementations
+//!
+//! This crate ships implementations for `i32` and `f32`.
 //!
 //! # Examples
 //!
@@ -27,7 +33,7 @@
 //! }
 //!
 //! assert_eq!(manhattan_step(7_i32, 2_i32), 5_i32);
-//! assert_eq!(manhattan_step(7_u8, 2_u8), 5_u8);
+//! assert_eq!(manhattan_step(2_i32, 7_i32), 5_i32);
 //! assert!((manhattan_step(4.5_f32, 1.0_f32) - 3.5_f32).abs() < 1e-6);
 //! ```
 
@@ -75,20 +81,3 @@ impl CoordinateDatatype for i32 {
     }
 }
 
-impl CoordinateDatatype for u8 {
-    fn abs(&self) -> Self {
-        *self
-    }
-
-    fn to_f32(&self) -> f32 {
-        *self as f32
-    }
-
-    fn from_f32(value: f32) -> Self {
-        if value.is_sign_negative() {
-            0
-        } else {
-            value.round() as u8
-        }
-    }
-}

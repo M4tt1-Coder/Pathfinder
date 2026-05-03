@@ -15,7 +15,7 @@
 //!
 //! `TwoDimensionalNode` is generic over coordinate type `C`:
 //! - default: `C = i32`,
-//! - supported by default in this crate: `i32`, `f32`, and `u8`,
+//! - supported by default in this crate: `i32` and `f32`,
 //! - custom coordinate types can be used when they implement
 //!   [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
 //!

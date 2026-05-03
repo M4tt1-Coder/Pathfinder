@@ -167,7 +167,7 @@ impl Graph for UndirectedGraph {
         };
 
         if a_index == b_index {
-            self.adjacency[a_index].push((b_index, 0)); // Store self-loop with zero weight.
+            self.adjacency[a_index].push((b_index, weight));
             return None;
         }
 

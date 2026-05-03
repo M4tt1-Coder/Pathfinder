@@ -20,7 +20,7 @@
 //! `C` must implement
 //! [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
 //! Library users can therefore build coordinate graphs with types such as
-//! `i32`, `f32`, or `u8`.
+//! `i32` or `f32`.
 //!
 //! # File Abbreviation
 //!
@@ -238,8 +238,7 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
         };
 
         if node_one_index == node_two_index {
-            self.adjacency[node_one_index].push((node_two_index, 0.0)); // Store self-loop with zero
-            // weight.
+            self.adjacency[node_one_index].push((node_two_index, weight));
             return None;
         }
 
