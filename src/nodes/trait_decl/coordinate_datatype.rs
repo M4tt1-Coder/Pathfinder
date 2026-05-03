@@ -80,4 +80,3 @@ impl CoordinateDatatype for i32 {
         value as i32
     }
 }
-
