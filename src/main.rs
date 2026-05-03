@@ -56,15 +56,16 @@ use shortest_path_finder::{
 // algorithm. The user can then call this method after calling the 'shortest_path' method to see the
 // visualization of the algorithm's execution.
 
-// TODO: Refactor code -> check if in some cases references are better then cloning (if possible),
-// apply best practices, apply better error handling -> for each file indiviually
-
-// TODO: 'A*' -> benchmark it against Dijkstra's algorithm
+// TODO: (Refactor) Refactor code -> apply best practices, apply better error handling -> for each file indiviually, improve the
+// visibility of the code + modulization
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
 // way, the user can choose which features to include in their project and which not (e.g. if they
 // don't need the 'A*' algorithm, they can exclude it from their project and save some space).
+
+// TODO: Feature that graphs can be selected to be none weighted -> each edge has weight of one.
+// information is stored and the algorithm is executed accordingly.
 
 /// Runs the Pathfinder CLI application lifecycle.
 ///
@@ -107,7 +108,7 @@ fn main() {
             let graphs = match retrieve_graph_data_from_file(&app_config.file_path) {
                 Ok(graph) => graph,
                 Err(err) => {
-                    error!("Here: {}", err);
+                    error!("{}", err);
                     process::exit(1);
                 }
             };

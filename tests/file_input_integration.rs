@@ -11,6 +11,20 @@ use shortest_path_finder::{
 };
 use tempfile::NamedTempFile;
 
+/// Counts edges in a directed graph by summing all outgoing neighbor lists.
+fn count_directed_edges<G: Graph>(graph: &G) -> usize {
+    graph
+        .get_all_nodes()
+        .iter()
+        .map(|node| graph.neighbors(node).count())
+        .sum()
+}
+
+/// Counts unique undirected edges by halving the bidirectional adjacency total.
+fn count_undirected_edges<G: Graph>(graph: &G) -> usize {
+    count_directed_edges(graph) / 2
+}
+
 fn write_temp_graph(contents: &str) -> NamedTempFile {
     let mut file = NamedTempFile::new().expect("temp file creation should succeed");
     file.write_all(contents.as_bytes())
@@ -32,7 +46,7 @@ fn parser_reads_directed_graph_from_file() {
 
     let graph = result.directed_graph.expect("directed graph must exist");
     assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(graph.edges.len(), 3);
+    assert_eq!(count_directed_edges(&graph), 3);
 }
 
 #[test]
@@ -50,12 +64,12 @@ fn parser_reads_undirected_graph_from_file() {
         .undirected_graph
         .expect("undirected graph must exist");
     assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(graph.edges.len(), 3);
+    assert_eq!(count_undirected_edges(&graph), 3);
 }
 
 #[test]
 fn parser_reads_two_dimensional_graph_from_file() {
-    let file = write_temp_graph("TD\nA:0,0-B:3,4\nB:3,4-C:6,8\n");
+    let file = write_temp_graph("TD\nA:0,0=>B:3,4\nB:3,4=>C:6,8\n");
     let path = file.path().to_string_lossy().into_owned();
 
     let result =
@@ -124,7 +138,7 @@ fn parser_ignores_whitespace_only_lines() {
 
     let graph = result.directed_graph.expect("directed graph must exist");
     assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(graph.edges.len(), 2);
+    assert_eq!(count_directed_edges(&graph), 2);
 }
 
 #[test]

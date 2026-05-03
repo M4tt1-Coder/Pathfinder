@@ -34,7 +34,7 @@
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
 //! let start = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-//! let graph = TwoDimensionalCoordinateGraph::new(vec![start], vec![]);
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![start]);
 //! let algorithm = AStar::new(graph);
 //!
 //! // Minimal valid query where start and destination are identical.
@@ -63,7 +63,9 @@ use crate::{
         algorithm::{Algorithm, SearchResult},
     },
     graphs::graph::Graph,
-    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    nodes::trait_decl::{
+        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
+    },
     weight_types::numeric_datatype::NumericDatatype,
 };
 
@@ -89,7 +91,7 @@ use crate::{
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
 /// let n = TwoDimensionalNode::new(1, 2, "S".to_string()).unwrap();
-/// let graph = TwoDimensionalCoordinateGraph::new(vec![n], vec![]);
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![n]);
 /// let _algorithm = AStar::new(graph);
 /// ```
 #[derive(Debug)]
@@ -143,7 +145,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);
     /// let a_star = AStar::new(graph);
     ///
     /// let result = a_star.shortest_path("A", "A").unwrap();
@@ -212,12 +214,14 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
             // get all neighbours and check if ... -> add all neighbours to "open_queue" + add
             // current node to the "closed_queue"
             for (neighbour, weight) in self.graph.neighbors(node) {
+                // Candidate g-cost if we reach `neighbour` through `node`.
                 let tentative_g_cost = g_cost + weight;
                 // get the 'g_cost' of the neighbour from the "open_queue" if it exists
                 // if the neighbour is already in the "open_queue" and the 'g_cost' is higher than
                 // the 'tentative_g_cost' -> update the 'g_cost' of the neighbour in the
                 // "open_queue" and set the current node as the predecessor of the neighbour
 
+                // Track membership so we can reopen nodes when a cheaper path appears.
                 let mut neighbour_is_in_open_queue = open_queue
                     .iter()
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
@@ -232,17 +236,16 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     && let Some(o_g_cost) = g_cost_neighbour
                     && tentative_g_cost < *o_g_cost
                 {
+                    // Remove stale entry so the improved version can be inserted below.
                     open_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
-                // if the neighbour is already in the "closed_queue" and the 'g_cost' is higher
-                // than the 'tentative_g_cost' -> update the 'g_cost' of the neighbour in the
-                // "closed_queue" and set the current node as the predecessor of the neighbour
-                // let g_cost_neighbour_closed_queue = g_costs.get(neighbour.get_id());
+                // If a cheaper route is found for a closed node, move it back to open.
                 if neighbour_is_in_closed_queue
                     && let Some(c_g_cost) = g_cost_neighbour
                     && tentative_g_cost < *c_g_cost
                 {
+                    // Re-open nodes from closed set when a strictly better route is found.
                     closed_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
@@ -257,7 +260,10 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
                 if !neighbour_is_in_open_queue && !neighbour_is_in_closed_queue {
+                    // Persist best-known g-cost for future comparisons.
                     g_costs.insert(neighbour.get_id().to_string(), tentative_g_cost);
+
+                    // Insert queue element with updated predecessor and heuristic score.
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,
@@ -296,7 +302,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
-    /// let graph = TwoDimensionalCoordinateGraph::new(vec![], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![]);
     /// let _a_star = AStar::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {
@@ -323,13 +329,10 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// Heuristic estimate from `current` toward `goal`.
     ///
-    /// # Example
+    /// # Notes
     ///
-    /// ```ignore
-    /// // Internal helper called during queue expansion.
-    /// // It is not part of the public API.
-    /// let estimate = a_star.heuristic(start, goal, current);
-    /// ```
+    /// This helper is private and is called during `shortest_path` queue
+    /// expansion to compute the heuristic term.
     fn heuristic(&self, start: &N, goal: &N, current: &N) -> WD {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();

@@ -4,16 +4,32 @@
 //!
 //! [`TwoDimensionalNode`] represents a graph node with:
 //! - a unique textual identifier,
-//! - an integer x-coordinate,
-//! - an integer y-coordinate.
+//! - a typed x-coordinate,
+//! - a typed y-coordinate.
 //!
 //! It implements both [`GraphNode`](crate::graphs::graph::GraphNode) and
 //! [`CoordinatesNode`](crate::nodes::trait_decl::coordinates_node::CoordinatesNode),
 //! enabling use in generic graph and pathfinding algorithms.
 //!
+//! # Coordinate Type
+//!
+//! `TwoDimensionalNode` is generic over coordinate type `C`:
+//! - default: `C = i32`,
+//! - supported by default in this crate: `i32` and `f32`,
+//! - custom coordinate types can be used when they implement
+//!   [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//!
+//! # Identity and Ordering Semantics
+//!
+//! Node identity and ordering are based on the node ID only.
+//! This keeps compatibility with graph constraints that require nodes to implement
+//! `Eq`, `Hash`, and `Ord`, while allowing coordinate datatypes like `f32` that do
+//! not provide full total ordering semantics.
+//!
 //! # Parsing Format
 //!
 //! `FromStr` supports parsing from `<id>:<x>,<y>` strings.
+//! Parsing is generic as long as `C: FromStr`.
 //!
 //! # Usage
 //!
@@ -25,30 +41,47 @@
 //!     two_dimensional_node::TwoDimensionalNode,
 //! };
 //!
-//! let node = TwoDimensionalNode::from_str("Hub:3,5").unwrap();
+//! let node = TwoDimensionalNode::<i32>::from_str("Hub:3,5").unwrap();
 //! assert_eq!(node.get_id(), "Hub");
 //! assert_eq!(node.get_x(), 3);
 //! assert_eq!(node.get_y(), 5);
+//!
+//! let precise = TwoDimensionalNode::<f32>::new(1.5, 2.75, "F32Node".to_string()).unwrap();
+//! assert_eq!(precise.get_x(), 1.5);
+//!
+//! let parsed = "P:1.25,2.5".parse::<TwoDimensionalNode<f32>>().unwrap();
+//! assert_eq!(parsed.get_y(), 2.5);
 //! ```
 
 // ----- Implementation of the 'TwoDimensionalNode' struct -----
 
-use std::{fmt::Display, str::FromStr};
-
-use crate::{
-    error::parse_error::ParseError, graphs::graph::GraphNode,
-    nodes::trait_decl::coordinates_node::CoordinatesNode,
+use std::{
+    cmp::Ordering,
+    fmt::Display,
+    hash::{Hash, Hasher},
+    str::FromStr,
 };
 
-// TODO: Introduce generic coordinate datatypes (f32, f64, i64, ...)
+use crate::{
+    error::parse_error::ParseError,
+    graphs::graph::GraphNode,
+    nodes::trait_decl::{
+        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
+    },
+};
 
 /// Coordinate-aware node type used by two-dimensional graph models.
 ///
 /// # Invariants
 ///
 /// - `id` must not be empty.
-/// - Coordinates are stored as `i32`.
+/// - Coordinates are stored as `C`, where `C: CoordinateDatatype`.
 /// - Fields are private and immutable from outside the type after creation.
+/// - Equality, hash, and ordering are based on `id` only.
+///
+/// # Type Parameter
+///
+/// - `C`: coordinate scalar type, defaulting to `i32`.
 ///
 /// # Example
 ///
@@ -63,9 +96,12 @@ use crate::{
 /// assert_eq!(node.get_id(), "Depot");
 /// assert_eq!(node.get_x(), 2);
 /// assert_eq!(node.get_y(), -1);
+///
+/// let floating = TwoDimensionalNode::<f32>::new(2.5, -1.0, "FloatDepot".to_string()).unwrap();
+/// assert_eq!(floating.get_x(), 2.5);
 /// ```
-#[derive(Debug, Clone, PartialEq, Hash, Eq, PartialOrd, Ord)]
-pub struct TwoDimensionalNode {
+#[derive(Debug, Clone)]
+pub struct TwoDimensionalNode<C: CoordinateDatatype = i32> {
     /// -- Private Field --
     ///
     /// The unique identifier for the node. It can be seen as its name too, but is used as an
@@ -75,15 +111,15 @@ pub struct TwoDimensionalNode {
     /// -- Private Field --
     ///
     /// X - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    x: i32,
+    x: C,
 
     /// -- Private field --
     ///
     /// Y - ordinate of the individual 'TwoDimensionalNode' struct instance.
-    y: i32,
+    y: C,
 }
 
-impl TwoDimensionalNode {
+impl<C: CoordinateDatatype> TwoDimensionalNode<C> {
     /// Creates a validated [`TwoDimensionalNode`].
     ///
     /// # Arguments
@@ -112,7 +148,7 @@ impl TwoDimensionalNode {
     /// let node = TwoDimensionalNode::new(2, 7, "".to_string());
     /// assert!(node.is_none());
     /// ```
-    pub fn new(x: i32, y: i32, id: String) -> Option<Self> {
+    pub fn new(x: C, y: C, id: String) -> Option<Self> {
         // id must be longer then 0
         if id.is_empty() {
             return None;
@@ -121,27 +157,27 @@ impl TwoDimensionalNode {
     }
 }
 
-impl CoordinatesNode for TwoDimensionalNode {
-    type CoordinateType = i32;
+impl<C: CoordinateDatatype> CoordinatesNode for TwoDimensionalNode<C> {
+    type CoordinateType = C;
 
     /// Returns the x-coordinate of this node.
-    fn get_x(&self) -> i32 {
+    fn get_x(&self) -> C {
         self.x
     }
 
     /// Returns the y-coordinate of this node.
-    fn get_y(&self) -> i32 {
+    fn get_y(&self) -> C {
         self.y
     }
 }
 
-impl GraphNode for TwoDimensionalNode {
+impl<C: CoordinateDatatype> GraphNode for TwoDimensionalNode<C> {
     fn get_id(&self) -> &str {
         &self.id
     }
 }
 
-impl Display for TwoDimensionalNode {
+impl<C: CoordinateDatatype> Display for TwoDimensionalNode<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -151,7 +187,36 @@ impl Display for TwoDimensionalNode {
     }
 }
 
-impl FromStr for TwoDimensionalNode {
+impl<C: CoordinateDatatype> PartialEq for TwoDimensionalNode<C> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<C: CoordinateDatatype> Eq for TwoDimensionalNode<C> {}
+
+impl<C: CoordinateDatatype> Hash for TwoDimensionalNode<C> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+impl<C: CoordinateDatatype> PartialOrd for TwoDimensionalNode<C> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<C: CoordinateDatatype> Ord for TwoDimensionalNode<C> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl<C> FromStr for TwoDimensionalNode<C>
+where
+    C: CoordinateDatatype + FromStr,
+{
     type Err = ParseError;
 
     /// Parses a node from `<id>:<x>,<y>` input.
@@ -160,7 +225,7 @@ impl FromStr for TwoDimensionalNode {
     ///
     /// - Exactly one `:` must separate ID and coordinate payload.
     /// - Exactly one `,` must separate `x` and `y`.
-    /// - Both coordinates must parse as `i32`.
+    /// - Both coordinates must parse as coordinate type `C`.
     /// - ID must not be empty.
     ///
     /// # Returns
@@ -175,7 +240,7 @@ impl FromStr for TwoDimensionalNode {
     /// use shortest_path_finder::graphs::graph::GraphNode;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
-    /// let node = TwoDimensionalNode::from_str("P:10,12").unwrap();
+    /// let node = TwoDimensionalNode::<i32>::from_str("P:10,12").unwrap();
     /// assert_eq!(node.get_id(), "P");
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -206,12 +271,12 @@ impl FromStr for TwoDimensionalNode {
             _ => return Err(ParseError::InvalidCoordinates),
         };
 
-        // Parse x and y as integers
-        let x: i32 = x_str
+        // Parse x and y as the configured coordinate scalar type.
+        let x: C = x_str
             .trim()
             .parse()
             .map_err(|_| ParseError::InvalidInteger)?;
-        let y: i32 = y_str
+        let y: C = y_str
             .trim()
             .parse()
             .map_err(|_| ParseError::InvalidInteger)?;

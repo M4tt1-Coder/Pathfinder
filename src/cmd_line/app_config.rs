@@ -117,6 +117,17 @@ struct ParsedCliValues {
 
 impl ParsedCliValues {
     /// Stores one parsed flag value and rejects duplicate occurrences.
+    ///
+    /// # Parameters
+    ///
+    /// - `slot`: Target storage location for a flag value.
+    /// - `flag`: Logical flag identifier used for diagnostics.
+    /// - `index`: Position of the current flag token in the original args.
+    /// - `value`: Parsed value token associated with `flag`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConfigParseError::DuplicateFlag`] when `slot` is already set.
     fn set_value(
         slot: &mut Option<(usize, String)>,
         flag: KnownFlag,
@@ -136,6 +147,16 @@ impl ParsedCliValues {
     }
 
     /// Routes one parsed flag/value pair into the corresponding storage slot.
+    ///
+    /// # Parameters
+    ///
+    /// - `flag`: Known flag discriminator.
+    /// - `index`: Index of the flag token in `args`.
+    /// - `value`: Associated value token.
+    ///
+    /// # Errors
+    ///
+    /// Propagates duplicate-flag errors from [`ParsedCliValues::set_value`].
     fn insert(
         &mut self,
         flag: KnownFlag,
@@ -151,22 +172,27 @@ impl ParsedCliValues {
         }
     }
 
+    /// Returns the parsed `--graph-file` value, if provided.
     fn graph_file_value(&self) -> Option<String> {
         self.graph_file.as_ref().map(|(_, value)| value.clone())
     }
 
+    /// Returns the parsed `--start` value, if provided.
     fn start_value(&self) -> Option<String> {
         self.start.as_ref().map(|(_, value)| value.clone())
     }
 
+    /// Returns the parsed `--end` value, if provided.
     fn end_value(&self) -> Option<String> {
         self.end.as_ref().map(|(_, value)| value.clone())
     }
 
+    /// Returns the parsed `--algo` value, if provided.
     fn algorithm_value(&self) -> Option<String> {
         self.algo.as_ref().map(|(_, value)| value.clone())
     }
 
+    /// Returns the parsed `--origin` value, if provided.
     fn origin_value(&self) -> Option<String> {
         self.origin.as_ref().map(|(_, value)| value.clone())
     }
@@ -232,6 +258,7 @@ fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError
         };
 
         parsed.insert(flag, index, value)?;
+        // Advance by one full pair (`--flag` + `value`).
         index += 2;
     }
 

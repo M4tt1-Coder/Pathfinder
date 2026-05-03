@@ -17,7 +17,10 @@
 //! ```rust
 //! use std::fmt::{Display, Formatter};
 //! use shortest_path_finder::graphs::graph::GraphNode;
-//! use shortest_path_finder::nodes::trait_decl::coordinates_node::CoordinatesNode;
+//! use shortest_path_finder::nodes::trait_decl::{
+//!     coordinate_datatype::CoordinateDatatype,
+//!     coordinates_node::CoordinatesNode,
+//! };
 //!
 //! #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
 //! struct MapNode {
@@ -51,15 +54,20 @@
 //! }
 //!
 //! fn manhattan_distance<N: CoordinatesNode<CoordinateType = i32>>(a: &N, b: &N) -> i32 {
-//!     (a.get_x() - b.get_x()).abs() + (a.get_y() - b.get_y()).abs()
+//!     let dx = (a.get_x() - b.get_x()).abs();
+//!     let dy = (a.get_y() - b.get_y()).abs();
+//!     dx + dy
 //! }
 //!
 //! let a = MapNode { id: "A".to_string(), x: 0, y: 0 };
 //! let b = MapNode { id: "B".to_string(), x: 3, y: 4 };
 //! assert_eq!(manhattan_distance(&a, &b), 7);
+//!
+//! let scaled = i32::from_f32(4.4);
+//! assert_eq!(scaled, 4);
 //! ```
 
-use crate::{graphs::graph::GraphNode, weight_types::numeric_datatype::NumericDatatype};
+use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
 
 /// Trait for nodes that expose two coordinates in addition to an identifier.
 ///
@@ -81,7 +89,7 @@ use crate::{graphs::graph::GraphNode, weight_types::numeric_datatype::NumericDat
 /// ```
 pub trait CoordinatesNode: GraphNode {
     /// The type used for the node's coordinates.
-    type CoordinateType: NumericDatatype;
+    type CoordinateType: CoordinateDatatype;
 
     /// Returns the x-coordinate of the node.
     ///

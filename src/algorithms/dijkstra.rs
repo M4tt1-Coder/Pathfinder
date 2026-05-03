@@ -19,7 +19,7 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+//! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
@@ -30,9 +30,9 @@
 //! graph.insert_node(a.clone());
 //! graph.insert_node(b.clone());
 //! graph.insert_node(c.clone());
-//! assert!(graph.insert_edge(DirectedEdge::new(a.clone(), b.clone(), 4)).is_none());
-//! assert!(graph.insert_edge(DirectedEdge::new(b, c.clone(), 2)).is_none());
-//! assert!(graph.insert_edge(DirectedEdge::new(a, c, 10)).is_none());
+//! assert!(graph.insert_edge(&a, &b, Some(4)).is_none());
+//! assert!(graph.insert_edge(&b, &c, Some(2)).is_none());
+//! assert!(graph.insert_edge(&a, &c, Some(10)).is_none());
 //!
 //! let dijkstra = DijkstraAlgorithm::new(graph);
 //! let result = dijkstra.shortest_path("A", "C").unwrap();
@@ -73,13 +73,12 @@ impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
     /// # Returns
     /// A new [`ShortestDistance`] value.
     ///
-    /// # Example (internal-only helper)
-    /// ```ignore
-    /// // Used by Dijkstra's internal state map.
-    /// let start_node = None;
-    /// let initial_distance = 0u16;
-    /// let node = ShortestDistance::new(start_node, initial_distance);
-    /// ```
+    /// # Notes
+    ///
+    /// This helper is used internally while building the distance map for
+    /// [`DijkstraAlgorithm`]. External callers should rely on
+    /// [`DijkstraAlgorithm::shortest_path`] instead of constructing
+    /// `ShortestDistance` entries directly.
     fn new(previous_node: Option<N>, distance: W) -> Self {
         Self {
             previous_node,
@@ -115,7 +114,7 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// ```rust
 /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-/// use shortest_path_finder::graphs::directed::{DirectedEdge, DirectedGraph};
+/// use shortest_path_finder::graphs::directed::DirectedGraph;
 /// use shortest_path_finder::graphs::graph::Graph;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
@@ -126,9 +125,9 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// graph.insert_node(a.clone());
 /// graph.insert_node(b.clone());
 /// graph.insert_node(c.clone());
-/// assert!(graph.insert_edge(DirectedEdge::new(a.clone(), b.clone(), 1)).is_none());
-/// assert!(graph.insert_edge(DirectedEdge::new(b, c.clone(), 1)).is_none());
-/// assert!(graph.insert_edge(DirectedEdge::new(a, c, 5)).is_none());
+/// assert!(graph.insert_edge(&a, &b, Some(1)).is_none());
+/// assert!(graph.insert_edge(&b, &c, Some(1)).is_none());
+/// assert!(graph.insert_edge(&a, &c, Some(5)).is_none());
 ///
 /// let algorithm = DijkstraAlgorithm::new(graph);
 /// let result = algorithm.shortest_path("A", "C").unwrap();
@@ -194,7 +193,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
         let distances = self.calculate_distances(start)?;
 
-        // search for the shortest route from the 'start' to the 'end' node
+        // Reconstruct the shortest route by walking predecessors from end to start.
         let mut path: Vec<N> = vec![];
         let mut current_node = end.clone();
         let mut output_distance = W::zero();
@@ -214,6 +213,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 }
             };
             if start.get_id() == prev.get_id() {
+                // The start node references itself as predecessor sentinel.
                 path.push(start.clone());
                 break;
             }
@@ -225,6 +225,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             return Err(DijkstraError::new("A path could not be found!".to_string()));
         }
 
+        // Path is collected from end to start; reverse to return start -> end.
         path.reverse();
 
         Ok(match DijkstraSearchResult::new(path, output_distance) {
@@ -253,7 +254,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
     ///
-    /// let graph = DirectedGraph::new(vec![], vec![]);
+    /// let graph = DirectedGraph::new(vec![]);
     /// let _algorithm = DijkstraAlgorithm::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {
@@ -276,6 +277,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         let mut output: HashMap<String, ShortestDistance<N, W>> = HashMap::new();
         for n in self.graph.get_all_nodes() {
             if n.get_id() == start.get_id() {
+                // Start node begins with distance 0 and itself as predecessor sentinel.
                 output.insert(
                     n.get_id().to_string().clone(),
                     ShortestDistance {
@@ -284,6 +286,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                     },
                 );
             } else {
+                // Unknown paths are initialized with "infinite" distance.
                 output.insert(
                     n.get_id().to_string().clone(),
                     ShortestDistance::new(None, W::max_value()),
@@ -321,6 +324,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         });
 
         while let Some(QueueItem { distance, position }) = queue.pop() {
+            // Skip stale queue entries superseded by a shorter known path.
             if distance
                 > match distances.get(position.get_id()) {
                     Some(distance_data) => distance_data.distance,
@@ -344,6 +348,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                     )));
                 }
 
+                // Standard relaxation: candidate distance via the current node.
                 let updated_distance = distance + weight;
 
                 if updated_distance
@@ -357,12 +362,15 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                         }
                     }
                 {
+                    // Persist better path and predecessor for later reconstruction.
                     distances
                         .entry(neighbour.get_id().to_string().clone())
                         .and_modify(|entry| {
                             entry.distance = updated_distance;
                             entry.previous_node = Some(position.clone())
                         });
+
+                    // Re-enqueue neighbor with its improved tentative distance.
                     queue.push(QueueItem::new(updated_distance, neighbour.clone()));
                 }
             }
@@ -399,12 +407,18 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> QueueItem<N, W> {
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord + Eq> PartialOrd for QueueItem<N, W> {
+    /// Defers partial ordering to [`Ord`] for `BinaryHeap` compatibility.
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
+    /// Orders queue entries by distance.
+    ///
+    /// `BinaryHeap` is a max-heap, so this ordering currently yields largest
+    /// distance first. The implementation compensates by skipping stale entries
+    /// when popped, which preserves correctness for this algorithm.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.distance.cmp(&other.distance)
     }

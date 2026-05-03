@@ -3,12 +3,24 @@
 //! # Overview
 //!
 //! This module models a graph whose nodes carry x/y coordinates:
-//! - [`TwoDimensionalCoordinateGraph`] stores nodes and computed edges.
-//! - [`TwoDimensionalEdge`] connects two coordinate nodes.
+//! - [`TwoDimensionalCoordinateGraph`] stores nodes and computed adjacency weights.
+//! - Edge weights are computed from node coordinates on insertion.
 //! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
 //!
 //! The graph implements the shared [`Graph`](crate::graphs::graph::Graph)
 //! trait and can be consumed by coordinate-aware algorithms such as A*.
+//!
+//! # Coordinate Type
+//!
+//! All main data structures in this module are generic over coordinate type
+//! `C`, defaulting to `i32`:
+//! - [`TwoDimensionalCoordinateGraph<C>`]
+//! - [`TwoDimensionalGraphInsertionError<C>`]
+//!
+//! `C` must implement
+//! [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//! Library users can therefore build coordinate graphs with types such as
+//! `i32` or `f32`.
 //!
 //! # File Abbreviation
 //!
@@ -18,27 +30,33 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::{
-//!     TwoDimensionalCoordinateGraph, TwoDimensionalEdge,
-//! };
+//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(2, 3, "B".to_string()).unwrap();
-//! let mut graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b.clone()], vec![]);
-//! assert!(graph.insert_edge(TwoDimensionalEdge::new(a, b)).is_none());
+//! let mut graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b.clone()]);
+//! assert!(graph.insert_edge(&a, &b, None).is_none());
 //! assert!(!graph.is_directed());
+//!
+//! let c = TwoDimensionalNode::<f32>::new(0.5, 1.5, "C".to_string()).unwrap();
+//! let d = TwoDimensionalNode::<f32>::new(1.5, 3.0, "D".to_string()).unwrap();
+//! let graph_f32 = TwoDimensionalCoordinateGraph::<f32>::new(vec![c, d]);
+//! assert_eq!(graph_f32.get_all_nodes().len(), 2);
 //! ```
 
-use std::{error::Error, fmt::Display};
+use std::{collections::HashMap, error::Error, fmt::Display};
 
-use log::debug;
-use uuid::Uuid;
+use log::{debug, warn};
 
 use crate::{
-    graphs::graph::{Graph, GraphEdge, GraphNode},
+    graphs::{
+        graph::{Graph, GraphNode},
+        utils::calculate_weight,
+    },
     nodes::{
-        trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
+        trait_decl::{coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode},
+        two_dimensional_node::TwoDimensionalNode,
     },
 };
 
@@ -51,33 +69,51 @@ use crate::{
 /// # Invariants
 ///
 /// - Duplicate nodes are rejected based on coordinates or ID.
+/// - Duplicate nodes provided at construction time are ignored.
 /// - Duplicate edges are rejected in either endpoint order.
+/// - Self-loop edges are stored once.
+/// - Explicit edge weights are ignored; weights are computed from coordinates.
 /// - Edge insertion requires both endpoint nodes to already exist.
+/// - Neighbor traversal is backed by an index-based adjacency list.
+///
+/// # Type Parameter
+///
+/// - `C`: coordinate scalar type used by graph nodes, defaulting to `i32`.
 #[derive(Debug, Clone, Default)]
-pub struct TwoDimensionalCoordinateGraph {
-    /// ----- Private field -----
-    ///
-    /// List of 'TwoDimensionalNode' placed in the graph.
-    nodes: Vec<TwoDimensionalNode>,
-    ///  ----- Private field -----
-    ///
-    /// All existing edges in the graph.
-    ///
-    /// Number of edges is bounded by the undirected complete-graph limit.
-    edges: Vec<TwoDimensionalEdge>,
+pub struct TwoDimensionalCoordinateGraph<C: CoordinateDatatype = i32> {
+    /// List of graph nodes.
+    nodes: Vec<TwoDimensionalNode<C>>,
+    /// Fast ID-to-index lookup for node access.
+    node_index_by_id: HashMap<String, usize>,
+    /// Adjacency list storing `(neighbor_index, weight)` for each node index.
+    adjacency: Vec<Vec<(usize, f32)>>,
 }
 
-impl TwoDimensionalCoordinateGraph {
-    /// Creates a new two-dimensional graph from node and edge vectors.
+impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
+    /// Resolves a node ID to its internal vector index.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: Node identifier.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(index)` when the node is present.
+    /// - `None` when the ID is unknown.
+    fn node_index_for_id(&self, id: &str) -> Option<usize> {
+        self.node_index_by_id.get(id).copied()
+    }
+
+    /// Creates a new two-dimensional graph from a node vector.
     ///
     /// # Arguments
     ///
     /// - `nodes`: initial node set.
-    /// - `edges`: initial edge set.
+    ///   Duplicate IDs or coordinates are ignored.
     ///
     /// # Returns
     ///
-    /// Fresh [`TwoDimensionalCoordinateGraph`] object with initial nodes and edges.
+    /// Fresh [`TwoDimensionalCoordinateGraph`] object with initial nodes.
     ///
     /// # Example
     ///
@@ -87,38 +123,44 @@ impl TwoDimensionalCoordinateGraph {
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(1, 2, "N1".to_string()).unwrap();
-    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node], vec![]);
+    /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);
     /// assert_eq!(graph.get_all_nodes().len(), 1);
     /// ```
-    pub fn new(nodes: Vec<TwoDimensionalNode>, edges: Vec<TwoDimensionalEdge>) -> Self {
-        Self { nodes, edges }
+    pub fn new(nodes: Vec<TwoDimensionalNode<C>>) -> Self {
+        let mut graph = Self {
+            nodes: Vec::new(),
+            node_index_by_id: HashMap::new(),
+            adjacency: Vec::new(),
+        };
+
+        for node in nodes {
+            graph.insert_node(node);
+        }
+
+        graph
     }
 }
 
-impl Graph for TwoDimensionalCoordinateGraph {
-    // types
-    type Node = TwoDimensionalNode;
-    type Edge = TwoDimensionalEdge;
-    type Weight = f32;
-    type InsertionError = TwoDimensionalGraphInsertionError;
+impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
+    type Node = TwoDimensionalNode<C>;
 
-    // methods
+    type Weight = f32;
+
+    type InsertionError = TwoDimensionalGraphInsertionError<C>;
+
     fn neighbors<'a>(
         &'a self,
         u: &Self::Node,
     ) -> Box<dyn Iterator<Item = (&'a Self::Node, Self::Weight)> + 'a> {
-        let mut neighbours: Vec<(&Self::Node, Self::Weight)> = vec![];
+        let Some(source_index) = self.node_index_for_id(u.get_id()) else {
+            return Box::new(std::iter::empty());
+        };
 
-        // iterate over edges and return tuple with reference to the node with the weight of the
-        // edge
-        for e in &self.edges {
-            if &e.node_one == u {
-                neighbours.push((&e.node_two, e.weight));
-            } else if &e.node_two == u {
-                neighbours.push((&e.node_one, e.weight));
-            }
-        }
-        Box::new(neighbours.into_iter())
+        Box::new(
+            self.adjacency[source_index]
+                .iter()
+                .map(move |(neighbor_index, weight)| (&self.nodes[*neighbor_index], *weight)),
+        )
     }
 
     fn is_directed(&self) -> bool {
@@ -126,41 +168,82 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
 
     fn insert_node(&mut self, new_node: Self::Node) {
-        // if the node already exists  -> then dont add it -> return
         if self.does_node_already_exist(&new_node) {
             return;
         }
 
+        let new_index = self.nodes.len();
+        self.node_index_by_id
+            .insert(new_node.get_id().to_string(), new_index);
         self.nodes.push(new_node);
+        self.adjacency.push(Vec::new());
     }
 
-    fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
-        // if the edge with the nodes already exists -> return error
-        if self.does_edge_already_exist(&edge) {
+    fn insert_edge(
+        &mut self,
+        from: &Self::Node,
+        to: &Self::Node,
+        weight: Option<Self::Weight>,
+    ) -> Option<Self::InsertionError> {
+        if self.does_edge_already_exist(from, to) {
             return Some(TwoDimensionalGraphInsertionError::new(
                 format!(
-                    "The edge {} already exists! Can't be added to the graph!",
-                    edge
+                    "The edge between '{}' and '{}' already exists in the graph!",
+                    from.get_id(),
+                    to.get_id()
                 ),
-                Some(edge),
-                None,
-            ));
-        }
-        // if at least one its predefined nodes isn't in the graph -> return error
-        if !self.does_node_already_exist(&edge.node_one)
-            || !self.does_node_already_exist(&edge.node_two)
-        {
-            return Some(TwoDimensionalGraphInsertionError::new(
-                format!(
-                    "One of the two nodes A {} or B {} of the edge {} are not in the graph! ",
-                    edge.node_one, edge.node_two, edge
-                ),
-                None,
-                Some([edge.node_one, edge.node_two]),
+                Some([from.clone(), to.clone()]),
             ));
         }
 
-        self.edges.push(edge);
+        let node_one_index = match self.node_index_for_id(from.get_id()) {
+            Some(index) => index,
+            None => {
+                return Some(TwoDimensionalGraphInsertionError::new(
+                    format!(
+                        "The source node '{}' does not exist in the graph!",
+                        from.get_id()
+                    ),
+                    Some([from.clone(), to.clone()]),
+                ));
+            }
+        };
+
+        let node_two_index = match self.node_index_for_id(to.get_id()) {
+            Some(index) => index,
+            None => {
+                return Some(TwoDimensionalGraphInsertionError::new(
+                    format!(
+                        "The destination node '{}' does not exist in the graph!",
+                        to.get_id()
+                    ),
+                    Some([from.clone(), to.clone()]),
+                ));
+            }
+        };
+
+        // Use canonical nodes from the graph to ensure weight is consistent with stored coordinates.
+        let canonical_from = &self.nodes[node_one_index];
+        let canonical_to = &self.nodes[node_two_index];
+
+        let weight = match weight {
+            Some(w) => {
+                warn!(
+                    "Explicit weight {} provided for edge from {} to {}, but coordinate graphs compute weights automatically!",
+                    w, from, to
+                );
+                calculate_weight(canonical_from, canonical_to)
+            }
+            None => calculate_weight(canonical_from, canonical_to),
+        };
+
+        if node_one_index == node_two_index {
+            self.adjacency[node_one_index].push((node_two_index, weight));
+            return None;
+        }
+
+        self.adjacency[node_one_index].push((node_two_index, weight));
+        self.adjacency[node_two_index].push((node_one_index, weight));
 
         None
     }
@@ -174,39 +257,33 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
 
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
-        self.nodes
-            .iter()
-            .find(|&n| n.get_id() == id)
-            .map(|v| v as _)
+        self.node_index_by_id
+            .get(id)
+            .and_then(|&index| self.nodes.get(index))
     }
 
-    fn get_edge_by_id(&self, id: &uuid::Uuid) -> Option<&Self::Edge> {
-        self.edges
-            .iter()
-            .find(|&e| e.get_id() == *id)
-            .map(|v| v as _)
-    }
-
-    fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
-        for e in &self.edges {
-            if e.id == edge.id
-                || (e.node_one == edge.node_one && e.node_two == edge.node_two)
-                || (e.node_one == edge.node_two && e.node_two == edge.node_one)
-            {
-                return true;
-            }
+    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+        if let Some(from_index) = self.node_index_for_id(from.get_id())
+            && let Some(to_index) = self.node_index_for_id(to.get_id())
+        {
+            return self.adjacency[from_index]
+                .iter()
+                .any(|(neighbor_index, _)| *neighbor_index == to_index)
+                || self.adjacency[to_index]
+                    .iter()
+                    .any(|(neighbor_index, _)| *neighbor_index == from_index);
         }
         false
     }
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
-        for n in &self.nodes {
-            if n.get_y() == node.get_y() && n.get_x() == node.get_x() || node.get_id() == n.get_id()
-            {
-                return true;
-            }
+        if self.node_index_by_id.contains_key(node.get_id()) {
+            return true;
         }
-        false
+
+        self.nodes
+            .iter()
+            .any(|n| n.get_y() == node.get_y() && n.get_x() == node.get_x())
     }
 
     fn abbreviation() -> String {
@@ -214,156 +291,38 @@ impl Graph for TwoDimensionalCoordinateGraph {
     }
 }
 
-impl Display for TwoDimensionalCoordinateGraph {
+impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // use template strings to display the nodes and edges in a clear manner
-        // nodes
-        let mut nodes_string = String::from("Nodes: \n");
-        for n in &self.nodes {
-            nodes_string.push_str(
-                format!("{}: ( X: {}, Y: {} )\n", n.get_id(), n.get_x(), n.get_y()).as_str(),
-            );
-        }
-        let mut edges_string = String::from("Edges: \n");
-        for e in &self.edges {
-            edges_string.push_str(
+        let mut graph_string = String::new();
+        graph_string.push_str("TwoDimensionalCoordinateGraph {\n");
+        for node in &self.nodes {
+            graph_string.push_str(
                 format!(
-                    "( ID: {}, Node A: {}, Node B: {}, Weight: {} )\n",
-                    e.id, e.node_one, e.node_two, e.weight
+                    "  Node: {}, {}, {}\n",
+                    node.get_id(),
+                    node.get_x(),
+                    node.get_y()
                 )
                 .as_str(),
             );
         }
-        write!(f, "{}{}", nodes_string, edges_string)
-    }
-}
-
-// ----- Implementation of the 'TwoDimensionalEdge' -----
-
-/// Edge connecting two nodes in a [`TwoDimensionalCoordinateGraph`].
-///
-/// # Weighting
-///
-/// The edge weight is calculated eagerly at construction and cached in the
-/// struct for fast access during pathfinding.
-#[derive(Debug, PartialEq, Clone)]
-pub struct TwoDimensionalEdge {
-    /// Unique identifier of the edge.
-    ///
-    /// UUID
-    id: Uuid,
-    /// First endpoint of the edge.
-    pub node_one: TwoDimensionalNode,
-    /// Second endpoint of the edge.
-    pub node_two: TwoDimensionalNode,
-    /// Cached weight computed from endpoint coordinates at construction time.
-    weight: f32,
-}
-
-impl TwoDimensionalEdge {
-    /// Creates a new edge and computes its cached weight.
-    ///
-    /// # Arguments
-    ///
-    /// * 'node_one' -> First node of the edge.
-    /// * 'node_two' -> Second mentioned node.
-    ///
-    /// # Returns
-    ///
-    /// [`TwoDimensionalEdge`] object.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalEdge;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
-    ///
-    /// let a = TwoDimensionalNode::new(4, 2, "A".to_string()).unwrap();
-    /// let b = TwoDimensionalNode::new(0, 0, "B".to_string()).unwrap();
-    /// let edge = TwoDimensionalEdge::new(a, b);
-    /// assert!(edge.get_weight().is_finite());
-    /// ```
-    pub fn new(node_one: TwoDimensionalNode, node_two: TwoDimensionalNode) -> Self {
-        let mut edge: Self = Self {
-            id: Uuid::new_v4(),
-            node_one,
-            node_two,
-            weight: 0.0_f32, // temporary value -> isn't the actual value
-        };
-        // calculate the weight and save it
-        edge.weight = edge.retrieve_actual_weight();
-
-        edge
-    }
-
-    /// Returns the cached weight of this edge.
-    ///
-    /// # Returns
-    ///
-    /// The weight of the edge.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalEdge;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
-    ///
-    /// let a = TwoDimensionalNode::new(5, 2, "A".to_string()).unwrap();
-    /// let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
-    /// let edge = TwoDimensionalEdge::new(a, b);
-    /// assert!(edge.get_weight().is_finite());
-    /// ```
-    pub fn get_weight(&self) -> f32 {
-        self.weight
-    }
-
-    /// Calculates the internal edge weight from endpoint coordinate deltas.
-    ///
-    /// # Implementation Detail
-    ///
-    /// The current implementation computes:
-    /// - `dx = x1 - x2`
-    /// - `dy = y1 - y2`
-    /// - `sqrt(dx.pow(2) + dy.pow(2))`
-    ///
-    /// which corresponds to the Euclidean distance formula for integer
-    /// coordinates.
-    ///
-    /// # Arguments
-    ///
-    /// - 'self' -> Any 'TwoDimensionalEdge' who's weight we want
-    ///
-    /// # Returns
-    ///
-    /// Computed `f32` weight value used internally by the graph.
-    fn retrieve_actual_weight(&self) -> f32 {
-        // Euclidean distance: sqrt((x1 - x2)^2 + (y1 - y2)^2).
-        let height = (self.node_one.get_x() - self.node_two.get_x()).pow(2);
-        let width = (self.node_one.get_y() - self.node_two.get_y()).pow(2);
-
-        // take the square root of the height and width
-        let temp_sum = (height + width) as f32;
-
-        temp_sum.sqrt()
-    }
-}
-
-// Implement the 'GraphEdge' trait for the 'TwoDimensionalEdge'
-impl GraphEdge for TwoDimensionalEdge {
-    type ID = Uuid;
-
-    fn get_id(&self) -> Self::ID {
-        self.id
-    }
-}
-
-impl Display for TwoDimensionalEdge {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Id: {},\nNode A: {}\nNode B: {}\nWeight: {}",
-            self.id, self.node_one, self.node_two, self.weight
-        )
+        for (index, neighbors) in self.adjacency.iter().enumerate() {
+            let node = &self.nodes[index];
+            for (neighbor_index, weight) in neighbors {
+                let neighbor_node = &self.nodes[*neighbor_index];
+                graph_string.push_str(
+                    format!(
+                        "  Edge: {} --({})--> {}\n",
+                        node.get_id(),
+                        weight,
+                        neighbor_node.get_id()
+                    )
+                    .as_str(),
+                );
+            }
+        }
+        graph_string.push('}');
+        write!(f, "{}", graph_string)
     }
 }
 
@@ -374,57 +333,49 @@ impl Display for TwoDimensionalEdge {
 /// # Fields
 ///
 /// - `message`: human-readable error description.
-/// - `cause_edge`: edge payload that may have caused the error.
 /// - `cause_nodes`: node pair that may have caused the error.
+///
+/// # Type Parameter
+///
+/// - `C`: coordinate scalar type used by node payloads in this error.
 #[derive(Debug)]
-pub struct TwoDimensionalGraphInsertionError {
-    /// Detailed description of the error
+pub struct TwoDimensionalGraphInsertionError<C: CoordinateDatatype = i32> {
+    /// Detailed description of the error.
     pub message: String,
-    /// A 'TwoDimensionalEdge' instance which potentially be what caused the error.
-    cause_edge: Option<TwoDimensionalEdge>,
     /// Two nodes passed when they caused the issue.
-    cause_nodes: Option<[TwoDimensionalNode; 2]>,
+    cause_nodes: Option<[TwoDimensionalNode<C>; 2]>,
 }
 
-impl TwoDimensionalGraphInsertionError {
+impl<C: CoordinateDatatype> TwoDimensionalGraphInsertionError<C> {
     /// Creates a new insertion error value.
     ///
     /// If `message` is empty, a default fallback message is used.
     ///
     /// # Arguments
     ///
-    /// - 'message' -> Descriptive message about what caused the error! Can refer to provided data
-    /// - 'cause_edge' -> An 'TwoDimensionalEdge' object relevant for the cause of the error!
-    /// - 'cause_nodes' -> Array of two 'TwoDimensionalNode' also important to explain why the
-    ///   error occured.
+    /// - `message` -> Descriptive message about what caused the error.
+    /// - `nodes` -> Optional pair of nodes relevant to the failure.
     ///
     /// # Returns
     ///
-    /// New instance of the [`TwoDimensionalGraphInsertionError`] struct.
+    /// New instance of [`TwoDimensionalGraphInsertionError`].
     ///
     /// # Example
     ///
     /// ```rust
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
     ///
-    /// let err = TwoDimensionalGraphInsertionError::new(
+    /// let err = TwoDimensionalGraphInsertionError::<i32>::new(
     ///     "invalid insertion".to_string(),
     ///     None,
-    ///     None,
     /// );
-    /// assert_eq!(err.to_string(), "invalid insertion");
+    /// assert!(err.to_string().contains("invalid insertion"));
     /// ```
-    pub fn new(
-        message: String,
-        edge: Option<TwoDimensionalEdge>,
-        nodes: Option<[TwoDimensionalNode; 2]>,
-    ) -> Self {
-        // if an empty message was provided -> apply default message BUT log info saying no error
-        // message provided
+    pub fn new(message: String, nodes: Option<[TwoDimensionalNode<C>; 2]>) -> Self {
         let err_message = if message.is_empty() {
-            debug!("No message was provided to the for the 'TwoDimensionalGraphInsertionError'!");
+            debug!("No message was provided for 'TwoDimensionalGraphInsertionError'!");
             String::from(
-                "An insertion error occured while trying to add data to the two dimensional graph!",
+                "An insertion error occurred while trying to add data to the two-dimensional graph!",
             )
         } else {
             message
@@ -432,26 +383,19 @@ impl TwoDimensionalGraphInsertionError {
 
         Self {
             message: err_message,
-            cause_edge: edge,
             cause_nodes: nodes,
         }
     }
 }
 
-impl Display for TwoDimensionalGraphInsertionError {
+impl<C: CoordinateDatatype> Display for TwoDimensionalGraphInsertionError<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // check if data was passed with the error
-        let mut cause_string = String::new();
-        if let Some(edge) = &self.cause_edge {
-            cause_string.push_str(format!("; Causing edge: {}", edge).as_str());
-        }
-        if let Some(nodes) = &self.cause_nodes {
-            for (i, n) in nodes.iter().enumerate() {
-                cause_string.push_str(format!("; Causing Node {}: {}", i, n).as_str());
-            }
-        }
-        write!(f, "{}", self.message)
+        write!(
+            f,
+            "{}; nodes involved in the occurred error: {:?}",
+            self.message, self.cause_nodes
+        )
     }
 }
 
-impl Error for TwoDimensionalGraphInsertionError {}
+impl<C: CoordinateDatatype> Error for TwoDimensionalGraphInsertionError<C> {}

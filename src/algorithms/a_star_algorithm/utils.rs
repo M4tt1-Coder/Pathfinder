@@ -15,14 +15,14 @@
 //!
 //! # Usage Example
 //!
-//! ```ignore
+//! ```rust
 //! use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
-//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
 //! let costs = prepare_g_cost_map(&graph, "A");
 //!
 //! assert_eq!(costs["A"], 0.0_f32);
@@ -56,14 +56,14 @@ use crate::{
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 /// let b = TwoDimensionalNode::new(2, 0, "B".to_string()).unwrap();
-/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b], vec![]);
+/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
 ///
 /// let g_costs = prepare_g_cost_map(&graph, "A");
 /// assert_eq!(g_costs["A"], 0.0_f32);
@@ -111,7 +111,7 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::{
 ///     a_star::AStarQueueElement,
 ///     utils::determine_path_cost,
@@ -139,11 +139,17 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
     let mut path: Vec<N> = Vec::new();
     let mut distance = WD::zero();
     if let Some(visited_node) = visited_nodes.last() {
+        // The final closed-set entry is expected to be the destination node.
         let mut current_node = visited_node;
         distance = current_node.get_g_cost();
         path.push(current_node.get_node().clone());
+
+        // Walk predecessor links backwards until the start node is reached.
         while let Some(predecessor) = current_node.get_predecessor() {
             path.push(predecessor.clone());
+
+            // Resolve predecessor metadata from the closed queue so the next
+            // predecessor hop can be followed.
             current_node = match visited_nodes.iter().find(|e| e.get_node() == predecessor) {
                 Some(element) => element,
                 None => {
@@ -154,6 +160,8 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
                 }
             }
         }
+
+        // Reconstruction collected nodes from goal -> start, so reverse it.
         path.reverse();
     }
 

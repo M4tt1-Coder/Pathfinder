@@ -1,28 +1,31 @@
 # PathFinder
 
 PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
-The runtime currently supports Dijkstra for directed/undirected graphs and A* for two-dimensional graphs.
+I build it with an eye for clean APIs, predictable behavior, and performance that scales as your graphs grow.
+The runtime currently supports Dijkstra for directed/undirected graphs and A* for two-dimensional coordinate graphs.
 
 ## Description
 
-PathFinder builds a graph from input data and computes the shortest path from a start node to an end node.
-The project supports directed and undirected weighted graphs, plus two-dimensional node types used by A* internals.
+PathFinder turns structured input into graph models and computes shortest paths between node IDs.
+The library exposes directed and undirected weighted graphs plus coordinate-aware nodes and graphs used by A*.
 
-The repository provides:
+In this repo you will find:
 
-- A reusable crate: shortest_path_finder
-- A CLI binary: pathfinder
-- Benchmarks for core modules
-- CI and pre-commit quality checks
+- The reusable crate: shortest_path_finder
+- The CLI binary: pathfinder
+- Benchmarks for the core modules
+- CI workflows and optional pre-commit hooks
 
 ### Current Runtime Scope
 
-- File-based input is implemented and used by the CLI
-- Command-line graph input mode is defined but not implemented in runtime flow
+- File-based input is implemented and wired into the CLI
+- Command-line graph input mode exists in configuration but is not wired into the runtime flow yet
 - Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
 - Dijkstra is fully wired in the executable
 - A* is wired for two-dimensional (`TD`) graph execution in the CLI path
-- A* now supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
+- A* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
+- `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
+- Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
 
 ### Technologies
 
@@ -52,7 +55,83 @@ Quality and automation:
 - src/graphs/: graph trait and concrete graph types
 - benches/: benchmark targets, including direct Dijkstra vs A* comparisons
 
-### Challenges & Feature
+### Library Usage (Rust)
+
+If you use the crate directly, the flow is simple: build a graph, pick an algorithm, and read the `SearchResult`.
+The snippets below are intentionally compact but mirror how I use the library in real code.
+
+#### Dijkstra on a directed graph
+
+```rust
+use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+use shortest_path_finder::graphs::directed::DirectedGraph;
+use shortest_path_finder::graphs::graph::Graph;
+use shortest_path_finder::nodes::default_node::DefaultNode;
+
+let mut graph = DirectedGraph::default();
+let a = DefaultNode::new("A".to_string());
+let b = DefaultNode::new("B".to_string());
+let c = DefaultNode::new("C".to_string());
+
+graph.insert_node(a.clone());
+graph.insert_node(b.clone());
+graph.insert_node(c.clone());
+
+graph.insert_edge(&a, &b, Some(4));
+graph.insert_edge(&b, &c, Some(2));
+graph.insert_edge(&a, &c, Some(10));
+
+let dijkstra = DijkstraAlgorithm::new(graph);
+let result = dijkstra.shortest_path("A", "C").expect("path should exist");
+
+assert_eq!(result.get_total_distance(), 6);
+assert_eq!(result.get_path().len(), 3);
+```
+
+Swap `DirectedGraph` for `UndirectedGraph` when you want a non-directional graph with the same API.
+
+#### A* on a coordinate graph
+
+```rust
+use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+use shortest_path_finder::graphs::graph::Graph;
+use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+
+let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+let b = TwoDimensionalNode::new(2, 1, "B".to_string()).unwrap();
+let c = TwoDimensionalNode::new(4, 1, "C".to_string()).unwrap();
+
+let mut graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b.clone(), c.clone()]);
+graph.insert_edge(&a, &b, None);
+graph.insert_edge(&b, &c, None);
+
+let a_star = AStar::new(graph);
+let result = a_star.shortest_path("A", "C").expect("path should exist");
+
+println!("distance: {}", result.get_total_distance());
+```
+
+#### Parse a graph from a file and run Dijkstra
+
+```rust
+use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+use shortest_path_finder::data_input::file_input::retrieve_graph_data_from_file;
+
+let parsed = retrieve_graph_data_from_file("test_files/directed_graph.txt")
+    .expect("graph file should parse");
+let graph = parsed.directed_graph.expect("directed graph expected");
+
+let dijkstra = DijkstraAlgorithm::new(graph);
+let result = dijkstra.shortest_path("A", "L").expect("path should exist");
+
+println!("distance: {}", result.get_total_distance());
+```
+
+### Challenges and roadmap
 
 Main engineering challenges addressed so far:
 
@@ -62,11 +141,11 @@ Main engineering challenges addressed so far:
 
 Planned and in-progress features:
 
-- [ ] Finalize full A* runtime integration
+- [X] Finalize full A* runtime integration
 - [ ] Enable command-line graph input origin in executable flow
 - [ ] Extend usage examples and integration tests for all graph variants
 
-## How to use it?
+## Getting started
 
 ### Prerequisites
 
@@ -160,8 +239,8 @@ Two-dimensional format currently recognized by parser:
 
 ```text
 TD
-A:0,0-B:2,1
-B:2,1-C:4,1
+A:0,0=>B:2,1
+B:2,1=>C:4,1
 ```
 
 ### Development workflow

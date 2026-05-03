@@ -14,7 +14,7 @@
 //! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
 //!
-//! let graph = DirectedGraph::new(vec![], vec![]);
+//! let graph = DirectedGraph::new(vec![]);
 //! assert!(graph.is_directed());
 //! assert!(graph.is_weighted());
 //! ```
@@ -23,3 +23,5 @@ pub mod directed;
 pub mod graph;
 pub mod two_dimensional_coordinate_graph;
 pub mod undirected;
+
+mod utils;

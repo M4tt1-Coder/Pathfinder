@@ -33,11 +33,10 @@ use shortest_path_finder::{
         algorithm::{Algorithm, SearchResult},
         dijkstra::DijkstraAlgorithm,
     },
-    graphs::graph::{Graph, GraphEdge, GraphNode, GraphWeight},
+    graphs::graph::{Graph, GraphNode, GraphWeight},
     nodes::two_dimensional_node::TwoDimensionalNode,
     weight_types::numeric_datatype::NumericDatatype,
 };
-use uuid::Uuid;
 
 fn main() {
     divan::main();
@@ -142,33 +141,6 @@ impl NumericDatatype for BenchWeight {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-struct BenchmarkEdge {
-    id: Uuid,
-    from_id: String,
-    to_id: String,
-    weight: BenchWeight,
-}
-
-impl BenchmarkEdge {
-    fn new(from_id: String, to_id: String, weight: BenchWeight) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            from_id,
-            to_id,
-            weight,
-        }
-    }
-}
-
-impl GraphEdge for BenchmarkEdge {
-    type ID = Uuid;
-
-    fn get_id(&self) -> Self::ID {
-        self.id
-    }
-}
-
 #[derive(Debug, Clone)]
 struct BenchmarkGraphInsertionError {
     message: String,
@@ -191,7 +163,6 @@ impl Error for BenchmarkGraphInsertionError {}
 #[derive(Clone, Debug, Default)]
 struct BenchmarkCoordinateGraph {
     nodes: Vec<TwoDimensionalNode>,
-    edges: Vec<BenchmarkEdge>,
     adjacency: HashMap<String, Vec<(usize, BenchWeight)>>,
 }
 
@@ -204,7 +175,6 @@ impl BenchmarkCoordinateGraph {
 impl Graph for BenchmarkCoordinateGraph {
     type Node = TwoDimensionalNode;
     type Weight = BenchWeight;
-    type Edge = BenchmarkEdge;
     type InsertionError = BenchmarkGraphInsertionError;
 
     fn neighbors<'a>(
@@ -238,51 +208,68 @@ impl Graph for BenchmarkCoordinateGraph {
         self.nodes.push(new_node);
     }
 
-    fn insert_edge(&mut self, edge: Self::Edge) -> Option<Self::InsertionError> {
-        if self.does_edge_already_exist(&edge) {
+    fn insert_edge(
+        &mut self,
+        from: &Self::Node,
+        to: &Self::Node,
+        weight: Option<Self::Weight>,
+    ) -> Option<Self::InsertionError> {
+        if self.does_edge_already_exist(from, to) {
             return Some(BenchmarkGraphInsertionError::new(format!(
                 "Edge from '{}' to '{}' already exists.",
-                edge.from_id, edge.to_id
+                from.get_id(),
+                to.get_id()
             )));
         }
 
-        let from_idx = match self.node_index_by_id(&edge.from_id) {
+        let from_idx = match self.node_index_by_id(from.get_id()) {
             Some(index) => index,
             None => {
                 return Some(BenchmarkGraphInsertionError::new(format!(
                     "Node '{}' is missing in benchmark graph.",
-                    edge.from_id
+                    from.get_id()
                 )));
             }
         };
-        let to_idx = match self.node_index_by_id(&edge.to_id) {
+        let to_idx = match self.node_index_by_id(to.get_id()) {
             Some(index) => index,
             None => {
                 return Some(BenchmarkGraphInsertionError::new(format!(
                     "Node '{}' is missing in benchmark graph.",
-                    edge.to_id
+                    to.get_id()
                 )));
             }
         };
 
-        self.adjacency
-            .entry(edge.from_id.clone())
-            .or_default()
-            .push((to_idx, edge.weight));
-        self.adjacency
-            .entry(edge.to_id.clone())
-            .or_default()
-            .push((from_idx, edge.weight));
+        let weight = match weight {
+            Some(value) => value,
+            None => {
+                return Some(BenchmarkGraphInsertionError::new(
+                    "Benchmark edges require an explicit weight.".to_string(),
+                ));
+            }
+        };
 
-        self.edges.push(edge);
+        self.adjacency
+            .entry(from.get_id().to_string())
+            .or_default()
+            .push((to_idx, weight));
+        self.adjacency
+            .entry(to.get_id().to_string())
+            .or_default()
+            .push((from_idx, weight));
+
         None
     }
 
-    fn does_edge_already_exist(&self, edge: &Self::Edge) -> bool {
-        self.edges.iter().any(|existing| {
-            (existing.from_id == edge.from_id && existing.to_id == edge.to_id)
-                || (existing.from_id == edge.to_id && existing.to_id == edge.from_id)
-        })
+    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+        let Some(entries) = self.adjacency.get(from.get_id()) else {
+            return false;
+        };
+
+        entries
+            .iter()
+            .any(|(target_idx, _)| self.nodes[*target_idx].get_id() == to.get_id())
     }
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
@@ -293,10 +280,6 @@ impl Graph for BenchmarkCoordinateGraph {
 
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
         self.nodes.iter().find(|node| node.get_id() == id)
-    }
-
-    fn get_edge_by_id(&self, id: &Uuid) -> Option<&Self::Edge> {
-        self.edges.iter().find(|edge| edge.get_id() == *id)
     }
 
     fn get_all_nodes(&self) -> &Vec<Self::Node> {
@@ -314,11 +297,13 @@ impl Graph for BenchmarkCoordinateGraph {
 
 impl Display for BenchmarkCoordinateGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let edge_count: usize = self.adjacency.values().map(|entries| entries.len()).sum();
+        let undirected_edges = edge_count / 2;
         write!(
             f,
             "BenchmarkCoordinateGraph(nodes: {}, edges: {})",
             self.nodes.len(),
-            self.edges.len()
+            undirected_edges
         )
     }
 }
@@ -339,9 +324,18 @@ fn insert_grid_edge(
     to_y: usize,
     weight: BenchWeight,
 ) {
-    let edge = BenchmarkEdge::new(node_id(from_x, from_y), node_id(to_x, to_y), weight);
+    let from_id = node_id(from_x, from_y);
+    let to_id = node_id(to_x, to_y);
+    let from = graph
+        .get_node_by_id(&from_id)
+        .cloned()
+        .expect("Benchmark graph is missing a source node.");
+    let to = graph
+        .get_node_by_id(&to_id)
+        .cloned()
+        .expect("Benchmark graph is missing a destination node.");
 
-    if let Some(err) = graph.insert_edge(edge) {
+    if let Some(err) = graph.insert_edge(&from, &to, Some(weight)) {
         panic!("Benchmark grid edge insertion failed: {}", err);
     }
 }

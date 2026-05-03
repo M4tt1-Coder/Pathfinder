@@ -9,9 +9,9 @@ use shortest_path_finder::{
         dijkstra::DijkstraAlgorithm,
     },
     graphs::{
-        directed::{DirectedEdge, DirectedGraph},
+        directed::DirectedGraph,
         graph::{Graph, GraphNode},
-        undirected::{UndirectedEdge, UndirectedGraph},
+        undirected::UndirectedGraph,
     },
     nodes::default_node::DefaultNode,
 };
@@ -28,30 +28,14 @@ fn dijkstra_finds_shortest_path_in_directed_graph() {
         graph.insert_node(node(id));
     }
 
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("A"), node("B"), 1))
-            .is_none(),
-        "edge insertion should succeed"
-    );
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("A"), node("C"), 5))
-            .is_none(),
-        "edge insertion should succeed"
-    );
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("B"), node("C"), 1))
-            .is_none(),
-        "edge insertion should succeed"
-    );
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("C"), node("D"), 1))
-            .is_none(),
-        "edge insertion should succeed"
-    );
+    let node_a = node("A");
+    let node_b = node("B");
+    let node_c = node("C");
+    let node_d = node("D");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(1)).is_none());
+    assert!(graph.insert_edge(&node_a, &node_c, Some(5)).is_none());
+    assert!(graph.insert_edge(&node_b, &node_c, Some(1)).is_none());
+    assert!(graph.insert_edge(&node_c, &node_d, Some(1)).is_none());
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let result = dijkstra.shortest_path("A", "D").expect("path should exist");
@@ -70,24 +54,12 @@ fn dijkstra_finds_shortest_path_in_undirected_graph() {
         graph.insert_node(node(id));
     }
 
-    assert!(
-        graph
-            .insert_edge(UndirectedEdge::new(node("A"), node("B"), 2))
-            .is_none(),
-        "edge insertion should succeed"
-    );
-    assert!(
-        graph
-            .insert_edge(UndirectedEdge::new(node("B"), node("C"), 2))
-            .is_none(),
-        "edge insertion should succeed"
-    );
-    assert!(
-        graph
-            .insert_edge(UndirectedEdge::new(node("A"), node("C"), 10))
-            .is_none(),
-        "edge insertion should succeed"
-    );
+    let node_a = node("A");
+    let node_b = node("B");
+    let node_c = node("C");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(2)).is_none());
+    assert!(graph.insert_edge(&node_b, &node_c, Some(2)).is_none());
+    assert!(graph.insert_edge(&node_a, &node_c, Some(10)).is_none());
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let result = dijkstra.shortest_path("A", "C").expect("path should exist");
@@ -103,12 +75,9 @@ fn dijkstra_returns_error_when_start_node_is_missing() {
     let mut graph = DirectedGraph::default();
     graph.insert_node(node("B"));
     graph.insert_node(node("C"));
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("B"), node("C"), 4))
-            .is_none(),
-        "edge insertion should succeed"
-    );
+    let node_b = node("B");
+    let node_c = node("C");
+    assert!(graph.insert_edge(&node_b, &node_c, Some(4)).is_none());
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let err = dijkstra
@@ -126,12 +95,9 @@ fn dijkstra_returns_error_when_no_path_exists() {
         graph.insert_node(node(id));
     }
 
-    assert!(
-        graph
-            .insert_edge(DirectedEdge::new(node("A"), node("B"), 1))
-            .is_none(),
-        "edge insertion should succeed"
-    );
+    let node_a = node("A");
+    let node_b = node("B");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(1)).is_none());
 
     let dijkstra = DijkstraAlgorithm::new(graph);
     let err = dijkstra
