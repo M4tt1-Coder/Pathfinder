@@ -69,6 +69,8 @@ use crate::{
     weight_types::numeric_datatype::NumericDatatype,
 };
 
+// TODO: Rework the error handling for the A* algorithm
+
 /// A* pathfinding engine for coordinate-aware graph nodes.
 ///
 /// # Type Parameters
