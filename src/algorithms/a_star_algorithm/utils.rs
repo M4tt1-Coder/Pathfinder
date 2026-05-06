@@ -32,7 +32,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    algorithms::a_star_algorithm::a_star::{AStarExecutionError, AStarQueueElement},
+    algorithms::a_star_algorithm::a_star::AStarQueueElement,
+    error::algorithm_error::PathReconstructionError,
     graphs::graph::{Graph, GraphNode},
     nodes::trait_decl::coordinates_node::CoordinatesNode,
     weight_types::numeric_datatype::NumericDatatype,
@@ -107,7 +108,7 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 /// # Returns
 ///
 /// - `Ok((path, total_cost))` with nodes ordered start -> destination.
-/// - `Err(AStarExecutionError)` if predecessor links are inconsistent.
+/// - `Err(PathReconstructionError)` if predecessor links are inconsistent.
 ///
 /// # Examples
 ///
@@ -135,9 +136,13 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 /// ```
 pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
     visited_nodes: Vec<AStarQueueElement<WD, N>>,
-) -> Result<(Vec<N>, WD), AStarExecutionError> {
+) -> Result<(Vec<N>, WD), PathReconstructionError> {
     let mut path: Vec<N> = Vec::new();
     let mut distance = WD::zero();
+    if visited_nodes.is_empty() {
+        return Err(PathReconstructionError::EmptyClosedSet);
+    }
+
     if let Some(visited_node) = visited_nodes.last() {
         // The final closed-set entry is expected to be the destination node.
         let mut current_node = visited_node;
@@ -153,10 +158,9 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
             current_node = match visited_nodes.iter().find(|e| e.get_node() == predecessor) {
                 Some(element) => element,
                 None => {
-                    return Err(AStarExecutionError::new(
-                        "Predecessor not found in closed queue during path reconstruction."
-                            .to_string(),
-                    ));
+                    return Err(PathReconstructionError::MissingClosedEntry {
+                        node_id: predecessor.get_id().to_string(),
+                    });
                 }
             }
         }

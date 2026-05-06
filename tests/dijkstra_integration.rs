@@ -6,7 +6,7 @@
 use shortest_path_finder::{
     algorithms::{
         algorithm::{Algorithm, SearchResult},
-        dijkstra::DijkstraAlgorithm,
+        dijkstra::{DijkstraAlgorithm, DijkstraError},
     },
     graphs::{
         directed::DirectedGraph,
@@ -84,7 +84,10 @@ fn dijkstra_returns_error_when_start_node_is_missing() {
         .shortest_path("A", "C")
         .expect_err("start node is not part of the graph");
 
-    assert!(err.message.contains("not in the graph"));
+    assert!(matches!(
+        err,
+        DijkstraError::MissingStartNode { id, .. } if id == "A"
+    ));
 }
 
 #[test]
@@ -104,8 +107,8 @@ fn dijkstra_returns_error_when_no_path_exists() {
         .shortest_path("A", "C")
         .expect_err("there is no route from A to C");
 
-    assert!(
-        err.message.contains("Unable to determine a valid path")
-            || err.message.contains("A path could not be found")
-    );
+    assert!(matches!(
+        err,
+        DijkstraError::NoPathFound { start, end } if start == "A" && end == "C"
+    ));
 }

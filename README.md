@@ -193,6 +193,18 @@ Compatibility note:
 - For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
 - The CLI parser now rejects unknown flags, duplicate flags, missing flag values, and unexpected non-flag tokens with explicit errors.
 
+### Exit codes
+
+- 0: success
+- 1: setup, parsing, or graph-loading failure
+- 2: unweighted graph for the selected algorithm
+- 3: required node is missing from the graph
+- 4: invalid edge weight encountered
+- 5: heuristic produced an invalid value
+- 6: no path exists between the requested nodes
+- 7: algorithm bookkeeping invariant failed
+- 8: algorithm returned an invalid result
+
 ### CLI argument examples
 
 Minimal example using defaults for origin and algorithm:

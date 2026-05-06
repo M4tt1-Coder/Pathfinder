@@ -3,7 +3,8 @@
 //! # Overview
 //!
 //! The crate currently exposes parsing-focused error types through
-//! [`parse_error`] and CLI setup parsing errors through [`config_error`].
+//! [`parse_error`], CLI setup parsing errors through [`config_error`], and
+//! algorithm execution errors through [`algorithm_error`].
 //!
 //! # Usage
 //!
@@ -17,3 +18,5 @@
 pub mod config_error;
 
 pub mod parse_error;
+
+pub mod algorithm_error;

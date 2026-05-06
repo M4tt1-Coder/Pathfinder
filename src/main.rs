@@ -48,6 +48,7 @@ use shortest_path_finder::{
     },
     cmd_line::app_config::{AppConfig, InputOrigin},
     data_input::file_input::retrieve_graph_data_from_file,
+    error::algorithm_error::AlgorithmError,
 };
 
 // TODO: Add a visualization function where the user can see how the algorithm is working step by
@@ -80,7 +81,14 @@ use shortest_path_finder::{
 /// # Exit Codes
 ///
 /// - `0`: successful path computation.
-/// - `1`: setup, parsing, graph-loading, or algorithm execution failure.
+/// - `1`: setup, parsing, or graph-loading failure.
+/// - `2`: algorithm rejected an unweighted graph.
+/// - `3`: required node is missing from the graph.
+/// - `4`: invalid edge weight encountered.
+/// - `5`: heuristic produced an invalid value.
+/// - `6`: no path exists between the requested nodes.
+/// - `7`: algorithm bookkeeping invariant failed.
+/// - `8`: algorithm returned an invalid result.
 fn main() {
     // enable logging to the terminal
     env_logger::init();
@@ -127,8 +135,9 @@ fn main() {
                     match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
                         Ok(res) => res,
                         Err(err) => {
-                            error!("{}", err.message);
-                            process::exit(1);
+                            let algorithm_error = AlgorithmError::from(err);
+                            error!("{}", algorithm_error);
+                            process::exit(algorithm_error.kind().exit_code());
                         }
                     };
                 // display the result
@@ -149,8 +158,9 @@ fn main() {
                     match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
                         Ok(res) => res,
                         Err(err) => {
-                            error!("{}", err.message);
-                            process::exit(1);
+                            let algorithm_error = AlgorithmError::from(err);
+                            error!("{}", algorithm_error);
+                            process::exit(algorithm_error.kind().exit_code());
                         }
                     };
                 // display the result
@@ -171,8 +181,9 @@ fn main() {
                     match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
                         Ok(res) => res,
                         Err(err) => {
-                            error!("{}", err.message);
-                            process::exit(1);
+                            let algorithm_error = AlgorithmError::from(err);
+                            error!("{}", algorithm_error);
+                            process::exit(algorithm_error.kind().exit_code());
                         }
                     };
                 // display the result
