@@ -1,7 +1,36 @@
 //! Integration tests for Dijkstra shortest path behavior.
 //!
-//! These cases verify successful shortest-path execution and common error
-//! conditions expected in production input handling.
+//! # Overview
+//!
+//! These tests exercise the end-to-end Dijkstra flow against concrete graph
+//! implementations.
+//!
+//! # Coverage
+//!
+//! - Directed and undirected graphs.
+//! - Successful shortest-path computation.
+//! - Expected failure modes returned as [`DijkstraError`].
+//!
+//! # Example
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+//! use shortest_path_finder::graphs::directed::DirectedGraph;
+//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//!
+//! let mut graph = DirectedGraph::default();
+//! let a = DefaultNode::new("A".to_string());
+//! let b = DefaultNode::new("B".to_string());
+//! graph.insert_node(a.clone());
+//! graph.insert_node(b.clone());
+//! graph.insert_edge(&a, &b, Some(2));
+//!
+//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let result = dijkstra.shortest_path("A", "B").unwrap();
+//! assert_eq!(result.get_total_distance(), 2);
+//! ```
 
 use shortest_path_finder::{
     algorithms::{

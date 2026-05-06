@@ -197,13 +197,58 @@ Compatibility note:
 
 - 0: success
 - 1: setup, parsing, or graph-loading failure
-- 2: unweighted graph for the selected algorithm
+- 2: invalid graph for the selected algorithm (for example unweighted)
 - 3: required node is missing from the graph
 - 4: invalid edge weight encountered
 - 5: heuristic produced an invalid value
 - 6: no path exists between the requested nodes
 - 7: algorithm bookkeeping invariant failed
 - 8: algorithm returned an invalid result
+
+Exit codes for algorithm failures are derived from `AlgorithmErrorKind` in
+the library error module. The CLI wraps algorithm-specific errors into
+`AlgorithmError`, calls `kind()`, and exits with `kind().exit_code()`.
+
+Example: mapping a Dijkstra error to a CLI exit code:
+
+```rust
+use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+
+let err = AlgorithmError::from(DijkstraError::NoPathFound {
+	start: "A".to_string(),
+	end: "B".to_string(),
+});
+assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+assert_eq!(err.kind().exit_code(), 6);
+```
+
+Example CLI error output:
+
+```text
+[ERROR] Algorithm error (Dijkstra): no path found from 'A' to 'B'
+```
+
+### Error handling (library)
+
+Algorithms return typed errors. If you want a stable classification layer for
+telemetry, exit codes, or user messaging, wrap errors in `AlgorithmError` and
+query `AlgorithmErrorKind`.
+
+```rust
+use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+
+let err = AlgorithmError::from(DijkstraError::MissingStartNode {
+	id: "A".to_string(),
+	graph: "DirectedGraph".to_string(),
+});
+
+match err.kind() {
+	AlgorithmErrorKind::MissingNode => println!("node is missing"),
+	_ => println!("other error"),
+}
+```
 
 ### CLI argument examples
 

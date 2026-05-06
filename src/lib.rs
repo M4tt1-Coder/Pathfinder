@@ -21,6 +21,23 @@
 //! - [`error`]: parse-time, CLI configuration, and algorithm execution errors.
 //! - [`weight_types`] and [`numeric_datatypes`]: numeric traits and impls.
 //!
+//! # Error Handling
+//!
+//! Algorithm execution failures are represented by typed error enums. Use
+//! [`error::algorithm_error::AlgorithmErrorKind`] to classify failures when you
+//! want stable categories (for example, for exit codes or telemetry).
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//!
+//! let err = AlgorithmError::from(DijkstraError::NoPathFound {
+//!     start: "A".to_string(),
+//!     end: "B".to_string(),
+//! });
+//! assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+//! ```
+//!
 //! # Quick Start
 //!
 //! ```rust

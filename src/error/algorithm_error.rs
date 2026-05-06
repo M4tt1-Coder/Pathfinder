@@ -6,14 +6,53 @@
 //! provides a wrapper for CLI consumers to classify errors and map them to
 //! exit codes.
 //!
+//! # Error Taxonomy
+//!
+//! - [`AlgorithmErrorKind`] groups error categories used by the CLI.
+//! - [`AlgorithmError`] wraps algorithm-specific error payloads.
+//! - [`AStarExecutionError`] and [`DijkstraError`] describe concrete failures.
+//! - [`PathReconstructionError`] captures failures while rebuilding paths.
+//!
 //! # Exit Codes
 //!
 //! `AlgorithmErrorKind::exit_code()` maps error categories to stable, numeric
 //! exit codes for the CLI runtime.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//!
+//! let err = AlgorithmError::from(DijkstraError::NoPathFound {
+//!     start: "A".to_string(),
+//!     end: "B".to_string(),
+//! });
+//! assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+//! assert_eq!(err.kind().exit_code(), 6);
+//! ```
 
 use std::{error::Error, fmt};
 
 /// High-level categories for algorithm execution failures.
+///
+/// # Exit Codes
+///
+/// - `InvalidGraph` => `2`
+/// - `MissingNode` => `3`
+/// - `InvalidWeight` => `4`
+/// - `InvalidHeuristic` => `5`
+/// - `NoPath` => `6`
+/// - `InvariantViolation` => `7`
+/// - `InvalidResult` => `8`
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::AlgorithmErrorKind;
+///
+/// assert_eq!(AlgorithmErrorKind::NoPath.exit_code(), 6);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlgorithmErrorKind {
     /// Graph configuration or constraints are invalid for the algorithm.
@@ -48,6 +87,19 @@ impl AlgorithmErrorKind {
 }
 
 /// Wrapper for algorithm-specific execution errors.
+///
+/// # Usage
+///
+/// ```rust
+/// use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+/// use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+///
+/// let err = AlgorithmError::from(DijkstraError::NoPathFound {
+///     start: "A".to_string(),
+///     end: "B".to_string(),
+/// });
+/// assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+/// ```
 #[derive(Debug)]
 pub enum AlgorithmError {
     /// A* algorithm execution error.
@@ -97,6 +149,22 @@ impl From<DijkstraError> for AlgorithmError {
 }
 
 /// Error returned while reconstructing a path from A* bookkeeping data.
+///
+/// # Context
+///
+/// These errors indicate inconsistent predecessor links in the closed set.
+/// They are wrapped by [`AStarExecutionError::PathReconstruction`].
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::PathReconstructionError;
+///
+/// let err = PathReconstructionError::MissingClosedEntry {
+///     node_id: "X".to_string(),
+/// };
+/// assert!(err.to_string().contains("missing"));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PathReconstructionError {
     /// The closed set was empty when reconstruction started.
@@ -121,6 +189,20 @@ impl fmt::Display for PathReconstructionError {
 impl Error for PathReconstructionError {}
 
 /// A* execution errors.
+///
+/// # Categories
+///
+/// Use [`AStarExecutionError::kind`] to map failures to
+/// [`AlgorithmErrorKind`] values.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::{AStarExecutionError, AlgorithmErrorKind};
+///
+/// let err = AStarExecutionError::UnweightedGraph;
+/// assert_eq!(err.kind(), AlgorithmErrorKind::InvalidGraph);
+/// ```
 #[derive(Debug, Clone)]
 pub enum AStarExecutionError {
     /// Graph is not weighted.
@@ -244,6 +326,22 @@ impl From<PathReconstructionError> for AStarExecutionError {
 }
 
 /// Dijkstra execution errors.
+///
+/// # Categories
+///
+/// Use [`DijkstraError::kind`] to map failures to [`AlgorithmErrorKind`].
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::{AlgorithmErrorKind, DijkstraError};
+///
+/// let err = DijkstraError::NoPathFound {
+///     start: "A".to_string(),
+///     end: "B".to_string(),
+/// };
+/// assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+/// ```
 #[derive(Debug, Clone)]
 pub enum DijkstraError {
     /// Graph is not weighted.

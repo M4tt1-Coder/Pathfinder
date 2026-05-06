@@ -1,14 +1,45 @@
 //! Dijkstra shortest-path algorithm implementation.
 //!
+//! # Overview
+//!
 //! This module contains the concrete Dijkstra implementation used by the
 //! application. It supports graph types that implement [`Graph`] and uses a
 //! priority queue (`BinaryHeap`) to iteratively relax edges.
 //!
-//! Dijkstra requires all traversed edge weights to be non-negative. If a
-//! negative edge weight is encountered during processing, the algorithm returns
-//! a [`DijkstraError`].
+//! # Requirements
 //!
-//! # Main types
+//! - Graph must be weighted (`graph.is_weighted() == true`).
+//! - All traversed edge weights must be non-negative.
+//!
+//! # Algorithm Steps
+//!
+//! 1. Initialize a distance map with `0` for the start node and `max_value`
+//!    for every other node.
+//! 2. Pop the next candidate from the priority queue and relax its outgoing
+//!    edges.
+//! 3. Update predecessor links and re-queue nodes when a shorter path is found.
+//! 4. Reconstruct the shortest path by following predecessors from the goal.
+//!
+//! # Complexity Notes
+//!
+//! The relaxation loop is typically `O(E log V)` due to queue operations.
+//! This implementation uses a max-heap and skips stale entries when a better
+//! distance is already known.
+//!
+//! # Queue Behavior
+//!
+//! The queue ordering is not inverted. Instead, stale entries are ignored on
+//! pop, which preserves correctness without requiring a custom min-heap.
+//!
+//! # Error Handling
+//!
+//! - Violations are surfaced as [`DijkstraError`] variants.
+//! - The CLI wraps these errors in
+//!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
+//!   maps them to exit codes via
+//!   [`AlgorithmErrorKind::exit_code`](crate::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//!
+//! # Main Types
 //!
 //! - [`DijkstraAlgorithm`]: algorithm engine operating on a concrete graph.
 //! - [`DijkstraSearchResult`]: successful path computation output.
@@ -55,9 +86,16 @@ use crate::{
 
 /// Internal bookkeeping entry used while distances are being relaxed.
 ///
+/// # Fields
+///
 /// Each node maps to one instance of this type while the algorithm is running:
 /// - `distance` stores the currently known best distance from the start node.
 /// - `previous_node` stores the predecessor used to reconstruct the final path.
+///
+/// # Notes
+///
+/// This struct is internal state and should not be constructed directly by
+/// library consumers.
 #[derive(Debug)]
 pub struct ShortestDistance<N: GraphNode, W: GraphWeight + Ord> {
     distance: W,
@@ -153,6 +191,49 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
     type NodeOfUsedGraph = N;
 
+    /// Computes a shortest path between two node IDs using Dijkstra.
+    ///
+    /// # Parameters
+    ///
+    /// - `start_node_id`: identifier of the start node.
+    /// - `end_node_id`: identifier of the destination node.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(DijkstraSearchResult<...>)` when a route can be produced.
+    /// - `Err(DijkstraError)` when graph constraints are violated or required
+    ///   nodes cannot be found.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - graph is not weighted,
+    /// - `start_node_id` does not exist,
+    /// - `end_node_id` does not exist,
+    /// - an edge weight is negative,
+    /// - no path can be found,
+    /// - path reconstruction fails or the result is invalid.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
+    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    ///
+    /// let mut graph = DirectedGraph::default();
+    /// let a = DefaultNode::new("A".to_string());
+    /// let b = DefaultNode::new("B".to_string());
+    /// graph.insert_node(a.clone());
+    /// graph.insert_node(b.clone());
+    /// graph.insert_edge(&a, &b, Some(4));
+    ///
+    /// let dijkstra = DijkstraAlgorithm::new(graph);
+    /// let result = dijkstra.shortest_path("A", "B").unwrap();
+    /// assert_eq!(result.get_total_distance(), 4);
+    /// ```
     fn shortest_path(
         &self,
         start_node_id: &str,
@@ -258,6 +339,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
     /// Initializes the distance map for Dijkstra processing.
     ///
+    /// # Behavior
+    ///
     /// The start node receives distance `0` and references itself as previous node.
     /// Every other node receives `W::max_value()` and no predecessor.
     ///
@@ -302,6 +385,11 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// - `Ok(HashMap<...>)` containing shortest-distance metadata for all nodes.
     /// - `Err(DijkstraError)` if graph consistency checks fail or an invalid
     ///   edge weight (negative) is encountered.
+    ///
+    /// # Notes
+    ///
+    /// The internal queue is a max-heap; stale entries are skipped when a
+    /// shorter distance is already recorded in `distances`.
     fn calculate_distances(
         &self,
         start: &N,
@@ -422,6 +510,15 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
 /// Search result produced by [`DijkstraAlgorithm`].
 ///
 /// Contains the final path and total distance of the shortest route.
+///
+/// # Validation
+///
+/// Use [`DijkstraSearchResult::new`] to enforce the minimum path length before
+/// constructing a result manually.
+///
+/// # Display
+///
+/// The display string prints the path and distance on separate lines.
 #[derive(Debug, Clone)]
 pub struct DijkstraSearchResult<N: GraphNode, W: GraphWeight> {
     /// Ordered node sequence from start node to destination node.
@@ -457,6 +554,9 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     /// ];
     /// let result = DijkstraSearchResult::new(path, 9u16);
     /// assert!(result.is_ok());
+    ///
+    /// let output = format!("{}", result.unwrap());
+    /// assert!(output.contains("Path:"));
     /// ```
     ///
     /// ```rust

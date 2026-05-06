@@ -13,6 +13,13 @@
 //! they are designed as algorithm-internal building blocks rather than stable
 //! high-level APIs.
 //!
+//! # Notes
+//!
+//! - `prepare_g_cost_map` uses `NumericDatatype::max_value()` as the initial
+//!   "infinite" sentinel for all nodes except the start.
+//! - `determine_path_cost` expects the destination to be the final entry in the
+//!   visited list.
+//!
 //! # Usage Example
 //!
 //! ```rust
@@ -54,6 +61,12 @@ use crate::{
 /// # Returns
 ///
 /// Map from node ID to initialized g-cost.
+///
+/// # Notes
+///
+/// `ND::max_value()` is treated as an "infinite" placeholder. Ensure the
+/// numeric datatype uses a large finite value so later comparisons behave as
+/// expected.
 ///
 /// # Examples
 ///
@@ -108,7 +121,17 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 /// # Returns
 ///
 /// - `Ok((path, total_cost))` with nodes ordered start -> destination.
-/// - `Err(PathReconstructionError)` if predecessor links are inconsistent.
+///
+/// # Errors
+///
+/// - `Err(PathReconstructionError::EmptyClosedSet)` if no nodes were visited.
+/// - `Err(PathReconstructionError::MissingClosedEntry)` if a predecessor chain
+///   cannot be resolved from the visited set.
+///
+/// # Notes
+///
+/// The predecessor chain is followed until no predecessor is found, so the
+/// visited list must include every node referenced by `predecessor` fields.
 ///
 /// # Examples
 ///

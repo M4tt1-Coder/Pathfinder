@@ -15,6 +15,20 @@
 //! - Algorithm selection: Dijkstra for directed (`D`) and undirected (`UN`)
 //!   graphs; A* for two-dimensional (`TD`) graphs.
 //!
+//! # Error Handling
+//!
+//! Algorithm-specific failures are wrapped in
+//! [`AlgorithmError`](shortest_path_finder::error::algorithm_error::AlgorithmError)
+//! and mapped to exit codes via
+//! [`AlgorithmErrorKind::exit_code`](shortest_path_finder::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//! The CLI logs the error message before exiting.
+//!
+//! ```no_run
+//! use shortest_path_finder::error::algorithm_error::AlgorithmErrorKind;
+//!
+//! assert_eq!(AlgorithmErrorKind::NoPath.exit_code(), 6);
+//! ```
+//!
 //! # CLI Example
 //!
 //! ```no_run
@@ -82,7 +96,7 @@ use shortest_path_finder::{
 ///
 /// - `0`: successful path computation.
 /// - `1`: setup, parsing, or graph-loading failure.
-/// - `2`: algorithm rejected an unweighted graph.
+/// - `2`: algorithm rejected an invalid graph (for example unweighted).
 /// - `3`: required node is missing from the graph.
 /// - `4`: invalid edge weight encountered.
 /// - `5`: heuristic produced an invalid value.

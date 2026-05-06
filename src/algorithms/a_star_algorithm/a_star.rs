@@ -25,6 +25,29 @@
 //! - The graph must be weighted (`graph.is_weighted() == true`).
 //! - `start_node_id` and `end_node_id` must exist in the graph.
 //!
+//! # Algorithm Steps
+//!
+//! 1. Validate the graph and resolve start and goal nodes.
+//! 2. Seed the open queue with the start node and initialize the g-cost map.
+//! 3. Pop the lowest `f(n)` entry, relax neighbors, and reopen nodes when a
+//!    cheaper g-cost is found.
+//! 4. Stop when the goal is reached and reconstruct the path from predecessors.
+//!
+//! # Complexity Notes
+//!
+//! Queue operations are `O(log V)` and the traversal is typically `O(E log V)`.
+//! This implementation uses linear scans to check open and closed membership,
+//! which can increase runtime on large graphs.
+//!
+//! # Error Handling
+//!
+//! - Runtime validation and bookkeeping failures are surfaced as
+//!   [`AStarExecutionError`].
+//! - In the CLI, these errors are wrapped in
+//!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
+//!   mapped to exit codes via
+//!   [`AlgorithmErrorKind::exit_code`](crate::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//!
 //! # Usage Example
 //!
 //! ```no_run
@@ -83,6 +106,11 @@ use crate::{
 /// - Resolve start and goal nodes by ID.
 /// - Execute the open/closed queue loop.
 /// - Reconstruct path and distance.
+///
+/// # Error Handling
+///
+/// Use [`AStar::shortest_path`] to surface validation, heuristic, or
+/// reconstruction failures as [`AStarExecutionError`].
 ///
 /// # Example
 ///
@@ -406,7 +434,17 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 /// - `distance`: total path cost.
 /// - `path`: ordered node sequence from start to destination.
 ///
-/// # Example
+/// # Validation
+///
+/// Use [`AStarSearchResult::new`] to enforce the non-empty path and
+/// non-negative distance invariants before constructing the result.
+///
+/// # Display
+///
+/// The display format is a human-readable `Path: ...` string followed by the
+/// total distance.
+///
+/// # Examples
 ///
 /// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
@@ -419,13 +457,15 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 ///
 /// assert_eq!(result.get_total_distance(), 1);
 /// assert_eq!(result.get_path().len(), 2);
+///
+/// let output = format!("{}", result);
+/// assert!(output.contains("Path:"));
 /// ```
 #[derive(Debug)]
 pub struct AStarSearchResult<WD: NumericDatatype, N: CoordinatesNode> {
-    /// Total distance from one node A to node B.
+    /// Total distance of the computed path.
     distance: WD,
-    /// List of nodes in order of the nodes that where visited to get the shortest path from the
-    /// start to the destination node.
+    /// Ordered node sequence from start to destination.
     ///
     /// Must have at least 1 node (the `start == destination` case produces a single-node path).
     path: Vec<N>,
@@ -532,6 +572,16 @@ impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult
 ///
 /// - `WD`: numeric cost type implementing [`NumericDatatype`].
 /// - `N`: coordinate-based node type.
+///
+/// # Lifetimes
+///
+/// The `'n` lifetime ties queue entries to graph-owned node references; callers
+/// must ensure the graph outlives the queue entries.
+///
+/// # Notes
+///
+/// `f_cost` is computed when the element is created as `g_cost + h_cost` and
+/// drives the queue ordering.
 ///
 /// # Example
 ///
