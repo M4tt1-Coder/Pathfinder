@@ -121,6 +121,15 @@ impl GraphWeight for BenchWeight {
     fn zero() -> Self {
         Self(0.0)
     }
+
+    fn checked_add(self, other: Self) -> Option<Self> {
+        let sum = self.0 + other.0;
+        if sum.is_finite() {
+            Some(Self(sum))
+        } else {
+            None
+        }
+    }
 }
 
 impl NumericDatatype for BenchWeight {

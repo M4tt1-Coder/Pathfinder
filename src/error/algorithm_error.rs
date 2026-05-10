@@ -11,7 +11,8 @@
 //! - [`AlgorithmErrorKind`] groups error categories used by the CLI.
 //! - [`AlgorithmError`] wraps algorithm-specific error payloads.
 //! - [`AStarExecutionError`] and [`DijkstraError`] describe concrete failures.
-//! - [`PathReconstructionError`] captures failures while rebuilding paths.
+//! - [`PathReconstructionError`] captures failures while rebuilding A* paths.
+//! - [`DijkstraPathReconstructionError`] captures Dijkstra reconstruction failures.
 //!
 //! # Exit Codes
 //!
@@ -325,6 +326,86 @@ impl From<PathReconstructionError> for AStarExecutionError {
     }
 }
 
+/// Reason for rejecting an edge weight during Dijkstra execution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EdgeWeightViolation {
+    /// Weight is negative.
+    Negative,
+    /// Weight is non-finite (NaN or +/- infinity).
+    NonFinite,
+}
+
+impl fmt::Display for EdgeWeightViolation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            EdgeWeightViolation::Negative => write!(f, "negative"),
+            EdgeWeightViolation::NonFinite => write!(f, "non-finite"),
+        }
+    }
+}
+
+/// Context describing where a node went missing during Dijkstra processing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MissingNodeContext {
+    /// The current queue item was not found in the distance map.
+    CurrentNode,
+    /// A neighbor referenced by an edge was not found in the distance map.
+    NeighborNode,
+}
+
+impl fmt::Display for MissingNodeContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MissingNodeContext::CurrentNode => write!(f, "current node"),
+            MissingNodeContext::NeighborNode => write!(f, "neighbor node"),
+        }
+    }
+}
+
+/// Error returned while reconstructing a Dijkstra path.
+///
+/// These errors indicate inconsistent predecessor links or missing distance
+/// data after the relaxation phase.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DijkstraPathReconstructionError {
+    /// No distance entry exists for the requested node.
+    MissingDistanceEntry { node_id: String },
+    /// Predecessor entry is missing while walking the chain.
+    MissingPredecessor { node_id: String },
+    /// Predecessor traversal exceeded the number of known nodes.
+    PredecessorLoop {
+        start: String,
+        end: String,
+        current: String,
+    },
+}
+
+impl fmt::Display for DijkstraPathReconstructionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DijkstraPathReconstructionError::MissingDistanceEntry { node_id } => {
+                write!(f, "missing distance entry for node '{}'", node_id)
+            }
+            DijkstraPathReconstructionError::MissingPredecessor { node_id } => write!(
+                f,
+                "missing predecessor while reconstructing node '{}'",
+                node_id
+            ),
+            DijkstraPathReconstructionError::PredecessorLoop {
+                start,
+                end,
+                current,
+            } => write!(
+                f,
+                "predecessor chain looped while reconstructing '{}' -> '{}' (stuck at '{}')",
+                start, end, current
+            ),
+        }
+    }
+}
+
+impl Error for DijkstraPathReconstructionError {}
+
 /// Dijkstra execution errors.
 ///
 /// # Categories
@@ -351,18 +432,35 @@ pub enum DijkstraError {
     /// End node does not exist in the graph.
     MissingEndNode { id: String, graph: String },
     /// A node is missing while computing distances.
-    MissingNodeDuringProcessing { id: String },
+    ///
+    /// The `context` field indicates whether the missing entry was the current
+    /// node or one of its neighbors.
+    MissingNodeDuringProcessing {
+        id: String,
+        context: MissingNodeContext,
+    },
     /// Edge weight violates algorithm constraints.
     InvalidEdgeWeight {
         from: String,
         to: String,
         weight: String,
-        reason: String,
+        reason: EdgeWeightViolation,
+    },
+    /// Edge relaxation would overflow the distance datatype.
+    DistanceOverflow {
+        from: String,
+        to: String,
+        current_distance: String,
+        edge_weight: String,
     },
     /// No path exists between the start and end nodes.
     NoPathFound { start: String, end: String },
     /// Search result failed validation.
     InvalidSearchResult { reason: String },
+    /// Path reconstruction failed using predecessor links.
+    PathReconstruction {
+        source: DijkstraPathReconstructionError,
+    },
 }
 
 impl DijkstraError {
@@ -376,8 +474,10 @@ impl DijkstraError {
                 AlgorithmErrorKind::InvariantViolation
             }
             DijkstraError::InvalidEdgeWeight { .. } => AlgorithmErrorKind::InvalidWeight,
+            DijkstraError::DistanceOverflow { .. } => AlgorithmErrorKind::InvalidWeight,
             DijkstraError::NoPathFound { .. } => AlgorithmErrorKind::NoPath,
             DijkstraError::InvalidSearchResult { .. } => AlgorithmErrorKind::InvalidResult,
+            DijkstraError::PathReconstruction { .. } => AlgorithmErrorKind::InvariantViolation,
         }
     }
 }
@@ -398,10 +498,10 @@ impl fmt::Display for DijkstraError {
                 "Algorithm error (Dijkstra): end node '{}' not found in graph {}",
                 id, graph
             ),
-            DijkstraError::MissingNodeDuringProcessing { id } => write!(
+            DijkstraError::MissingNodeDuringProcessing { id, context } => write!(
                 f,
-                "Algorithm error (Dijkstra): node '{}' missing during distance processing",
-                id
+                "Algorithm error (Dijkstra): node '{}' missing during distance processing ({})",
+                id, context
             ),
             DijkstraError::InvalidEdgeWeight {
                 from,
@@ -413,6 +513,16 @@ impl fmt::Display for DijkstraError {
                 "Algorithm error (Dijkstra): invalid edge weight {} on {} -> {} ({})",
                 weight, from, to, reason
             ),
+            DijkstraError::DistanceOverflow {
+                from,
+                to,
+                current_distance,
+                edge_weight,
+            } => write!(
+                f,
+                "Algorithm error (Dijkstra): distance overflow while relaxing edge {} -> {} (current: {}, edge: {})",
+                from, to, current_distance, edge_weight
+            ),
             DijkstraError::NoPathFound { start, end } => write!(
                 f,
                 "Algorithm error (Dijkstra): no path found from '{}' to '{}'",
@@ -423,8 +533,26 @@ impl fmt::Display for DijkstraError {
                 "Algorithm error (Dijkstra): invalid search result ({})",
                 reason
             ),
+            DijkstraError::PathReconstruction { source } => write!(
+                f,
+                "Algorithm error (Dijkstra): path reconstruction failed: {}",
+                source
+            ),
         }
     }
 }
 
-impl Error for DijkstraError {}
+impl Error for DijkstraError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            DijkstraError::PathReconstruction { source } => Some(source),
+            _ => None,
+        }
+    }
+}
+
+impl From<DijkstraPathReconstructionError> for DijkstraError {
+    fn from(source: DijkstraPathReconstructionError) -> Self {
+        DijkstraError::PathReconstruction { source }
+    }
+}

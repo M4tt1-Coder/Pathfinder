@@ -71,6 +71,11 @@ impl GraphWeight for u16 {
     fn max_value() -> Self {
         u16::MAX
     }
+
+    /// Returns the checked sum for `u16` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        u16::checked_add(self, other)
+    }
 }
 
 /// Implements the `GraphWeight` trait for `f32`.
@@ -84,6 +89,12 @@ impl GraphWeight for f32 {
     fn max_value() -> Self {
         f32::MAX
     }
+
+    /// Returns the checked sum for `f32` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        let sum = self + other;
+        if sum.is_finite() { Some(sum) } else { None }
+    }
 }
 
 /// Implements the `GraphWeight` trait for `i32`.
@@ -96,5 +107,10 @@ impl GraphWeight for i32 {
     /// Returns the maximum possible value for `i32` weights.
     fn max_value() -> Self {
         i32::MAX
+    }
+
+    /// Returns the checked sum for `i32` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        i32::checked_add(self, other)
     }
 }

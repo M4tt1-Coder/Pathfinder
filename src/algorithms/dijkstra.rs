@@ -34,6 +34,8 @@
 //! # Error Handling
 //!
 //! - Violations are surfaced as [`DijkstraError`] variants.
+//! - Path reconstruction invariants and distance overflow produce dedicated
+//!   error variants for clearer diagnostics.
 //! - The CLI wraps these errors in
 //!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
 //!   maps them to exit codes via
@@ -77,12 +79,15 @@ use std::{
     fmt::{Debug, Display},
 };
 
-pub use crate::error::algorithm_error::DijkstraError;
-
 use crate::{
     algorithms::algorithm::{Algorithm, SearchResult},
+    error::algorithm_error::{
+        DijkstraPathReconstructionError, EdgeWeightViolation, MissingNodeContext,
+    },
     graphs::graph::{Graph, GraphNode, GraphWeight},
 };
+
+pub use crate::error::algorithm_error::DijkstraError;
 
 /// Internal bookkeeping entry used while distances are being relaxed.
 ///
@@ -204,6 +209,9 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// - `Err(DijkstraError)` when graph constraints are violated or required
     ///   nodes cannot be found.
     ///
+    /// If `start_node_id == end_node_id`, returns a single-node path with a
+    /// zero distance.
+    ///
     /// # Errors
     ///
     /// Returns an error if:
@@ -211,6 +219,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// - `start_node_id` does not exist,
     /// - `end_node_id` does not exist,
     /// - an edge weight is negative,
+    /// - distance overflow occurs while relaxing edges,
     /// - no path can be found,
     /// - path reconstruction fails or the result is invalid.
     ///
@@ -251,7 +260,13 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         }
 
         // check if the two 'Node's are in the graph <G> and get them as 'Node' objects
-        let graph_label = self.graph.to_string();
+        let graph_label = format!(
+            "{}(nodes={}, directed={}, weighted={})",
+            G::abbreviation(),
+            self.graph.get_all_nodes().len(),
+            self.graph.is_directed(),
+            self.graph.is_weighted()
+        );
         let start: &N = self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
             DijkstraError::MissingStartNode {
                 id: start_node_id.to_string(),
@@ -266,41 +281,68 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             }
         })?;
 
-        let distances = self.calculate_distances(start)?;
-
-        // Reconstruct the shortest route by walking predecessors from end to start.
-        let mut path: Vec<N> = vec![];
-        let mut current_node = end.clone();
-        let mut output_distance = W::zero();
-
-        while let Some(distance) = distances.get(current_node.get_id()) {
-            if current_node.get_id() == end.get_id() {
-                output_distance = distance.distance;
-            }
-            path.push(current_node);
-            let prev: &N = match &distance.previous_node {
-                Some(node) => node,
-                None => {
-                    return Err(DijkstraError::NoPathFound {
-                        start: start_node_id.to_string(),
-                        end: end_node_id.to_string(),
-                    });
-                }
-            };
-            if start.get_id() == prev.get_id() {
-                // The start node references itself as predecessor sentinel.
-                path.push(start.clone());
-                break;
-            }
-            current_node = prev.clone();
+        if start.get_id() == end.get_id() {
+            return DijkstraSearchResult::new(vec![start.clone()], W::zero());
         }
 
-        // check if a path really has been found
-        if path.last() != Some(start) {
+        let distances = self.calculate_distances(start)?;
+
+        let end_distance =
+            distances
+                .get(end.get_id())
+                .ok_or_else(|| DijkstraError::PathReconstruction {
+                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                        node_id: end.get_id().to_string(),
+                    },
+                })?;
+
+        if end_distance.distance == W::max_value() {
             return Err(DijkstraError::NoPathFound {
                 start: start_node_id.to_string(),
                 end: end_node_id.to_string(),
             });
+        }
+
+        // Reconstruct the shortest route by walking predecessors from end to start.
+        let mut path: Vec<N> = Vec::new();
+        let mut current_node = end.clone();
+        let mut remaining_steps = distances.len();
+        let output_distance = end_distance.distance;
+
+        loop {
+            if remaining_steps == 0 {
+                return Err(DijkstraError::PathReconstruction {
+                    source: DijkstraPathReconstructionError::PredecessorLoop {
+                        start: start_node_id.to_string(),
+                        end: end_node_id.to_string(),
+                        current: current_node.get_id().to_string(),
+                    },
+                });
+            }
+            remaining_steps -= 1;
+            path.push(current_node.clone());
+
+            if current_node.get_id() == start.get_id() {
+                break;
+            }
+
+            let distance = distances.get(current_node.get_id()).ok_or_else(|| {
+                DijkstraError::PathReconstruction {
+                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                        node_id: current_node.get_id().to_string(),
+                    },
+                }
+            })?;
+
+            let prev = distance.previous_node.as_ref().ok_or_else(|| {
+                DijkstraError::PathReconstruction {
+                    source: DijkstraPathReconstructionError::MissingPredecessor {
+                        node_id: current_node.get_id().to_string(),
+                    },
+                }
+            })?;
+
+            current_node = prev.clone();
         }
 
         // Path is collected from end to start; reverse to return start -> end.
@@ -383,8 +425,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// # Returns
     ///
     /// - `Ok(HashMap<...>)` containing shortest-distance metadata for all nodes.
-    /// - `Err(DijkstraError)` if graph consistency checks fail or an invalid
-    ///   edge weight (negative) is encountered.
+    /// - `Err(DijkstraError)` if graph consistency checks fail, an invalid
+    ///   edge weight (negative) is encountered, or distance overflow occurs.
     ///
     /// # Notes
     ///
@@ -414,6 +456,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                     None => {
                         return Err(DijkstraError::MissingNodeDuringProcessing {
                             id: position.get_id().to_string(),
+                            context: MissingNodeContext::CurrentNode,
                         });
                     }
                 }
@@ -422,18 +465,34 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             }
 
             for (neighbour, weight) in self.graph.neighbors(&position) {
+                if W::zero().checked_add(weight).is_none() {
+                    return Err(DijkstraError::InvalidEdgeWeight {
+                        from: position.get_id().to_string(),
+                        to: neighbour.get_id().to_string(),
+                        weight: format!("{}", weight),
+                        reason: EdgeWeightViolation::NonFinite,
+                    });
+                }
+
                 // for Dijkstra an edges weight can't be smaller then 0
                 if weight < W::zero() {
                     return Err(DijkstraError::InvalidEdgeWeight {
                         from: position.get_id().to_string(),
                         to: neighbour.get_id().to_string(),
                         weight: format!("{}", weight),
-                        reason: "negative".to_string(),
+                        reason: EdgeWeightViolation::Negative,
                     });
                 }
 
                 // Standard relaxation: candidate distance via the current node.
-                let updated_distance = distance + weight;
+                let updated_distance = distance.checked_add(weight).ok_or_else(|| {
+                    DijkstraError::DistanceOverflow {
+                        from: position.get_id().to_string(),
+                        to: neighbour.get_id().to_string(),
+                        current_distance: format!("{}", distance),
+                        edge_weight: format!("{}", weight),
+                    }
+                })?;
 
                 if updated_distance
                     < match distances.get(neighbour.get_id()) {
@@ -441,6 +500,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                         None => {
                             return Err(DijkstraError::MissingNodeDuringProcessing {
                                 id: neighbour.get_id().to_string(),
+                                context: MissingNodeContext::NeighborNode,
                             });
                         }
                     }
@@ -513,8 +573,8 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
 ///
 /// # Validation
 ///
-/// Use [`DijkstraSearchResult::new`] to enforce the minimum path length before
-/// constructing a result manually.
+/// Use [`DijkstraSearchResult::new`] to enforce minimum path length and
+/// distance constraints before constructing a result manually.
 ///
 /// # Display
 ///
@@ -523,7 +583,9 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
 pub struct DijkstraSearchResult<N: GraphNode, W: GraphWeight> {
     /// Ordered node sequence from start node to destination node.
     ///
-    /// The path must contain at least two nodes.
+    /// The path must contain at least one node.
+    ///
+    /// If the path contains exactly one node, the total distance must be zero.
     pub path: Vec<N>,
 
     /// Sum of all edge weights along `path`.
@@ -535,7 +597,8 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     ///
     /// # Errors
     ///
-    /// Returns an error if `path` contains fewer than two nodes.
+    /// Returns an error if `path` is empty or if a single-node path has a
+    /// non-zero distance.
     ///
     /// # Returns
     ///
@@ -563,14 +626,20 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
-    /// let invalid_path = vec![DefaultNode::new("A".to_string())];
+    /// let invalid_path: Vec<DefaultNode> = vec![];
     /// let result = DijkstraSearchResult::new(invalid_path, 0u16);
     /// assert!(result.is_err());
     /// ```
     pub fn new(path: Vec<N>, distance: W) -> Result<Self, DijkstraError> {
-        if path.len() < 2 {
+        if path.is_empty() {
             return Err(DijkstraError::InvalidSearchResult {
-                reason: "path must contain at least two nodes".to_string(),
+                reason: "path must contain at least one node".to_string(),
+            });
+        }
+
+        if path.len() == 1 && distance != W::zero() {
+            return Err(DijkstraError::InvalidSearchResult {
+                reason: "single-node path must have zero distance".to_string(),
             });
         }
 

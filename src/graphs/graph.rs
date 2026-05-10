@@ -298,7 +298,8 @@ pub trait Graph {
 /// This trait is implemented for types that:
 /// - are `Copy`, allowing for inexpensive duplication,
 /// - implement `PartialOrd`, enabling comparison of weights,
-/// - and support addition with `Add<Output = Self>`, allowing weights to be combined.
+/// - support addition with `Add<Output = Self>`, allowing weights to be combined,
+/// - and can perform overflow-aware addition via [`GraphWeight::checked_add`].
 ///
 /// # Usage
 /// Use `GraphWeight` as a trait bound for generic types in graph algorithms,
@@ -337,6 +338,16 @@ pub trait GraphWeight:
     /// # Returns
     /// The zero value of the implementing type.
     fn zero() -> Self;
+
+    /// Returns the sum of two weights if it can be represented safely.
+    ///
+    /// Implementations should return `None` if the addition would overflow or
+    /// produce a non-finite value (for floating-point weights).
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: The weight to add to `self`.
+    fn checked_add(self, other: Self) -> Option<Self>;
 }
 
 /// Trait for node values stored in graph implementations.

@@ -37,6 +37,10 @@ use shortest_path_finder::{
         algorithm::{Algorithm, SearchResult},
         dijkstra::{DijkstraAlgorithm, DijkstraError},
     },
+    error::algorithm_error::{
+        AlgorithmErrorKind, DijkstraPathReconstructionError, EdgeWeightViolation,
+        MissingNodeContext,
+    },
     graphs::{
         directed::DirectedGraph,
         graph::{Graph, GraphNode},
@@ -140,4 +144,123 @@ fn dijkstra_returns_error_when_no_path_exists() {
         err,
         DijkstraError::NoPathFound { start, end } if start == "A" && end == "C"
     ));
+}
+
+#[test]
+fn dijkstra_returns_trivial_path_when_start_equals_end() {
+    let mut graph = DirectedGraph::default();
+
+    for id in ["A", "B"] {
+        graph.insert_node(node(id));
+    }
+
+    let node_a = node("A");
+    let node_b = node("B");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(2)).is_none());
+
+    let dijkstra = DijkstraAlgorithm::new(graph);
+    let result = dijkstra
+        .shortest_path("A", "A")
+        .expect("start equals end should return a trivial path");
+
+    assert_eq!(result.get_total_distance(), 0);
+    assert_eq!(result.get_path().len(), 1);
+    assert_eq!(result.get_path()[0].get_id(), "A");
+}
+
+#[test]
+fn dijkstra_returns_error_on_distance_overflow() {
+    let mut graph = DirectedGraph::default();
+
+    for id in ["A", "B", "C"] {
+        graph.insert_node(node(id));
+    }
+
+    let node_a = node("A");
+    let node_b = node("B");
+    let node_c = node("C");
+    assert!(
+        graph
+            .insert_edge(&node_a, &node_b, Some(u16::MAX - 1))
+            .is_none()
+    );
+    assert!(graph.insert_edge(&node_b, &node_c, Some(2)).is_none());
+
+    let dijkstra = DijkstraAlgorithm::new(graph);
+    let err = dijkstra
+        .shortest_path("A", "C")
+        .expect_err("overflow should surface as a Dijkstra error");
+
+    match err {
+        DijkstraError::DistanceOverflow { from, to, .. } => {
+            assert_eq!(from, "B");
+            assert_eq!(to, "C");
+        }
+        other => panic!("unexpected error: {:?}", other),
+    }
+}
+
+#[test]
+fn dijkstra_error_kind_mapping_is_stable() {
+    let missing_start = DijkstraError::MissingStartNode {
+        id: "A".to_string(),
+        graph: "D(nodes=1)".to_string(),
+    };
+    let missing_end = DijkstraError::MissingEndNode {
+        id: "B".to_string(),
+        graph: "D(nodes=1)".to_string(),
+    };
+    let missing_processing = DijkstraError::MissingNodeDuringProcessing {
+        id: "C".to_string(),
+        context: MissingNodeContext::CurrentNode,
+    };
+    let invalid_weight = DijkstraError::InvalidEdgeWeight {
+        from: "A".to_string(),
+        to: "B".to_string(),
+        weight: "-1".to_string(),
+        reason: EdgeWeightViolation::Negative,
+    };
+    let overflow = DijkstraError::DistanceOverflow {
+        from: "A".to_string(),
+        to: "B".to_string(),
+        current_distance: "65535".to_string(),
+        edge_weight: "1".to_string(),
+    };
+    let reconstruction = DijkstraError::PathReconstruction {
+        source: DijkstraPathReconstructionError::MissingPredecessor {
+            node_id: "X".to_string(),
+        },
+    };
+
+    assert_eq!(
+        DijkstraError::UnweightedGraph.kind(),
+        AlgorithmErrorKind::InvalidGraph
+    );
+    assert_eq!(missing_start.kind(), AlgorithmErrorKind::MissingNode);
+    assert_eq!(missing_end.kind(), AlgorithmErrorKind::MissingNode);
+    assert_eq!(
+        missing_processing.kind(),
+        AlgorithmErrorKind::InvariantViolation
+    );
+    assert_eq!(invalid_weight.kind(), AlgorithmErrorKind::InvalidWeight);
+    assert_eq!(overflow.kind(), AlgorithmErrorKind::InvalidWeight);
+    assert_eq!(
+        DijkstraError::NoPathFound {
+            start: "A".to_string(),
+            end: "B".to_string(),
+        }
+        .kind(),
+        AlgorithmErrorKind::NoPath
+    );
+    assert_eq!(
+        DijkstraError::InvalidSearchResult {
+            reason: "bad".to_string(),
+        }
+        .kind(),
+        AlgorithmErrorKind::InvalidResult
+    );
+    assert_eq!(
+        reconstruction.kind(),
+        AlgorithmErrorKind::InvariantViolation
+    );
 }
