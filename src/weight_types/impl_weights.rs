@@ -8,6 +8,12 @@
 //! - Implementations of [`GraphWeight`](crate::graphs::graph::GraphWeight)
 //!   for `u16`, `f32`, and `i32`.
 //!
+//! # Design Notes
+//!
+//! The `GraphWeight` implementations follow the overflow semantics of the
+//! underlying primitive types. For `f32`, `checked_add` rejects non-finite
+//! results to keep algorithms safe.
+//!
 //! # Usage
 //!
 //! ```rust
@@ -37,6 +43,11 @@ use crate::graphs::graph::GraphWeight;
 /// - `F32(f32)`: Represents a 32-bit floating point weight.
 /// - `I32(i32)`: Represents a signed 32-bit integer weight.
 /// - `NotNecessary`: Marker used when a graph derives weights internally.
+///
+/// # Conversion
+///
+/// Parsing code can select a variant based on graph type and then convert into
+/// the target weight type used by the graph implementation.
 ///
 /// # Example
 ///

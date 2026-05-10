@@ -6,11 +6,18 @@
 //! It benchmarks Dijkstra and A* on the same graph model and the same
 //! start/end query pairs.
 //!
-//! Benchmark groups:
-//! - construction of a shared coordinate benchmark graph,
-//! - algorithm construction cost,
-//! - shortest-path comparison on a sparse grid,
-//! - shortest-path comparison on denser grids with diagonal shortcuts.
+//! # Benchmark Goals
+//!
+//! - Compare algorithm throughput on shared grid datasets.
+//! - Separate graph construction cost from query execution cost.
+//! - Provide stable, repeatable scenarios for regression tracking.
+//!
+//! # Benchmark Groups
+//!
+//! - Construction of a shared coordinate benchmark graph.
+//! - Algorithm construction cost.
+//! - Shortest-path comparison on a sparse grid.
+//! - Shortest-path comparison on denser grids with diagonal shortcuts.
 //!
 //! # Run
 //!
@@ -46,12 +53,24 @@ const START_NODE_ID: &str = "0_0";
 const STRAIGHT_EDGE_WEIGHT: BenchWeight = BenchWeight(1.0);
 const DIAGONAL_EDGE_WEIGHT: BenchWeight = BenchWeight(1.4);
 
+/// Algorithms compared by the benchmark suite.
+///
+/// # Purpose
+///
+/// This keeps the `divan` parameterization readable when benchmarking both
+/// Dijkstra and A*.
 #[derive(Clone, Copy, Debug)]
 enum ComparedAlgorithm {
     Dijkstra,
     AStar,
 }
 
+/// Benchmark-specific weight type with total ordering.
+///
+/// # Design Notes
+///
+/// The wrapper ensures deterministic ordering via `total_cmp` and implements
+/// [`GraphWeight`] with non-finite protection.
 #[derive(Clone, Copy, Debug)]
 struct BenchWeight(f32);
 
@@ -150,6 +169,12 @@ impl NumericDatatype for BenchWeight {
     }
 }
 
+/// Error type used by the benchmark graph insertion API.
+///
+/// # Purpose
+///
+/// Keeps benchmark graph construction failures readable and isolated from the
+/// library error types.
 #[derive(Debug, Clone)]
 struct BenchmarkGraphInsertionError {
     message: String,
@@ -169,6 +194,13 @@ impl Display for BenchmarkGraphInsertionError {
 
 impl Error for BenchmarkGraphInsertionError {}
 
+/// Simple coordinate graph used to drive benchmark scenarios.
+///
+/// # Data Model
+///
+/// - Nodes are stored in a contiguous vector.
+/// - Adjacency lists map node IDs to `(index, weight)` pairs.
+/// - The graph is undirected for symmetric benchmark workloads.
 #[derive(Clone, Debug, Default)]
 struct BenchmarkCoordinateGraph {
     nodes: Vec<TwoDimensionalNode>,
@@ -325,6 +357,11 @@ fn goal_node_id(grid_side: usize) -> String {
     node_id(grid_side - 1, grid_side - 1)
 }
 
+/// Inserts a single undirected grid edge into the benchmark graph.
+///
+/// # Panics
+///
+/// Panics if the graph is missing either endpoint or if insertion fails.
 fn insert_grid_edge(
     graph: &mut BenchmarkCoordinateGraph,
     from_x: usize,
@@ -349,6 +386,12 @@ fn insert_grid_edge(
     }
 }
 
+/// Builds a square grid graph with optional diagonal shortcuts.
+///
+/// # Parameters
+///
+/// - `grid_side`: number of nodes per side of the grid.
+/// - `include_diagonal_shortcuts`: toggles diagonal edges.
 fn build_grid_graph(
     grid_side: usize,
     include_diagonal_shortcuts: bool,
@@ -380,6 +423,11 @@ fn build_grid_graph(
     graph
 }
 
+/// Executes a single shortest-path query for the requested algorithm.
+///
+/// # Returns
+///
+/// `(path_len, distance)` for the computed shortest path.
 fn run_single_search(
     algorithm: ComparedAlgorithm,
     graph: &BenchmarkCoordinateGraph,
@@ -408,6 +456,12 @@ fn run_single_search(
     }
 }
 
+/// Benchmark helper that compares algorithms on the same dataset.
+///
+/// # Notes
+///
+/// Uses `divan` input generation to keep data construction out of the timed
+/// section.
 fn benchmark_algorithm_comparison(
     bencher: Bencher,
     algorithm: ComparedAlgorithm,

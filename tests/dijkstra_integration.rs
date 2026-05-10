@@ -5,11 +5,15 @@
 //! These tests exercise the end-to-end Dijkstra flow against concrete graph
 //! implementations.
 //!
-//! # Coverage
+//! # Scenario Matrix
 //!
 //! - Directed and undirected graphs.
 //! - Successful shortest-path computation.
-//! - Expected failure modes returned as [`DijkstraError`].
+//! - Missing start node validation.
+//! - No-path scenarios.
+//! - Trivial path when start equals end.
+//! - Distance overflow handling.
+//! - Stable error-kind mapping.
 //!
 //! # Example
 //!

@@ -6,10 +6,17 @@
 //! application. It supports graph types that implement [`Graph`] and uses a
 //! priority queue (`BinaryHeap`) to iteratively relax edges.
 //!
-//! # Requirements
+//! # Inputs
 //!
 //! - Graph must be weighted (`graph.is_weighted() == true`).
 //! - All traversed edge weights must be non-negative.
+//! - Floating-point weights must be finite (no NaN or infinity).
+//! - `start_node_id` and `end_node_id` must exist in the graph.
+//!
+//! # Outputs
+//!
+//! - Success: [`DijkstraSearchResult`] containing the path and total distance.
+//! - Failure: [`DijkstraError`] describing the violated constraint.
 //!
 //! # Algorithm Steps
 //!
@@ -20,26 +27,37 @@
 //! 3. Update predecessor links and re-queue nodes when a shorter path is found.
 //! 4. Reconstruct the shortest path by following predecessors from the goal.
 //!
-//! # Complexity Notes
+//! # Edge-Weight Validation
 //!
-//! The relaxation loop is typically `O(E log V)` due to queue operations.
-//! This implementation uses a max-heap and skips stale entries when a better
-//! distance is already known.
+//! - A weight is rejected as non-finite if `W::zero().checked_add(weight)`
+//!   returns `None` (useful for `f32` weights).
+//! - A weight is rejected as negative if it is `< W::zero()`.
+//! - Relaxation uses `checked_add` to prevent overflow when combining distances.
+//!
+//! # Error Handling
+//!
+//! - `UnweightedGraph`, `MissingStartNode`, and `MissingEndNode` cover basic
+//!   preconditions.
+//! - `InvalidEdgeWeight` captures negative or non-finite weights.
+//! - `DistanceOverflow` captures overflow or non-finite sums during relaxation.
+//! - `MissingNodeDuringProcessing` captures internal graph inconsistencies.
+//! - `NoPathFound`, `PathReconstruction`, and `InvalidSearchResult` surface
+//!   path and validation failures.
+//! - The CLI wraps these errors in
+//!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
+//!   maps them to exit codes via
+//!   [`AlgorithmErrorKind::exit_code`](crate::error::algorithm_error::AlgorithmErrorKind::exit_code).
 //!
 //! # Queue Behavior
 //!
 //! The queue ordering is not inverted. Instead, stale entries are ignored on
 //! pop, which preserves correctness without requiring a custom min-heap.
 //!
-//! # Error Handling
+//! # Complexity Notes
 //!
-//! - Violations are surfaced as [`DijkstraError`] variants.
-//! - Path reconstruction invariants and distance overflow produce dedicated
-//!   error variants for clearer diagnostics.
-//! - The CLI wraps these errors in
-//!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
-//!   maps them to exit codes via
-//!   [`AlgorithmErrorKind::exit_code`](crate::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//! The relaxation loop is typically `O(E log V)` due to queue operations.
+//! This implementation uses a max-heap and skips stale entries when a better
+//! distance is already known.
 //!
 //! # Main Types
 //!
@@ -97,6 +115,12 @@ pub use crate::error::algorithm_error::DijkstraError;
 /// - `distance` stores the currently known best distance from the start node.
 /// - `previous_node` stores the predecessor used to reconstruct the final path.
 ///
+/// # Invariants
+///
+/// - The start node uses itself as a predecessor sentinel.
+/// - Nodes that remain unreachable keep `previous_node = None` and
+///   `distance = W::max_value()`.
+///
 /// # Notes
 ///
 /// This struct is internal state and should not be constructed directly by
@@ -143,7 +167,7 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 
 /// Concrete implementation of the Dijkstra shortest-path algorithm.
 ///
-/// The generic parameters are:
+/// # Type Parameters
 /// - `N`: graph node type.
 /// - `W`: edge-weight/distance type.
 /// - `G`: graph type implementing [`Graph`].
@@ -151,7 +175,11 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// # Requirements
 ///
 /// - The underlying graph must be weighted.
-/// - Edge weights must be non-negative when the algorithm explores edges.
+/// - Edge weights must be non-negative and finite when explored.
+///
+/// # Errors
+///
+/// See [`DijkstraAlgorithm::shortest_path`] for a detailed list of error cases.
 ///
 /// # Example
 ///
@@ -203,14 +231,16 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// - `start_node_id`: identifier of the start node.
     /// - `end_node_id`: identifier of the destination node.
     ///
+    /// # Behavior
+    ///
+    /// If `start_node_id == end_node_id`, returns a single-node path with a
+    /// zero distance.
+    ///
     /// # Returns
     ///
     /// - `Ok(DijkstraSearchResult<...>)` when a route can be produced.
     /// - `Err(DijkstraError)` when graph constraints are violated or required
     ///   nodes cannot be found.
-    ///
-    /// If `start_node_id == end_node_id`, returns a single-node path with a
-    /// zero distance.
     ///
     /// # Errors
     ///
@@ -218,10 +248,11 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// - graph is not weighted,
     /// - `start_node_id` does not exist,
     /// - `end_node_id` does not exist,
-    /// - an edge weight is negative,
+    /// - an edge weight is negative or non-finite,
     /// - distance overflow occurs while relaxing edges,
     /// - no path can be found,
-    /// - path reconstruction fails or the result is invalid.
+    /// - path reconstruction fails or the result is invalid,
+    /// - graph invariants are violated during processing.
     ///
     /// # Example
     ///
@@ -383,8 +414,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     ///
     /// # Behavior
     ///
-    /// The start node receives distance `0` and references itself as previous node.
-    /// Every other node receives `W::max_value()` and no predecessor.
+    /// The start node receives distance `0` and references itself as previous
+    /// node. Every other node receives `W::max_value()` and no predecessor.
     ///
     /// # Parameters
     ///
@@ -426,7 +457,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     ///
     /// - `Ok(HashMap<...>)` containing shortest-distance metadata for all nodes.
     /// - `Err(DijkstraError)` if graph consistency checks fail, an invalid
-    ///   edge weight (negative) is encountered, or distance overflow occurs.
+    ///   edge weight (negative or non-finite) is encountered, or distance
+    ///   overflow occurs.
     ///
     /// # Notes
     ///
@@ -524,7 +556,14 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
 /// Internal priority-queue element used by the Dijkstra processing loop.
 ///
+/// # Purpose
+///
 /// The queue stores candidate nodes ordered by distance.
+///
+/// # Ordering
+///
+/// Because `BinaryHeap` is a max-heap, the implementation relies on
+/// stale-entry skipping to preserve correctness.
 #[derive(Eq, PartialEq)]
 struct QueueItem<N: GraphNode, W: GraphWeight> {
     /// Candidate distance for this queue step.
@@ -569,6 +608,8 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
 
 /// Search result produced by [`DijkstraAlgorithm`].
 ///
+/// # Contents
+///
 /// Contains the final path and total distance of the shortest route.
 ///
 /// # Validation
@@ -595,10 +636,14 @@ pub struct DijkstraSearchResult<N: GraphNode, W: GraphWeight> {
 impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     /// Creates a validated [`DijkstraSearchResult`].
     ///
+    /// # Validation Rules
+    ///
+    /// - `path` must contain at least one node.
+    /// - A single-node path must have a zero distance.
+    ///
     /// # Errors
     ///
-    /// Returns an error if `path` is empty or if a single-node path has a
-    /// non-zero distance.
+    /// Returns an error if validation fails.
     ///
     /// # Returns
     ///

@@ -14,10 +14,11 @@
 //! - [`PathReconstructionError`] captures failures while rebuilding A* paths.
 //! - [`DijkstraPathReconstructionError`] captures Dijkstra reconstruction failures.
 //!
-//! # Exit Codes
+//! # CLI Integration
 //!
 //! `AlgorithmErrorKind::exit_code()` maps error categories to stable, numeric
-//! exit codes for the CLI runtime.
+//! exit codes for the CLI runtime. The [`AlgorithmError`] wrapper makes it easy
+//! to convert algorithm-specific errors into a single CLI-facing payload.
 //!
 //! # Examples
 //!
@@ -36,6 +37,11 @@
 use std::{error::Error, fmt};
 
 /// High-level categories for algorithm execution failures.
+///
+/// # Meaning
+///
+/// These variants classify errors across algorithms so the CLI can provide
+/// consistent exit codes and messaging.
 ///
 /// # Exit Codes
 ///
@@ -88,6 +94,11 @@ impl AlgorithmErrorKind {
 }
 
 /// Wrapper for algorithm-specific execution errors.
+///
+/// # Purpose
+///
+/// The CLI wants one error type that exposes both a human-readable display and
+/// a categorized [`AlgorithmErrorKind`]. This enum provides that wrapper.
 ///
 /// # Usage
 ///
@@ -327,6 +338,19 @@ impl From<PathReconstructionError> for AStarExecutionError {
 }
 
 /// Reason for rejecting an edge weight during Dijkstra execution.
+///
+/// # Meaning
+///
+/// - `Negative` means the weight is less than zero.
+/// - `NonFinite` means the weight is NaN or +/- infinity.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::EdgeWeightViolation;
+///
+/// assert_eq!(EdgeWeightViolation::Negative.to_string(), "negative");
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EdgeWeightViolation {
     /// Weight is negative.
@@ -345,6 +369,20 @@ impl fmt::Display for EdgeWeightViolation {
 }
 
 /// Context describing where a node went missing during Dijkstra processing.
+///
+/// # Meaning
+///
+/// This is surfaced when the distance map built from `get_all_nodes` does not
+/// align with the adjacency lists traversed during relaxation. It usually
+/// indicates the graph was mutated or built inconsistently.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::MissingNodeContext;
+///
+/// assert_eq!(MissingNodeContext::CurrentNode.to_string(), "current node");
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MissingNodeContext {
     /// The current queue item was not found in the distance map.
@@ -364,8 +402,21 @@ impl fmt::Display for MissingNodeContext {
 
 /// Error returned while reconstructing a Dijkstra path.
 ///
+/// # Causes
+///
 /// These errors indicate inconsistent predecessor links or missing distance
 /// data after the relaxation phase.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::error::algorithm_error::DijkstraPathReconstructionError;
+///
+/// let err = DijkstraPathReconstructionError::MissingPredecessor {
+///     node_id: "X".to_string(),
+/// };
+/// assert!(err.to_string().contains("missing predecessor"));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DijkstraPathReconstructionError {
     /// No distance entry exists for the requested node.
@@ -411,6 +462,11 @@ impl Error for DijkstraPathReconstructionError {}
 /// # Categories
 ///
 /// Use [`DijkstraError::kind`] to map failures to [`AlgorithmErrorKind`].
+///
+/// # Variants
+///
+/// Errors cover invalid graph setup, missing nodes, invalid weights, overflow,
+/// path reconstruction failures, and invalid result invariants.
 ///
 /// # Example
 ///
