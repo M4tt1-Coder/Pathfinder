@@ -1,13 +1,15 @@
+- TODO: add badges for CI status, latest release, and crates.io version
+
 # PathFinder
 
 PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
 I build it with an eye for clean APIs, predictable behavior, and performance that scales as your graphs grow.
-The runtime currently supports Dijkstra for directed/undirected graphs and A* for two-dimensional coordinate graphs.
+The runtime currently supports Dijkstra for directed/undirected graphs and A\* for two-dimensional coordinate graphs.
 
 ## Description
 
 PathFinder turns structured input into graph models and computes shortest paths between node IDs.
-The library exposes directed and undirected weighted graphs plus coordinate-aware nodes and graphs used by A*.
+The library exposes directed and undirected weighted graphs plus coordinate-aware nodes and graphs used by A\*.
 
 In this repo you will find:
 
@@ -22,8 +24,8 @@ In this repo you will find:
 - Command-line graph input mode exists in configuration but is not wired into the runtime flow yet
 - Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
 - Dijkstra is fully wired in the executable
-- A* is wired for two-dimensional (`TD`) graph execution in the CLI path
-- A* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
+- A\* is wired for two-dimensional (`TD`) graph execution in the CLI path
+- A\* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
 - `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
 - Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
 
@@ -41,9 +43,9 @@ Core stack and dependencies:
 Quality and automation:
 
 - Three GitHub Actions workflows:
-	- Rust CI checks (fmt, clippy, tests, docs)
-	- Rust baseline verification on pushes and PRs to main
-	- Automated release publishing on merged PRs into main
+  - Rust CI checks (fmt, clippy, tests, docs)
+  - Rust baseline verification on pushes and PRs to main
+  - Automated release publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ### Project Structure
@@ -53,7 +55,7 @@ Quality and automation:
 - src/data_input/file_input.rs: graph-file parsing and validation
 - src/algorithms/: algorithm traits and implementations
 - src/graphs/: graph trait and concrete graph types
-- benches/: benchmark targets, including direct Dijkstra vs A* comparisons
+- benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
 ### Library Usage (Rust)
 
@@ -91,7 +93,7 @@ assert_eq!(result.get_path().len(), 3);
 
 Swap `DirectedGraph` for `UndirectedGraph` when you want a non-directional graph with the same API.
 
-#### A* on a coordinate graph
+#### A\* on a coordinate graph
 
 ```rust
 use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
@@ -141,7 +143,7 @@ Main engineering challenges addressed so far:
 
 Planned and in-progress features:
 
-- [X] Finalize full A* runtime integration
+- [x] Finalize full A\* runtime integration
 - [ ] Enable command-line graph input origin in executable flow
 - [ ] Extend usage examples and integration tests for all graph variants
 
@@ -329,7 +331,7 @@ cargo test --workspace --doc --locked --verbose
 ### Benchmarking
 
 Run the algorithm benchmark target to compare all currently implemented runtime
-algorithms (Dijkstra and A*) on shared benchmark scenarios:
+algorithms (Dijkstra and A\*) on shared benchmark scenarios:
 
 ```sh
 cargo bench --bench pathfinder
@@ -338,9 +340,9 @@ cargo bench --bench pathfinder
 The benchmark includes:
 
 - Shared coordinate-graph construction cost
-- Dijkstra vs A* instance creation cost on the same graph model
-- Dijkstra vs A* shortest-path runtime on sparse grids
-- Dijkstra vs A* shortest-path runtime on denser grids with diagonal shortcuts
+- Dijkstra vs A\* instance creation cost on the same graph model
+- Dijkstra vs A\* shortest-path runtime on sparse grids
+- Dijkstra vs A\* shortest-path runtime on denser grids with diagonal shortcuts
 
 ### Automated releases
 
