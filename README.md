@@ -1,4 +1,5 @@
-- TODO: add badges for CI status, latest release, and crates.io version
+[![CI](https://img.shields.io/github/actions/workflow/status/M4tt1-Coder/Pathfinder/rust.yml?branch=main&label=CI&style=flat)](https://github.com/M4tt1-Coder/Pathfinder/actions/workflows/rust.yml) [![Crates.io](https://img.shields.io/crates/v/shortest_path_finder?style=flat)](https://crates.io/crates/shortest_path_finder) [![Docs.rs](https://img.shields.io/docsrs/shortest_path_finder?style=flat)](https://docs.rs/shortest_path_finder)
+[![License](https://img.shields.io/github/license/M4tt1-Coder/Pathfinder?style=flat)](LICENSE) [![MSRV](https://img.shields.io/badge/MSRV-1.85%2B-blue?style=flat)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 
 # PathFinder
 
