@@ -1,16 +1,122 @@
-[![CI](https://img.shields.io/github/actions/workflow/status/M4tt1-Coder/Pathfinder/rust.yml?branch=main&label=CI&style=flat)](https://github.com/M4tt1-Coder/Pathfinder/actions/workflows/rust.yml) [![Crates.io](https://img.shields.io/crates/v/shortest_path_finder?style=flat)](https://crates.io/crates/shortest_path_finder) [![Docs.rs](https://img.shields.io/docsrs/shortest_path_finder?style=flat)](https://docs.rs/shortest_path_finder)
-[![License](https://img.shields.io/github/license/M4tt1-Coder/Pathfinder?style=flat)](LICENSE) [![MSRV](https://img.shields.io/badge/MSRV-1.85%2B-blue?style=flat)](https://doc.rust-lang.org/edition-guide/rust-2024/)
+<div align="center">
+	<h1>PathFinder</h1>
+	<p><strong>Rust shortest-path library and CLI for weighted graphs.</strong></p>
+	<p>
+		<a href="https://github.com/M4tt1-Coder/Pathfinder/actions/workflows/rust.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/M4tt1-Coder/Pathfinder/rust.yml?branch=main&label=CI&style=flat-square"></a>
+		<a href="https://crates.io/crates/shortest_path_finder"><img alt="Crates.io" src="https://img.shields.io/crates/v/shortest_path_finder?style=flat-square"></a>
+		<a href="https://docs.rs/shortest_path_finder"><img alt="Docs.rs" src="https://img.shields.io/docsrs/shortest_path_finder?style=flat-square"></a>
+		<a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/M4tt1-Coder/Pathfinder?style=flat-square"></a>
+		<a href="https://doc.rust-lang.org/edition-guide/rust-2024/"><img alt="MSRV" src="https://img.shields.io/badge/MSRV-1.85%2B-blue?style=flat-square"></a>
+	</p>
+	<p>
+		<a href="https://docs.rs/shortest_path_finder">Docs</a> |
+		<a href="https://crates.io/crates/shortest_path_finder">Crate</a> |
+		<a href="#cli-usage">CLI usage</a> |
+		<a href="#benchmarking">Benchmarks</a> |
+		<a href="#challenges-and-roadmap">Roadmap</a>
+	</p>
+</div>
 
-# PathFinder
+## At a glance
 
-PathFinder is a Rust library and CLI application for shortest-path computation on weighted graphs.
-I build it with an eye for clean APIs, predictable behavior, and performance that scales as your graphs grow.
-The runtime currently supports Dijkstra for directed/undirected graphs and A\* for two-dimensional coordinate graphs.
+| Algorithms | Graphs | Input | Runtime |
+| --- | --- | --- | --- |
+| Dijkstra, A\* | Directed, Undirected, 2D coordinate | File (header + edges) | CLI + library |
 
-## Description
+## Contents
+- [Quickstart](#quickstart)
+- [Overview](#overview)
+- [Runtime status](#runtime-status)
+- [Library usage (Rust)](#library-usage-rust)
+- [Input format](#input-format)
+- [Challenges and roadmap](#challenges-and-roadmap)
+- [Dev workflow](#dev-workflow)
+- [Advanced details](#advanced-details)
+
+---
+
+## Quickstart
+
+### Prerequisites
+
+Install Rust from https://rust-lang.org/tools/install and verify your setup.
+
+Example command:
+
+```sh
+cargo -V
+```
+
+Expected style of output example:
+
+```text
+cargo 1.xx.x (........ 2026-..-..)
+```
+
+### Build
+
+From the repository root, build the release binary.
+
+Example command:
+
+```sh
+cargo build --release
+```
+
+### Run the binary
+
+Example command:
+
+```sh
+./target/release/pathfinder --graph-file graph.txt --start A --end B
+```
+
+### CLI usage
+
+```text
+pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
+```
+
+> **Compatibility**: Input origin now reads from `--origin` when present. For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
+
+The CLI parser rejects unknown flags, duplicate flags, missing flag values, and unexpected non-flag tokens with explicit errors.
+
+### CLI argument examples
+
+Minimal example using defaults for origin and algorithm:
+
+```sh
+./target/release/pathfinder --start A --end B
+```
+
+Explicit file and algorithm example:
+
+```sh
+./target/release/pathfinder --graph-file graph.txt --algo Dijkstra --start A --end B
+```
+
+### Example output
+
+Output shape example (values depend on input graph):
+
+```text
+Path: A -> ... -> B
+Distance: <value>
+```
+
+### Default settings
+
+- Input origin defaults to file
+- Graph file defaults to graph.txt
+- Algorithm defaults to Dijkstra
+
+---
+
+## Overview
 
 PathFinder turns structured input into graph models and computes shortest paths between node IDs.
-The library exposes directed and undirected weighted graphs plus coordinate-aware nodes and graphs used by A\*.
+It focuses on clean APIs, predictable behavior, and performance that scales as graphs grow.
+The runtime currently supports Dijkstra for directed/undirected graphs and A\* for two-dimensional coordinate graphs.
 
 In this repo you will find:
 
@@ -19,7 +125,16 @@ In this repo you will find:
 - Benchmarks for the core modules
 - CI workflows and optional pre-commit hooks
 
-### Current Runtime Scope
+> **Naming**: PathFinder is the project, `shortest_path_finder` is the crate, and `pathfinder` is the CLI binary.
+
+### Why PathFinder
+
+- Strict, typed parsing with clear file-line validation errors
+- Typed algorithm errors with stable classification for exit codes and telemetry
+- Mixed numeric types for A\* coordinate graphs (for example `i32` coordinates with `f32` weights)
+- Index-based adjacency lists for efficient neighbor lookup
+
+## Runtime status
 
 - File-based input is implemented and wired into the CLI
 - Command-line graph input mode exists in configuration but is not wired into the runtime flow yet
@@ -30,7 +145,7 @@ In this repo you will find:
 - `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
 - Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
 
-### Technologies
+## Technologies
 
 Core stack and dependencies:
 
@@ -44,12 +159,12 @@ Core stack and dependencies:
 Quality and automation:
 
 - Three GitHub Actions workflows:
-  - Rust CI checks (fmt, clippy, tests, docs)
-  - Rust baseline verification on pushes and PRs to main
-  - Automated release publishing on merged PRs into main
+	- Rust CI checks (fmt, clippy, tests, docs)
+	- Rust baseline verification on pushes and PRs to main
+	- Automated release publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
-### Project Structure
+## Project structure
 
 - src/main.rs: CLI entrypoint and runtime wiring
 - src/cmd_line/app_config.rs: argument parsing and defaults
@@ -58,7 +173,7 @@ Quality and automation:
 - src/graphs/: graph trait and concrete graph types
 - benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
-### Library Usage (Rust)
+## Library usage (Rust)
 
 If you use the crate directly, the flow is simple: build a graph, pick an algorithm, and read the `SearchResult`.
 The snippets below are intentionally compact but mirror how I use the library in real code.
@@ -134,140 +249,7 @@ let result = dijkstra.shortest_path("A", "L").expect("path should exist");
 println!("distance: {}", result.get_total_distance());
 ```
 
-### Challenges and roadmap
-
-Main engineering challenges addressed so far:
-
-- Designing graph abstractions that support multiple graph models
-- Keeping algorithm interfaces generic while preserving practical runtime ergonomics
-- Validating strict, typed parsing from textual graph definitions
-
-Planned and in-progress features:
-
-- [x] Finalize full A\* runtime integration
-- [ ] Enable command-line graph input origin in executable flow
-- [ ] Extend usage examples and integration tests for all graph variants
-
-## Getting started
-
-### Prerequisites
-
-Install Rust from https://rust-lang.org/tools/install and verify your setup.
-
-Example command:
-
-```sh
-cargo -V
-```
-
-Expected style of output example:
-
-```text
-cargo 1.xx.x (........ 2026-..-..)
-```
-
-### Build
-
-From the repository root, build the release binary.
-
-Example command:
-
-```sh
-cargo build --release
-```
-
-### Run the binary
-
-Example command:
-
-```sh
-./target/release/pathfinder --graph-file graph.txt --start A --end B
-```
-
-### CLI syntax
-
-```text
-pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
-```
-
-Compatibility note:
-
-- Input origin now reads from `--origin` when present.
-- For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
-- The CLI parser now rejects unknown flags, duplicate flags, missing flag values, and unexpected non-flag tokens with explicit errors.
-
-### Exit codes
-
-- 0: success
-- 1: setup, parsing, or graph-loading failure
-- 2: invalid graph for the selected algorithm (for example unweighted)
-- 3: required node is missing from the graph
-- 4: invalid edge weight encountered
-- 5: heuristic produced an invalid value
-- 6: no path exists between the requested nodes
-- 7: algorithm bookkeeping invariant failed
-- 8: algorithm returned an invalid result
-
-Exit codes for algorithm failures are derived from `AlgorithmErrorKind` in
-the library error module. The CLI wraps algorithm-specific errors into
-`AlgorithmError`, calls `kind()`, and exits with `kind().exit_code()`.
-
-Example: mapping a Dijkstra error to a CLI exit code:
-
-```rust
-use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
-
-let err = AlgorithmError::from(DijkstraError::NoPathFound {
-	start: "A".to_string(),
-	end: "B".to_string(),
-});
-assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
-assert_eq!(err.kind().exit_code(), 6);
-```
-
-Example CLI error output:
-
-```text
-[ERROR] Algorithm error (Dijkstra): no path found from 'A' to 'B'
-```
-
-### Error handling (library)
-
-Algorithms return typed errors. If you want a stable classification layer for
-telemetry, exit codes, or user messaging, wrap errors in `AlgorithmError` and
-query `AlgorithmErrorKind`.
-
-```rust
-use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
-
-let err = AlgorithmError::from(DijkstraError::MissingStartNode {
-	id: "A".to_string(),
-	graph: "DirectedGraph".to_string(),
-});
-
-match err.kind() {
-	AlgorithmErrorKind::MissingNode => println!("node is missing"),
-	_ => println!("other error"),
-}
-```
-
-### CLI argument examples
-
-Minimal example using defaults for origin and algorithm:
-
-```sh
-./target/release/pathfinder --start A --end B
-```
-
-Explicit file and algorithm example:
-
-```sh
-./target/release/pathfinder --graph-file graph.txt --algo Dijkstra --start A --end B
-```
-
-### Input file format
+## Input format
 
 The current parser format (used by the provided test files) is header plus edge lines:
 
@@ -303,7 +285,23 @@ A:0,0=>B:2,1
 B:2,1=>C:4,1
 ```
 
-### Development workflow
+## Challenges and roadmap
+
+Main engineering challenges addressed so far:
+
+- Designing graph abstractions that support multiple graph models
+- Keeping algorithm interfaces generic while preserving practical runtime ergonomics
+- Validating strict, typed parsing from textual graph definitions
+
+Planned and in-progress features:
+
+- [x] Finalize full A\* runtime integration
+- [ ] Enable command-line graph input origin in executable flow
+- [ ] Extend usage examples and integration tests for all graph variants
+
+---
+
+## Dev workflow
 
 Run checks locally before pushing:
 
@@ -329,7 +327,7 @@ cargo test --workspace --all-targets --locked --verbose
 cargo test --workspace --doc --locked --verbose
 ```
 
-### Benchmarking
+## Benchmarking
 
 Run the algorithm benchmark target to compare all currently implemented runtime
 algorithms (Dijkstra and A\*) on shared benchmark scenarios:
@@ -345,7 +343,73 @@ The benchmark includes:
 - Dijkstra vs A\* shortest-path runtime on sparse grids
 - Dijkstra vs A\* shortest-path runtime on denser grids with diagonal shortcuts
 
-### Automated releases
+---
+
+## Advanced details
+
+<details>
+  <summary><strong>Exit codes</strong></summary>
+
+- 0: success
+- 1: setup, parsing, or graph-loading failure
+- 2: invalid graph for the selected algorithm (for example unweighted)
+- 3: required node is missing from the graph
+- 4: invalid edge weight encountered
+- 5: heuristic produced an invalid value
+- 6: no path exists between the requested nodes
+- 7: algorithm bookkeeping invariant failed
+- 8: algorithm returned an invalid result
+
+Exit codes for algorithm failures are derived from `AlgorithmErrorKind` in
+the library error module. The CLI wraps algorithm-specific errors into
+`AlgorithmError`, calls `kind()`, and exits with `kind().exit_code()`.
+
+Example: mapping a Dijkstra error to a CLI exit code:
+
+```rust
+use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+
+let err = AlgorithmError::from(DijkstraError::NoPathFound {
+	start: "A".to_string(),
+	end: "B".to_string(),
+});
+assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+assert_eq!(err.kind().exit_code(), 6);
+```
+
+Example CLI error output:
+
+```text
+[ERROR] Algorithm error (Dijkstra): no path found from 'A' to 'B'
+```
+</details>
+
+<details>
+  <summary><strong>Error handling (library)</strong></summary>
+
+Algorithms return typed errors. If you want a stable classification layer for
+telemetry, exit codes, or user messaging, wrap errors in `AlgorithmError` and
+query `AlgorithmErrorKind`.
+
+```rust
+use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+
+let err = AlgorithmError::from(DijkstraError::MissingStartNode {
+	id: "A".to_string(),
+	graph: "DirectedGraph".to_string(),
+});
+
+match err.kind() {
+	AlgorithmErrorKind::MissingNode => println!("node is missing"),
+	_ => println!("other error"),
+}
+```
+</details>
+
+<details>
+  <summary><strong>Automated releases</strong></summary>
 
 When a pull request is merged into `main`, the release workflow (`.github/workflows/release.yml`) runs and:
 
@@ -362,8 +426,10 @@ Release authentication requirement:
 Important release rule:
 
 - Always bump `version` in `Cargo.toml` before merging a release-worthy PR into `main`
+</details>
 
-Pre-commit hook setup (optional):
+<details>
+  <summary><strong>Pre-commit hook setup (optional)</strong></summary>
 
 Example command for clippy:
 
@@ -390,23 +456,7 @@ Example command to run hooks manually:
 ```sh
 pre-commit run --all-files
 ```
-
-### Default Settings
-
-Current defaults from CLI configuration:
-
-- Input origin defaults to file
-- Graph file defaults to graph.txt
-- Algorithm defaults to Dijkstra
-
-### Example output
-
-Output shape example (values depend on input graph):
-
-```text
-Path: A -> ... -> B
-Distance: <value>
-```
+</details>
 
 ## License
 
