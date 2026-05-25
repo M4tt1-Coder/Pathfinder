@@ -11,6 +11,7 @@
 //! - [`parse_error`]: parse-time failures for graph input.
 //! - [`config_error`]: CLI argument and configuration parsing failures.
 //! - [`algorithm_error`]: algorithm execution and path reconstruction failures.
+//! - [`app_error`]: unified CLI error wrapper with exit-code mapping.
 //!
 //! # Examples
 //!
@@ -29,8 +30,12 @@
 //! assert!(err.to_string().contains("Invalid syntax"));
 //! ```
 
+pub mod app_error;
+
 pub mod config_error;
 
 pub mod parse_error;
 
 pub mod algorithm_error;
+
+pub use app_error::AppError;

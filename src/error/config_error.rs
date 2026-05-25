@@ -15,6 +15,9 @@
 use std::{error::Error, fmt};
 
 /// Structured errors returned while parsing CLI configuration arguments.
+///
+/// Argument indices reported in this enum are 1-based positions from the
+/// original argument list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfigParseError {
     /// Fewer than the minimum expected argument count was supplied.
@@ -33,6 +36,20 @@ pub enum ConfigParseError {
     UnknownFlag { flag: String, index: usize },
     /// A non-flag token appeared where a flag was expected.
     UnexpectedArgument { value: String, index: usize },
+    /// The end-of-options sentinel (`--`) appeared where a flag was expected.
+    UnexpectedEndOfOptions { index: usize },
+    /// A flag value is not one of the expected options.
+    InvalidFlagValue {
+        flag: String,
+        value: String,
+        expected: String,
+    },
+    /// Mutually exclusive or conflicting flags were provided together.
+    ConflictingFlags {
+        flag: String,
+        other: String,
+        reason: String,
+    },
 }
 
 impl fmt::Display for ConfigParseError {
@@ -48,7 +65,7 @@ impl fmt::Display for ConfigParseError {
             }
             ConfigParseError::MissingValueForFlag { flag, index } => write!(
                 f,
-                "Missing value for flag {} at argument index {}.",
+                "Missing value for flag {} at argument position {}.",
                 flag, index
             ),
             ConfigParseError::DuplicateFlag {
@@ -57,17 +74,36 @@ impl fmt::Display for ConfigParseError {
                 duplicate_index,
             } => write!(
                 f,
-                "Flag {} was provided more than once (first at index {}, duplicate at index {}).",
+                "Flag {} was provided more than once (first at position {}, duplicate at position {}).",
                 flag, first_index, duplicate_index
             ),
             ConfigParseError::UnknownFlag { flag, index } => {
-                write!(f, "Unknown flag {} at argument index {}.", flag, index)
+                write!(f, "Unknown flag {} at argument position {}.", flag, index)
             }
             ConfigParseError::UnexpectedArgument { value, index } => write!(
                 f,
-                "Unexpected argument '{}' at index {}. Flags must start with '--'.",
+                "Unexpected argument '{}' at position {}. Flags must start with '--'.",
                 value, index
             ),
+            ConfigParseError::UnexpectedEndOfOptions { index } => write!(
+                f,
+                "Unexpected end-of-options marker '--' at position {}.",
+                index
+            ),
+            ConfigParseError::InvalidFlagValue {
+                flag,
+                value,
+                expected,
+            } => write!(
+                f,
+                "Invalid value '{}' for flag {} (expected {}).",
+                value, flag, expected
+            ),
+            ConfigParseError::ConflictingFlags {
+                flag,
+                other,
+                reason,
+            } => write!(f, "Conflicting flags {} and {}: {}.", flag, other, reason),
         }
     }
 }

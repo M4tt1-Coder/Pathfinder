@@ -2,7 +2,7 @@
 //!
 //! This module turns raw CLI arguments into strongly typed runtime configuration.
 //! The main entry point is [`AppConfig::setup_config`], which validates arguments,
-//! applies defaults, and returns an [`AppConfig`] used by the application runtime.
+//! applies defaults, and returns an [`AppConfigOutcome`] used by the application runtime.
 //!
 //! # Supported flags
 //!
@@ -11,14 +11,18 @@
 //! - `--end <node_name>`: destination node identifier (required).
 //! - `--algo <algorithm_name>`: algorithm selector (defaults to `Dijkstra`).
 //! - `--origin <file|cmd-line>`: intended input-origin selector.
+//! - `--help`/`-h`: print usage information and exit.
+//! - `--version`/`-V`: print version information and exit.
 //!
 //! # Defaults and compatibility notes
 //!
 //! - Missing `--graph-file` defaults to `graph.txt`.
-//! - Missing or unknown `--algo` defaults to `Dijkstra`.
+//! - Missing `--algo` defaults to `Dijkstra`.
+//! - Unknown `--algo` values are rejected unless used for legacy origin fallback.
 //! - Input-origin parsing primarily reads from `--origin`.
 //! - Compatibility fallback: if `--origin` is absent, parser also accepts legacy
 //!   origin values from `--algo` (`file` or `cmd-line`).
+//! - Use `--` between a flag and its value to allow values that start with `--`.
 //! - Unknown flags, duplicate flags, missing values, and unexpected tokens are
 //!   rejected with structured [`ConfigParseError`] values.
 //!
@@ -43,7 +47,10 @@
 //! .map(String::from)
 //! .collect();
 //!
-//! let config = AppConfig::setup_config(args).unwrap();
+//! let config = AppConfig::setup_config(args)
+//!     .unwrap()
+//!     .into_config()
+//!     .expect("expected config");
 //!
 //! assert_eq!(config.file_path, "test_files/directed_graph.txt");
 //! assert_eq!(config.start_node_id, "A");
@@ -52,16 +59,27 @@
 //! assert!(matches!(config.data_input, InputOrigin::File));
 //! ```
 
-use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
+// TODO: (Refactor) Finish AI prompt and evaluating the implementation against it -> let
+// documentation be updated
 
-/// Minimum argument count required before parsing is attempted.
-///
-/// This guard prevents obviously incomplete invocations from entering detailed
-/// flag parsing logic.
-const MIN_ARGUMENT_COUNT: usize = 4;
+use std::{error::Error as StdError, fmt};
+
+use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
 
 /// Default file path used when `--graph-file` is not provided.
 const DEFAULT_GRAPH_FILE: &str = "graph.txt";
+
+/// Application name used in CLI output.
+const APP_NAME: &str = "pathfinder";
+
+/// End-of-options marker used to allow values starting with `--`.
+const END_OF_OPTIONS: &str = "--";
+
+/// Allowed origin values for `--origin`.
+const VALID_ORIGINS: [&str; 2] = ["file", "cmd-line"];
+
+/// Allowed algorithm values for `--algo`.
+const VALID_ALGORITHMS: [&str; 2] = ["Dijkstra", "AStar"];
 
 /// Internal representation of supported CLI flags.
 ///
@@ -102,9 +120,21 @@ impl KnownFlag {
     }
 }
 
+fn is_help_flag(token: &str) -> bool {
+    matches!(token, "--help" | "-h")
+}
+
+fn is_version_flag(token: &str) -> bool {
+    matches!(token, "--version" | "-V")
+}
+
+fn expected_values(values: &[&str]) -> String {
+    values.join(" | ")
+}
+
 /// Parsed key-value storage for all supported CLI options.
 ///
-/// Each field stores the original flag index and its associated value, which
+/// Each field stores the 1-based flag position and its associated value, which
 /// enables precise duplicate-flag diagnostics.
 #[derive(Default, Debug)]
 struct ParsedCliValues {
@@ -122,7 +152,7 @@ impl ParsedCliValues {
     ///
     /// - `slot`: Target storage location for a flag value.
     /// - `flag`: Logical flag identifier used for diagnostics.
-    /// - `index`: Position of the current flag token in the original args.
+    /// - `index`: 1-based position of the current flag token in the original args.
     /// - `value`: Parsed value token associated with `flag`.
     ///
     /// # Errors
@@ -151,7 +181,7 @@ impl ParsedCliValues {
     /// # Parameters
     ///
     /// - `flag`: Known flag discriminator.
-    /// - `index`: Index of the flag token in `args`.
+    /// - `index`: 1-based position of the flag token in `args`.
     /// - `value`: Associated value token.
     ///
     /// # Errors
@@ -198,14 +228,24 @@ impl ParsedCliValues {
     }
 }
 
+/// Result of parsing raw CLI arguments before full validation.
+#[derive(Debug)]
+enum CliParseOutcome {
+    Values(ParsedCliValues),
+    HelpRequested,
+    VersionRequested,
+}
+
 /// Parses raw CLI arguments into validated key-value pairs.
 ///
 /// # Behavior
 ///
 /// - Accepts argument vectors both with and without executable name prefix.
 /// - Requires every option token to start with `--`.
-/// - Requires every known flag to be followed by a non-empty, non-flag value.
+/// - Requires every known flag to be followed by a non-empty value.
+/// - Accepts `--` between a flag and its value to allow values that start with `--`.
 /// - Rejects unknown and duplicate flags.
+/// - Short-circuits for `--help`/`--version` requests.
 ///
 /// # Errors
 ///
@@ -213,8 +253,9 @@ impl ParsedCliValues {
 /// - [`ConfigParseError::UnexpectedArgument`] for non-flag tokens,
 /// - [`ConfigParseError::UnknownFlag`] for unsupported switches,
 /// - [`ConfigParseError::MissingValueForFlag`] when a flag has no usable value,
-/// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times.
-fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError> {
+/// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times,
+/// - [`ConfigParseError::UnexpectedEndOfOptions`] when `--` appears where a flag is expected.
+fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseError> {
     let mut parsed = ParsedCliValues::default();
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
@@ -226,12 +267,26 @@ fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError
     // Process tokens in pairs: flag followed by value.
     while index < args.len() {
         let token = &args[index];
+        if is_help_flag(token) {
+            return Ok(CliParseOutcome::HelpRequested);
+        }
+        if is_version_flag(token) {
+            return Ok(CliParseOutcome::VersionRequested);
+        }
+
+        let display_index = index + 1;
+
+        if token == END_OF_OPTIONS {
+            return Err(ConfigParseError::UnexpectedEndOfOptions {
+                index: display_index,
+            });
+        }
 
         // Validate that the current token is a flag.
         if !token.starts_with("--") {
             return Err(ConfigParseError::UnexpectedArgument {
                 value: token.clone(),
-                index,
+                index: display_index,
             });
         }
 
@@ -240,29 +295,43 @@ fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError
             None => {
                 return Err(ConfigParseError::UnknownFlag {
                     flag: token.clone(),
-                    index,
+                    index: display_index,
                 });
             }
         };
 
         // Validate that the flag is followed by a usable value.
         let maybe_value = args.get(index + 1);
-        let value = match maybe_value {
-            Some(value) if !value.is_empty() && !value.starts_with("--") => value,
+        let (value, next_index) = match maybe_value {
+            Some(value) if value == END_OF_OPTIONS => {
+                let escaped_index = index + 2;
+                let escaped_value = args.get(escaped_index);
+                let escaped_value = match escaped_value {
+                    Some(value) if !value.is_empty() => value,
+                    _ => {
+                        return Err(ConfigParseError::MissingValueForFlag {
+                            flag: flag.as_str().to_string(),
+                            index: display_index,
+                        });
+                    }
+                };
+                (escaped_value, escaped_index + 1)
+            }
+            Some(value) if !value.is_empty() && !value.starts_with("--") => (value, index + 2),
             _ => {
                 return Err(ConfigParseError::MissingValueForFlag {
                     flag: flag.as_str().to_string(),
-                    index,
+                    index: display_index,
                 });
             }
         };
 
-        parsed.insert(flag, index, value)?;
-        // Advance by one full pair (`--flag` + `value`).
-        index += 2;
+        parsed.insert(flag, display_index, value)?;
+        // Advance by one full pair (`--flag` + `value`), or escape value if used.
+        index = next_index;
     }
 
-    Ok(parsed)
+    Ok(CliParseOutcome::Values(parsed))
 }
 
 /// Declares where graph data should be read from.
@@ -291,7 +360,10 @@ fn parse_cli_values(args: &[String]) -> Result<ParsedCliValues, ConfigParseError
 /// .map(String::from)
 /// .collect();
 ///
-/// let config = AppConfig::setup_config(args).unwrap();
+/// let config = AppConfig::setup_config(args)
+///     .unwrap()
+///     .into_config()
+///     .expect("expected config");
 /// assert!(matches!(config.data_input, InputOrigin::CommandLine));
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -302,47 +374,48 @@ pub enum InputOrigin {
     CommandLine,
 }
 
-impl InputOrigin {
-    /// Converts a raw text token into an [`InputOrigin`] variant.
-    ///
-    /// # Parameters
-    ///
-    /// - `src`: raw token to parse.
-    ///
-    /// # Returns
-    ///
-    /// - [`InputOrigin::File`] when `src` is `"file"`.
-    /// - [`InputOrigin::CommandLine`] when `src` is `"cmd-line"`.
-    /// - [`InputOrigin::File`] for any unknown token.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
-    ///
-    /// // Demonstrated via the public setup function.
-    /// let args = vec![
-    ///     "pathfinder",
-    ///     "--start",
-    ///     "A",
-    ///     "--end",
-    ///     "B",
-    ///     "--algo",
-    ///     "file",
-    /// ]
-    /// .into_iter()
-    /// .map(String::from)
-    /// .collect();
-    ///
-    /// let config = AppConfig::setup_config(args).unwrap();
-    /// assert!(matches!(config.data_input, InputOrigin::File));
-    /// ```
-    fn get_from_string(src: &str) -> Self {
+/// Error returned when parsing an [`InputOrigin`] value from user input.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InputOriginParseError {
+    /// Raw input that failed to match a known origin value.
+    pub value: String,
+}
+
+impl fmt::Display for InputOriginParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown input origin '{}'", self.value)
+    }
+}
+
+impl StdError for InputOriginParseError {}
+
+impl TryFrom<&str> for InputOrigin {
+    type Error = InputOriginParseError;
+
+    fn try_from(src: &str) -> Result<Self, Self::Error> {
         match src {
-            "file" => Self::File,
-            "cmd-line" => Self::CommandLine,
-            _ => Self::File,
+            "file" => Ok(Self::File),
+            "cmd-line" => Ok(Self::CommandLine),
+            _ => Err(InputOriginParseError {
+                value: src.to_string(),
+            }),
         }
+    }
+}
+
+impl InputOrigin {
+    /// Returns the canonical string representation for the origin.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            InputOrigin::File => "file",
+            InputOrigin::CommandLine => "cmd-line",
+        }
+    }
+}
+
+impl fmt::Display for InputOrigin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -377,7 +450,10 @@ impl InputOrigin {
 /// .map(String::from)
 /// .collect();
 ///
-/// let config = AppConfig::setup_config(args).unwrap();
+/// let config = AppConfig::setup_config(args)
+///     .unwrap()
+///     .into_config()
+///     .expect("expected config");
 ///
 /// assert_eq!(config.file_path, "graph.txt");
 /// assert_eq!(config.start_node_id, "A");
@@ -399,8 +475,29 @@ pub struct AppConfig {
     pub data_input: InputOrigin,
 }
 
+/// Outcome of CLI configuration parsing.
+#[derive(Debug)]
+pub enum AppConfigOutcome {
+    /// Parsed configuration for normal runtime execution.
+    Config(AppConfig),
+    /// Help flag was requested; caller should print help and exit successfully.
+    HelpRequested,
+    /// Version flag was requested; caller should print version and exit successfully.
+    VersionRequested,
+}
+
+impl AppConfigOutcome {
+    /// Extracts the parsed configuration when available.
+    pub fn into_config(self) -> Option<AppConfig> {
+        match self {
+            AppConfigOutcome::Config(config) => Some(config),
+            AppConfigOutcome::HelpRequested | AppConfigOutcome::VersionRequested => None,
+        }
+    }
+}
+
 impl AppConfig {
-    /// Builds an [`AppConfig`] by parsing and validating CLI arguments.
+    /// Builds an [`AppConfigOutcome`] by parsing and validating CLI arguments.
     ///
     /// # Parameters
     ///
@@ -408,25 +505,30 @@ impl AppConfig {
     ///
     /// # Returns
     ///
-    /// - `Ok(AppConfig)` when required information is present.
+    /// - `Ok(AppConfigOutcome::Config)` when required information is present.
+    /// - `Ok(AppConfigOutcome::HelpRequested)` when help flags are present.
+    /// - `Ok(AppConfigOutcome::VersionRequested)` when version flags are present.
     /// - `Err(ConfigParseError)` when parsing or validation fails.
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - fewer than four arguments are provided,
     /// - required flags are missing,
     /// - a known flag is missing a value,
     /// - unknown or duplicate flags are provided,
+    /// - a known flag is supplied with an invalid value,
+    /// - conflicting flags are provided,
     /// - or unexpected non-flag tokens appear.
     ///
     /// Concrete variant mapping:
-    /// - [`ConfigParseError::TooFewArguments`]
     /// - [`ConfigParseError::MissingRequiredFlag`]
     /// - [`ConfigParseError::MissingValueForFlag`]
     /// - [`ConfigParseError::UnknownFlag`]
     /// - [`ConfigParseError::DuplicateFlag`]
+    /// - [`ConfigParseError::InvalidFlagValue`]
+    /// - [`ConfigParseError::ConflictingFlags`]
     /// - [`ConfigParseError::UnexpectedArgument`]
+    /// - [`ConfigParseError::UnexpectedEndOfOptions`]
     ///
     /// # Examples
     ///
@@ -447,7 +549,10 @@ impl AppConfig {
     /// .map(String::from)
     /// .collect();
     ///
-    /// let config = AppConfig::setup_config(args).unwrap();
+    /// let config = AppConfig::setup_config(args)
+    ///     .unwrap()
+    ///     .into_config()
+    ///     .expect("expected config");
     ///
     /// assert_eq!(config.file_path, "graph.txt");
     /// assert!(matches!(config.algorithm, Algorithms::Dijkstra));
@@ -496,21 +601,22 @@ impl AppConfig {
     /// let err = AppConfig::setup_config(args).expect_err("unknown flag should fail");
     /// assert!(matches!(err, ConfigParseError::UnknownFlag { .. }));
     /// ```
-    pub fn setup_config(args: Vec<String>) -> Result<Self, ConfigParseError> {
-        if args.len() < MIN_ARGUMENT_COUNT {
-            return Err(ConfigParseError::TooFewArguments {
-                provided: args.len(),
-                minimum: MIN_ARGUMENT_COUNT,
-            });
-        }
+    pub fn setup_config(args: Vec<String>) -> Result<AppConfigOutcome, ConfigParseError> {
+        let parsed = match parse_cli_values(&args)? {
+            CliParseOutcome::Values(values) => values,
+            CliParseOutcome::HelpRequested => return Ok(AppConfigOutcome::HelpRequested),
+            CliParseOutcome::VersionRequested => return Ok(AppConfigOutcome::VersionRequested),
+        };
 
-        let parsed = parse_cli_values(&args)?;
         let file_path = parsed
             .graph_file_value()
             .unwrap_or_else(|| DEFAULT_GRAPH_FILE.to_string());
         let algorithm_token = parsed.algorithm_value();
-        let algorithm = AppConfig::retrieve_algorithm(algorithm_token.as_deref());
-        let data_input = AppConfig::retrieve_data_input(&parsed, algorithm_token.as_deref());
+        let (data_input, used_legacy_origin) =
+            AppConfig::retrieve_data_input(&parsed, algorithm_token.as_deref())?;
+        AppConfig::validate_flag_combinations(&parsed, &data_input)?;
+        let algorithm =
+            AppConfig::retrieve_algorithm(algorithm_token.as_deref(), used_legacy_origin)?;
 
         let start_node_id = parsed
             .start_value()
@@ -519,23 +625,56 @@ impl AppConfig {
             .end_value()
             .ok_or(ConfigParseError::MissingRequiredFlag { flag: "--end" })?;
 
-        Ok(Self {
+        Ok(AppConfigOutcome::Config(Self {
             file_path,
             start_node_id,
             end_node_id,
             algorithm,
             data_input,
-        })
+        }))
+    }
+
+    /// Returns the CLI help text for the Pathfinder binary.
+    pub fn help_text() -> String {
+        format!(
+            "Usage: {app} [--origin <file|cmd-line>] [--graph-file <path_to_file>] \
+[--algo <algorithm_name>] --start <node> --end <node>\n\n\
+Options:\n\
+  --graph-file <path>         Graph input file (default: graph.txt)\n\
+  --start <node>              Start node identifier (required)\n\
+  --end <node>                Destination node identifier (required)\n\
+  --algo <name>               Algorithm to run (Dijkstra | AStar)\n\
+  --origin <file|cmd-line>    Input origin (default: file)\n\
+  --help, -h                  Show this help message and exit\n\
+  --version, -V               Show version information and exit\n\n\
+Notes:\n\
+  Use `--` between a flag and its value to allow values starting with `--`.\n\
+  Legacy: when --origin is absent, --algo file|cmd-line sets the input origin.\n\
+  Command-line origin is parsed but not implemented in the CLI runtime yet.\n",
+            app = APP_NAME
+        )
+    }
+
+    /// Returns the version banner for the Pathfinder binary.
+    pub fn version_text() -> String {
+        format!("{} {}", APP_NAME, env!("CARGO_PKG_VERSION"))
     }
 
     /// Converts optional algorithm text into a concrete [`Algorithms`] value.
-    ///
-    /// Falls back to [`Algorithms::Dijkstra`] when the algorithm flag is not
-    /// provided.
-    fn retrieve_algorithm(raw_algorithm: Option<&str>) -> Algorithms {
-        raw_algorithm
-            .map(Algorithms::get_from_string)
-            .unwrap_or(Algorithms::Dijkstra)
+    fn retrieve_algorithm(
+        raw_algorithm: Option<&str>,
+        used_legacy_origin: bool,
+    ) -> Result<Algorithms, ConfigParseError> {
+        if used_legacy_origin || raw_algorithm.is_none() {
+            return Ok(Algorithms::Dijkstra);
+        }
+
+        let token = raw_algorithm.expect("algorithm token should be present");
+        Algorithms::try_from(token).map_err(|err| ConfigParseError::InvalidFlagValue {
+            flag: "--algo".to_string(),
+            value: err.value,
+            expected: expected_values(&VALID_ALGORITHMS),
+        })
     }
 
     /// Resolves input origin with compatibility fallback.
@@ -544,18 +683,53 @@ impl AppConfig {
     /// 1. `--origin` value,
     /// 2. legacy `--algo` values `file`/`cmd-line`,
     /// 3. [`InputOrigin::File`] default.
-    fn retrieve_data_input(parsed: &ParsedCliValues, raw_algorithm: Option<&str>) -> InputOrigin {
+    fn retrieve_data_input(
+        parsed: &ParsedCliValues,
+        raw_algorithm: Option<&str>,
+    ) -> Result<(InputOrigin, bool), ConfigParseError> {
         if let Some(origin) = parsed.origin_value() {
-            return InputOrigin::get_from_string(&origin);
+            let origin = InputOrigin::try_from(origin.as_str()).map_err(|err| {
+                ConfigParseError::InvalidFlagValue {
+                    flag: "--origin".to_string(),
+                    value: err.value,
+                    expected: expected_values(&VALID_ORIGINS),
+                }
+            })?;
+            return Ok((origin, false));
         }
 
         // Keep backward compatibility for existing callers that pass
         // `--algo cmd-line` or `--algo file` as origin markers.
         if let Some(algo_token) = raw_algorithm {
-            return InputOrigin::get_from_string(algo_token);
+            if let Some(origin) = AppConfig::legacy_origin_from_algorithm(algo_token) {
+                return Ok((origin, true));
+            }
         }
 
-        InputOrigin::File
+        Ok((InputOrigin::File, false))
+    }
+
+    fn legacy_origin_from_algorithm(raw_algorithm: &str) -> Option<InputOrigin> {
+        match raw_algorithm {
+            "file" => Some(InputOrigin::File),
+            "cmd-line" => Some(InputOrigin::CommandLine),
+            _ => None,
+        }
+    }
+
+    fn validate_flag_combinations(
+        parsed: &ParsedCliValues,
+        data_input: &InputOrigin,
+    ) -> Result<(), ConfigParseError> {
+        if matches!(data_input, InputOrigin::CommandLine) && parsed.graph_file.is_some() {
+            return Err(ConfigParseError::ConflictingFlags {
+                flag: "--origin".to_string(),
+                other: "--graph-file".to_string(),
+                reason: "command-line origin cannot be combined with --graph-file".to_string(),
+            });
+        }
+
+        Ok(())
     }
 }
 

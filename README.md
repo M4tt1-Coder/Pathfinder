@@ -74,12 +74,14 @@ Example command:
 ### CLI usage
 
 ```text
-pathfinder [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
+pathfinder [--help] [--version] [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
 ```
 
 > **Compatibility**: Input origin now reads from `--origin` when present. For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
 
-The CLI parser rejects unknown flags, duplicate flags, missing flag values, and unexpected non-flag tokens with explicit errors.
+> **Value escape**: Use `--` between a flag and its value to allow values that start with `--`.
+
+The CLI parser rejects unknown flags, duplicate flags, missing flag values, invalid flag values, conflicting flags, and unexpected non-flag tokens with explicit errors.
 
 ### CLI argument examples
 
@@ -93,6 +95,12 @@ Explicit file and algorithm example:
 
 ```sh
 ./target/release/pathfinder --graph-file graph.txt --algo Dijkstra --start A --end B
+```
+
+Show CLI usage:
+
+```sh
+./target/release/pathfinder --help
 ```
 
 ### Example output
@@ -137,7 +145,7 @@ In this repo you will find:
 ## Runtime status
 
 - File-based input is implemented and wired into the CLI
-- Command-line graph input mode exists in configuration but is not wired into the runtime flow yet
+- Command-line graph input mode is parsed but the CLI returns a structured error (runtime support is pending)
 - Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
 - Dijkstra is fully wired in the executable
 - A\* is wired for two-dimensional (`TD`) graph execution in the CLI path

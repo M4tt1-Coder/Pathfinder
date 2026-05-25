@@ -14,7 +14,10 @@
 //!     .into_iter()
 //!     .map(String::from)
 //!     .collect();
-//! let config = AppConfig::setup_config(args).unwrap();
+//! let config = AppConfig::setup_config(args)
+//!     .unwrap()
+//!     .into_config()
+//!     .expect("expected config");
 //! assert_eq!(config.start_node_id, "A");
 //! ```
 

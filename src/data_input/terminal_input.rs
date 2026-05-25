@@ -4,7 +4,7 @@
 //!
 //! Interactive graph input is planned but not implemented yet. Runtime support
 //! for [`InputOrigin::CommandLine`](crate::cmd_line::app_config::InputOrigin::CommandLine)
-//! currently resolves to `unimplemented!()` in the binary flow.
+//! currently returns a structured CLI error in the binary flow.
 //!
 //! # Current Status
 //!

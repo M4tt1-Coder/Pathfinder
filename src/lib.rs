@@ -25,7 +25,9 @@
 //!
 //! Algorithm execution failures are represented by typed error enums. Use
 //! [`error::algorithm_error::AlgorithmErrorKind`] to classify failures when you
-//! want stable categories (for example, for exit codes or telemetry).
+//! want stable categories (for example, for exit codes or telemetry). The CLI
+//! wraps configuration, input, and algorithm errors in [`AppError`] for
+//! consistent exit-code mapping.
 //!
 //! ```rust
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
@@ -67,3 +69,5 @@ pub mod graphs;
 pub mod nodes;
 pub mod numeric_datatypes;
 pub mod weight_types;
+
+pub use error::AppError;

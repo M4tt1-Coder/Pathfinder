@@ -11,15 +11,15 @@
 //! # Runtime Notes
 //!
 //! - `InputOrigin::File` is implemented and used in production flow.
-//! - `InputOrigin::CommandLine` is currently `unimplemented!()`.
+//! - `InputOrigin::CommandLine` returns a structured CLI error for now.
 //! - Algorithm selection: Dijkstra for directed (`D`) and undirected (`UN`)
 //!   graphs; A* for two-dimensional (`TD`) graphs.
 //!
 //! # Error Handling
 //!
-//! Algorithm-specific failures are wrapped in
-//! [`AlgorithmError`](shortest_path_finder::error::algorithm_error::AlgorithmError)
-//! and mapped to exit codes via
+//! The CLI wraps configuration, input, and algorithm failures in
+//! [`AppError`](shortest_path_finder::AppError). Algorithm-specific failures are
+//! still mapped to exit codes via
 //! [`AlgorithmErrorKind::exit_code`](shortest_path_finder::error::algorithm_error::AlgorithmErrorKind::exit_code).
 //! The CLI logs the error message before exiting.
 //!
@@ -55,12 +55,13 @@ use std::{env, process};
 
 use log::error;
 use shortest_path_finder::{
+    AppError,
     algorithms::{
         a_star_algorithm::a_star::AStar,
         algorithm::{Algorithm, Algorithms},
         dijkstra::DijkstraAlgorithm,
     },
-    cmd_line::app_config::{AppConfig, InputOrigin},
+    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
     data_input::file_input::retrieve_graph_data_from_file,
     error::algorithm_error::AlgorithmError,
 };
@@ -107,10 +108,7 @@ use shortest_path_finder::{
 /// - `6`: no path exists between the requested nodes.
 /// - `7`: algorithm bookkeeping invariant failed.
 /// - `8`: algorithm returned an invalid result.
-fn main() {
-    // enable logging to the terminal
-    env_logger::init();
-
+fn run() -> Result<(), AppError> {
     let args: Vec<String> = env::args().collect();
     // -> '--graph <relative_path_to_file>' specifies which file to use to generate the graph
     // -> '--start <node_name>' name of the node to start from
@@ -120,101 +118,97 @@ fn main() {
     // (default: file with the name 'graph.txt')
 
     // validate the arguments and generate config data
-    let app_config = match AppConfig::setup_config(args) {
-        Ok(config) => config,
-        Err(err) => {
-            error!("{}", err);
-            process::exit(1);
+    let app_config = match AppConfig::setup_config(args)? {
+        AppConfigOutcome::Config(config) => config,
+        AppConfigOutcome::HelpRequested => {
+            println!("{}", AppConfig::help_text());
+            return Ok(());
+        }
+        AppConfigOutcome::VersionRequested => {
+            println!("{}", AppConfig::version_text());
+            return Ok(());
         }
     };
 
     // create the graph and execute the algorithm on it
     match app_config.data_input {
         InputOrigin::File => {
-            let graphs = match retrieve_graph_data_from_file(&app_config.file_path) {
-                Ok(graph) => graph,
-                Err(err) => {
-                    error!("{}", err);
-                    process::exit(1);
-                }
-            };
+            let graphs = retrieve_graph_data_from_file(&app_config.file_path)?;
             if let Some(graph) = graphs.directed_graph {
                 let algo = match app_config.algorithm {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
                     _ => {
-                        error!(
-                            "Algorithm {:?} is not implemented for directed graphs yet or a directed graph is not supported by the implementation of the algorithm!",
-                            app_config.algorithm
-                        );
-                        process::exit(1);
+                        return Err(AppError::Runtime {
+                            message: format!(
+                                "Algorithm {:?} is not implemented for directed graphs yet or a directed graph is not supported by the implementation of the algorithm!",
+                                app_config.algorithm
+                            ),
+                        });
                     }
                 };
-                let result =
-                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
-                        Ok(res) => res,
-                        Err(err) => {
-                            let algorithm_error = AlgorithmError::from(err);
-                            error!("{}", algorithm_error);
-                            process::exit(algorithm_error.kind().exit_code());
-                        }
-                    };
+                let result = algo
+                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                    .map_err(AlgorithmError::from)?;
                 // display the result
                 println!("{}", result);
-                process::exit(0);
+                Ok(())
             } else if let Some(graph) = graphs.undirected_graph {
                 let algo = match app_config.algorithm {
                     Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
                     _ => {
-                        error!(
-                            "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
-                            app_config.algorithm
-                        );
-                        process::exit(1);
+                        return Err(AppError::Runtime {
+                            message: format!(
+                                "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
+                                app_config.algorithm
+                            ),
+                        });
                     }
                 };
-                let result =
-                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
-                        Ok(res) => res,
-                        Err(err) => {
-                            let algorithm_error = AlgorithmError::from(err);
-                            error!("{}", algorithm_error);
-                            process::exit(algorithm_error.kind().exit_code());
-                        }
-                    };
+                let result = algo
+                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                    .map_err(AlgorithmError::from)?;
                 // display the result
                 println!("{}", result);
-                process::exit(0);
+                Ok(())
             } else if let Some(graph) = graphs.two_dimensional_graph {
                 let algo = match app_config.algorithm {
                     Algorithms::AStar => AStar::new(graph),
                     _ => {
-                        error!(
-                            "Algorithm {:?} is not implemented for two dimensional graphs yet or a two dimensional graph is not supported by the implementation of the algorithm!",
-                            app_config.algorithm
-                        );
-                        process::exit(1);
+                        return Err(AppError::Runtime {
+                            message: format!(
+                                "Algorithm {:?} is not implemented for two dimensional graphs yet or a two dimensional graph is not supported by the implementation of the algorithm!",
+                                app_config.algorithm
+                            ),
+                        });
                     }
                 };
-                let result =
-                    match algo.shortest_path(&app_config.start_node_id, &app_config.end_node_id) {
-                        Ok(res) => res,
-                        Err(err) => {
-                            let algorithm_error = AlgorithmError::from(err);
-                            error!("{}", algorithm_error);
-                            process::exit(algorithm_error.kind().exit_code());
-                        }
-                    };
+                let result = algo
+                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                    .map_err(AlgorithmError::from)?;
                 // display the result
                 println!("{}", result);
-                process::exit(0);
+                Ok(())
             } else {
-                error!(
-                    "No graph was create from the file {}!",
-                    app_config.file_path
-                );
-                process::exit(1);
-            };
+                Err(AppError::Runtime {
+                    message: format!(
+                        "No graph was created from the file {}!",
+                        app_config.file_path
+                    ),
+                })
+            }
         }
-        InputOrigin::CommandLine => unimplemented!(),
+        InputOrigin::CommandLine => Err(AppError::UnsupportedInputOrigin {
+            origin: app_config.data_input.as_str().to_string(),
+        }),
+    }
+}
+
+fn main() {
+    // enable logging to the terminal
+    env_logger::init();
+
+    if let Err(err) = run() {
+        error!("{}", err);
+        process::exit(err.exit_code());
     }
 }
