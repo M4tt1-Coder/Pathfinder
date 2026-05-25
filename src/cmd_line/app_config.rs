@@ -59,9 +59,6 @@
 //! assert!(matches!(config.data_input, InputOrigin::File));
 //! ```
 
-// TODO: (Refactor) Finish AI prompt and evaluating the implementation against it -> let
-// documentation be updated
-
 use std::{error::Error as StdError, fmt};
 
 use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
