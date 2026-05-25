@@ -54,14 +54,23 @@ separate entry with its own timestamp:
 
 ## Commit Convention
 
-Every prompt that creates or modifies code artifacts results in its own commit
-containing both the code changes and the diary entry:
+Every prompt that creates or modifies code artifacts results in one or more
+commits containing the changes and a diary entry:
 
-- One prompt -> one dedicated commit for the resulting repository changes.
-- Keep commits scoped only to the changes introduced for that prompt.
+- One prompt -> one or more commits for the resulting repository changes.
+- If a prompt includes multiple distinct modifications, split them into
+  separate commits; avoid bundling unrelated changes.
+- Include the diary entry in one of the commits for that prompt (preferably
+  the final commit so it reflects the completed work).
+- Every commit must include a concise title and a brief description in the
+  commit body summarizing the contents.
 
 ```
 [diary] NNN — Short description of what was prompted
+
+- Update Copilot instructions for commit hygiene.
+- Align diary commit convention with new guidance.
+- Add diary entry for the prompt.
 ```
 
 This ensures `git log` shows a clear trail of AI interactions, and

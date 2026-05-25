@@ -83,6 +83,7 @@
 
 ## Commit History requirement
 
-- After each user prompt that results in repository modifications, create a dedicated commit containing all changes made for that prompt.
-- Keep commits granular and topic-focused to maximize traceability and reviewability.
-- Do not batch unrelated prompt changes into one commit.
+- After each user prompt that results in repository modifications, create one or more commits containing the changes made for that prompt.
+- Always separate distinct modifications into different commits to keep the history clean and reviewable.
+- Keep commits granular and topic-focused; do not batch unrelated changes into one commit.
+- Every commit must have a concise, descriptive title and a body description that briefly summarizes the commit contents.
