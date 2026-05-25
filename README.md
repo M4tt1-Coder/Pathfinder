@@ -9,6 +9,14 @@
 		<a href="https://doc.rust-lang.org/edition-guide/rust-2024/"><img alt="MSRV" src="https://img.shields.io/badge/MSRV-1.85%2B-blue?style=flat-square"></a>
 	</p>
 	<p>
+		<strong>
+			<span style="color:#1565C0">Library</span> |
+			<span style="color:#2E7D32">CLI</span> |
+			<span style="color:#EF6C00">Dijkstra + A*</span> |
+			<span style="color:#6A1B9A">Directed / Undirected / 2D</span>
+		</strong>
+	</p>
+	<p>
 		<a href="https://docs.rs/shortest_path_finder">Docs</a> |
 		<a href="https://crates.io/crates/shortest_path_finder">Crate</a> |
 		<a href="#cli-usage">CLI usage</a> |
@@ -19,7 +27,7 @@
 
 ## At a glance
 
-| Algorithms | Graphs | Input | Runtime |
+| <span style="color:#EF6C00"><strong>Algorithms</strong></span> | <span style="color:#1565C0"><strong>Graphs</strong></span> | <span style="color:#2E7D32"><strong>Input</strong></span> | <span style="color:#6A1B9A"><strong>Runtime</strong></span> |
 | --- | --- | --- | --- |
 | Dijkstra, A\* | Directed, Undirected, 2D coordinate | File (header + edges) | CLI + library |
 
@@ -36,6 +44,14 @@
 ---
 
 ## Quickstart
+
+> <strong><span style="color:#1B5E20">Start here</span></strong>: Build the release binary and run the CLI with a graph file.
+
+**Quick checklist**
+
+- <span style="color:#1565C0"><strong>Install</strong></span>: Rust toolchain from https://rust-lang.org/tools/install
+- <span style="color:#2E7D32"><strong>Build</strong></span>: `cargo build --release`
+- <span style="color:#EF6C00"><strong>Run</strong></span>: `./target/release/pathfinder --graph-file graph.txt --start A --end B`
 
 ### Prerequisites
 
@@ -73,13 +89,15 @@ Example command:
 
 ### CLI usage
 
+#### Syntax
+
 ```text
 pathfinder [--help] [--version] [--origin <file|cmd-line>] [--graph-file <path_to_file>] [--algo <algorithm_name>] --start <node> --end <node>
 ```
 
-> **Compatibility**: Input origin now reads from `--origin` when present. For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
+> <strong><span style="color:#1565C0">Compatibility</span></strong>: Input origin now reads from `--origin` when present. For backward compatibility, `--algo file` and `--algo cmd-line` are still accepted as origin markers when `--origin` is absent.
 
-> **Value escape**: Use `--` between a flag and its value to allow values that start with `--`.
+> <strong><span style="color:#2E7D32">Value escape</span></strong>: Use `--` between a flag and its value to allow values that start with `--`.
 
 The CLI parser rejects unknown flags, duplicate flags, missing flag values, invalid flag values, conflicting flags, and unexpected non-flag tokens with explicit errors.
 
@@ -114,9 +132,11 @@ Distance: <value>
 
 ### Default settings
 
-- Input origin defaults to file
-- Graph file defaults to graph.txt
-- Algorithm defaults to Dijkstra
+| <span style="color:#1565C0"><strong>Setting</strong></span> | <span style="color:#2E7D32"><strong>Default</strong></span> |
+| --- | --- |
+| Input origin | file |
+| Graph file | graph.txt |
+| Algorithm | Dijkstra |
 
 ---
 
@@ -144,14 +164,14 @@ In this repo you will find:
 
 ## Runtime status
 
-- File-based input is implemented and wired into the CLI
-- Command-line graph input mode is parsed but the CLI returns a structured error (runtime support is pending)
-- Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
-- Dijkstra is fully wired in the executable
-- A\* is wired for two-dimensional (`TD`) graph execution in the CLI path
-- A\* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
-- `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
-- Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
+- <span style="color:#2E7D32"><strong>Ready</strong></span>: File-based input is implemented and wired into the CLI
+- <span style="color:#EF6C00"><strong>Partial</strong></span>: Command-line graph input mode is parsed but the CLI returns a structured error (runtime support is pending)
+- <span style="color:#1565C0"><strong>Parsing</strong></span>: Input origin is parsed from `--origin`, with backward-compatible fallback to legacy `--algo` origin values (`file`, `cmd-line`)
+- <span style="color:#2E7D32"><strong>Ready</strong></span>: Dijkstra is fully wired in the executable
+- <span style="color:#2E7D32"><strong>Ready</strong></span>: A\* is wired for two-dimensional (`TD`) graph execution in the CLI path
+- <span style="color:#1565C0"><strong>Mixed types</strong></span>: A\* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
+- <span style="color:#1565C0"><strong>Library</strong></span>: `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
+- <span style="color:#1565C0"><strong>Performance</strong></span>: Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
 
 ## Technologies
 
@@ -261,6 +281,8 @@ println!("distance: {}", result.get_total_distance());
 
 The current parser format (used by the provided test files) is header plus edge lines:
 
+> <strong><span style="color:#C62828">Strict format</span></strong>: The parser is line-validated and surfaces file-line context for invalid input.
+
 - Line 1 is a graph-type header and must be exactly one of: `D`, `UN`, or `TD`.
 - Only lines after line 1 are converted into edges.
 - Line 1 is not inserted as an edge.
@@ -305,7 +327,7 @@ Planned and in-progress features:
 
 - [x] Finalize full A\* runtime integration
 - [ ] Enable command-line graph input origin in executable flow
-- [ ] Extend usage examples and integration tests for all graph variants
+- [x] Extend usage examples and integration tests for all graph variants
 
 ---
 
