@@ -85,10 +85,15 @@ const VALID_ALGORITHMS: [&str; 2] = ["Dijkstra", "AStar"];
 /// switches.
 #[derive(Copy, Clone, Debug)]
 enum KnownFlag {
+    /// `--graph-file` flag.
     GraphFile,
+    /// `--start` flag.
     Start,
+    /// `--end` flag.
     End,
+    /// `--algo` flag.
     Algo,
+    /// `--origin` flag.
     Origin,
 }
 
@@ -117,14 +122,17 @@ impl KnownFlag {
     }
 }
 
+/// Returns true when the token is a recognized help flag.
 fn is_help_flag(token: &str) -> bool {
     matches!(token, "--help" | "-h")
 }
 
+/// Returns true when the token is a recognized version flag.
 fn is_version_flag(token: &str) -> bool {
     matches!(token, "--version" | "-V")
 }
 
+/// Formats a list of expected values for diagnostic messages.
 fn expected_values(values: &[&str]) -> String {
     values.join(" | ")
 }
@@ -135,10 +143,15 @@ fn expected_values(values: &[&str]) -> String {
 /// enables precise duplicate-flag diagnostics.
 #[derive(Default, Debug)]
 struct ParsedCliValues {
+    /// Parsed `--graph-file` value and 1-based flag position.
     graph_file: Option<(usize, String)>,
+    /// Parsed `--start` value and 1-based flag position.
     start: Option<(usize, String)>,
+    /// Parsed `--end` value and 1-based flag position.
     end: Option<(usize, String)>,
+    /// Parsed `--algo` value and 1-based flag position.
     algo: Option<(usize, String)>,
+    /// Parsed `--origin` value and 1-based flag position.
     origin: Option<(usize, String)>,
 }
 
@@ -228,8 +241,11 @@ impl ParsedCliValues {
 /// Result of parsing raw CLI arguments before full validation.
 #[derive(Debug)]
 enum CliParseOutcome {
+    /// Parsed key-value storage for the supported CLI flags.
     Values(ParsedCliValues),
+    /// Caller requested help output via `--help`/`-h`.
     HelpRequested,
+    /// Caller requested version output via `--version`/`-V`.
     VersionRequested,
 }
 
@@ -255,6 +271,7 @@ enum CliParseOutcome {
 fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseError> {
     let mut parsed = ParsedCliValues::default();
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
+    // Skip argv[0] when it looks like the executable name.
     let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
         0
     } else {
@@ -271,8 +288,10 @@ fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseError
             return Ok(CliParseOutcome::VersionRequested);
         }
 
+        // Use 1-based positions to match user-facing error reporting.
         let display_index = index + 1;
 
+        // A stray `--` is invalid outside a value-escape sequence.
         if token == END_OF_OPTIONS {
             return Err(ConfigParseError::UnexpectedEndOfOptions {
                 index: display_index,
@@ -301,6 +320,7 @@ fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseError
         let maybe_value = args.get(index + 1);
         let (value, next_index) = match maybe_value {
             Some(value) if value == END_OF_OPTIONS => {
+                // Support `--flag -- --value` to accept values that start with `--`.
                 let escaped_index = index + 2;
                 let escaped_value = args.get(escaped_index);
                 let escaped_value = match escaped_value {
@@ -372,6 +392,15 @@ pub enum InputOrigin {
 }
 
 /// Error returned when parsing an [`InputOrigin`] value from user input.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::cmd_line::app_config::InputOrigin;
+///
+/// let err = InputOrigin::try_from("nope").expect_err("invalid origin should fail");
+/// assert_eq!(err.value, "nope");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InputOriginParseError {
     /// Raw input that failed to match a known origin value.
@@ -402,6 +431,15 @@ impl TryFrom<&str> for InputOrigin {
 
 impl InputOrigin {
     /// Returns the canonical string representation for the origin.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::InputOrigin;
+    ///
+    /// assert_eq!(InputOrigin::File.as_str(), "file");
+    /// assert_eq!(InputOrigin::CommandLine.as_str(), "cmd-line");
+    /// ```
     pub fn as_str(&self) -> &'static str {
         match self {
             InputOrigin::File => "file",
@@ -485,6 +523,15 @@ pub enum AppConfigOutcome {
 
 impl AppConfigOutcome {
     /// Extracts the parsed configuration when available.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::AppConfigOutcome;
+    ///
+    /// let outcome = AppConfigOutcome::HelpRequested;
+    /// assert!(outcome.into_config().is_none());
+    /// ```
     pub fn into_config(self) -> Option<AppConfig> {
         match self {
             AppConfigOutcome::Config(config) => Some(config),
@@ -632,6 +679,16 @@ impl AppConfig {
     }
 
     /// Returns the CLI help text for the Pathfinder binary.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::AppConfig;
+    ///
+    /// let help = AppConfig::help_text();
+    /// assert!(help.contains("Usage:"));
+    /// assert!(help.contains("--graph-file"));
+    /// ```
     pub fn help_text() -> String {
         format!(
             "Usage: {app} [--origin <file|cmd-line>] [--graph-file <path_to_file>] \
@@ -653,6 +710,15 @@ Notes:\n\
     }
 
     /// Returns the version banner for the Pathfinder binary.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use shortest_path_finder::cmd_line::app_config::AppConfig;
+    ///
+    /// let version = AppConfig::version_text();
+    /// assert!(version.starts_with("pathfinder "));
+    /// ```
     pub fn version_text() -> String {
         format!("{} {}", APP_NAME, env!("CARGO_PKG_VERSION"))
     }
@@ -662,6 +728,7 @@ Notes:\n\
         raw_algorithm: Option<&str>,
         used_legacy_origin: bool,
     ) -> Result<Algorithms, ConfigParseError> {
+        // Legacy origin markers consume --algo, so default to Dijkstra here.
         if used_legacy_origin || raw_algorithm.is_none() {
             return Ok(Algorithms::Dijkstra);
         }
@@ -684,6 +751,7 @@ Notes:\n\
         parsed: &ParsedCliValues,
         raw_algorithm: Option<&str>,
     ) -> Result<(InputOrigin, bool), ConfigParseError> {
+        // `--origin` takes precedence over legacy origin markers.
         if let Some(origin) = parsed.origin_value() {
             let origin = InputOrigin::try_from(origin.as_str()).map_err(|err| {
                 ConfigParseError::InvalidFlagValue {
@@ -706,6 +774,7 @@ Notes:\n\
         Ok((InputOrigin::File, false))
     }
 
+    /// Maps legacy `--algo` origin markers to [`InputOrigin`].
     fn legacy_origin_from_algorithm(raw_algorithm: &str) -> Option<InputOrigin> {
         match raw_algorithm {
             "file" => Some(InputOrigin::File),
@@ -714,10 +783,12 @@ Notes:\n\
         }
     }
 
+    /// Validates mutually exclusive flags against the resolved input origin.
     fn validate_flag_combinations(
         parsed: &ParsedCliValues,
         data_input: &InputOrigin,
     ) -> Result<(), ConfigParseError> {
+        // Command-line input conflicts with explicit file-path selection.
         if matches!(data_input, InputOrigin::CommandLine) && parsed.graph_file.is_some() {
             return Err(ConfigParseError::ConflictingFlags {
                 flag: "--origin".to_string(),
