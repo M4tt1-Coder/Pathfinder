@@ -20,4 +20,4 @@
 //! assert!(matches!(origin, InputOrigin::CommandLine));
 //! ```
 
-// TODO: Implement terminal-based graph input parsing and construction.
+// TODO: Implement CL-based graph input parsing and construction.

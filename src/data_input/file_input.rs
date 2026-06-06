@@ -94,6 +94,7 @@ use std::{
     str::{FromStr, Lines},
 };
 
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use strum_macros::EnumString;
 
@@ -116,6 +117,34 @@ use crate::{
 // type in the header line (e.g., `TD<i32>`) and then parse the coordinates accordingly in
 // `convert_line_to_graph_data`. This would make the file input more flexible and compatible with
 // different use cases.
+
+// TODO: Improve error handling for the 'file_input' module
+//  - Introduce a global DataInputError in mod.rs with variants File(FileInputError) and CommandLine(CommandLineInputError) to unify input error handling across sources.
+//  - Enhance FileInputError to include file path context in parse failures, providing clearer error messages that specify which file caused the issue.
+//  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
+//  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
+//  - Replace FileInputGraphResult with a ParsedGraph enum (e.g., Directed, Undirected, TwoDimensional) to remove runtime checks and simplify graph parsing logic.
+//  - Add a first-class InvalidHeader error variant with header and expected values, ensuring header errors are reported with line 1 context for consistency.
+//  - Differentiate internal parser failures (like regex issues or unreachable code) from user data errors by using an Internal variant in FileInputError, preventing false user error reports.
+//  - Improve weight parsing diagnostics by indicating if the input is non-numeric or out-of-range, and specify the allowed range for better error clarity.
+
+// ----- Module-level variables and types -----
+
+/// Precompiled regexes for validating graph line syntax.
+///
+/// This is initialized once per parse run to avoid repeated compilation and to ensure that any
+/// regex setup failure is surfaced as a parser error instead of a panic. The regexes are used for
+/// validating the syntax of edge lines according to the detected graph type.
+///
+/// The regex patterns are:
+/// - Directed: `^[A-Za-z0-9]+->[A-Za-z0-9]+:[0-9]+$`
+/// - Undirected: `^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$`
+/// - Two-dimensional: `^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+=>[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$`
+///
+/// Note: Node IDs are restricted to `[A-Za-z0-9]+` in file input. IDs with other characters (e.g.
+/// `Station-42`, `node_1`) are not supported and will fail validation. Keep node names to letters
+/// and digits only when using file-based graph input.
+static GRAPH_EDGE_SYNTAX_REGEXES: OnceCell<LineSyntaxRegexes> = OnceCell::new();
 
 // ----- Implementation of the 'FoundGraphType' enum -----
 
@@ -153,6 +182,7 @@ enum FoundGraphType {
 ///
 /// Compiling once per parse run avoids repeated work and guarantees that any
 /// regex setup failure is surfaced as a parser error instead of a panic.
+#[derive(Debug)]
 struct LineSyntaxRegexes {
     /// Regex for directed lines (`A->B:7`).
     directed: Regex,
@@ -293,7 +323,7 @@ impl Error for FileInputError {
     }
 }
 
-// _____ Public endpoint of the file input module _____
+// ----- Public endpoint of the file input module -----
 
 /// Reads a graph definition file and parses it into one concrete graph result.
 ///
@@ -710,8 +740,17 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
 /// readability.
 fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph, ParseError> {
     let mut graph = DirectedGraph::default();
+
     let graph_type = FoundGraphType::D;
-    let syntax_regexes = compile_line_syntax_regexes()?;
+
+    let syntax_regexes = GRAPH_EDGE_SYNTAX_REGEXES.get_or_try_init(|| {
+        compile_line_syntax_regexes().map_err(|err| {
+            ParseError::RegexCompilationFailed(format!(
+                "Failed to compile line syntax regexes for directed graph parsing: {}",
+                err
+            ))
+        })
+    })?;
 
     for (index, raw_line) in lines_iter.enumerate() {
         // `+2`: zero-based enumerate starts after the header line (file line 1).
@@ -723,7 +762,7 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
             continue;
         }
 
-        if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
+        if !validate_line_syntax(line, &graph_type, syntax_regexes) {
             return Err(ParseError::InvalidDataInput(format!(
                 "Invalid syntax at line {} ('{}'). {}",
                 line_number,
@@ -800,8 +839,17 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
 /// - Silently skips duplicate edges.
 fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGraph, ParseError> {
     let mut graph = UndirectedGraph::default();
+
     let graph_type = FoundGraphType::UN;
-    let syntax_regexes = compile_line_syntax_regexes()?;
+
+    let syntax_regexes = GRAPH_EDGE_SYNTAX_REGEXES.get_or_try_init(|| {
+        compile_line_syntax_regexes().map_err(|err| {
+            ParseError::RegexCompilationFailed(format!(
+                "Failed to compile line syntax regexes for undirected graph parsing: {}",
+                err
+            ))
+        })
+    })?;
 
     for (index, raw_line) in lines_iter.enumerate() {
         // `+2`: one line offset for zero-based enumerate, one for header line.
@@ -813,7 +861,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
             continue;
         }
 
-        if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
+        if !validate_line_syntax(line, &graph_type, syntax_regexes) {
             return Err(ParseError::InvalidDataInput(format!(
                 "Invalid syntax at line {} ('{}'). {}",
                 line_number,
@@ -892,8 +940,17 @@ fn generate_two_dimensional_graph_from_file(
     lines_iter: Lines,
 ) -> Result<TwoDimensionalCoordinateGraph, ParseError> {
     let mut graph = TwoDimensionalCoordinateGraph::default();
+
     let graph_type = FoundGraphType::TD;
-    let syntax_regexes = compile_line_syntax_regexes()?;
+
+    let syntax_regexes = GRAPH_EDGE_SYNTAX_REGEXES.get_or_try_init(|| {
+        compile_line_syntax_regexes().map_err(|err| {
+            ParseError::RegexCompilationFailed(format!(
+                "Failed to compile line syntax regexes for two-dimensional graph parsing: {}",
+                err
+            ))
+        })
+    })?;
 
     for (index, raw_line) in lines_iter.enumerate() {
         // `+2`: parser reports original file line numbers (header occupies line 1).
@@ -905,7 +962,7 @@ fn generate_two_dimensional_graph_from_file(
             continue;
         }
 
-        if !validate_line_syntax(line, &graph_type, &syntax_regexes) {
+        if !validate_line_syntax(line, &graph_type, syntax_regexes) {
             return Err(ParseError::InvalidDataInput(format!(
                 "Invalid syntax at line {} ('{}'). {}",
                 line_number,

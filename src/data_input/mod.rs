@@ -15,5 +15,5 @@
 //! assert!(result.is_ok());
 //! ```
 
+pub mod cmd_line_input;
 pub mod file_input;
-pub mod terminal_input;
