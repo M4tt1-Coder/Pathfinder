@@ -428,14 +428,18 @@ Errors are layered by boundary:
 | Algorithm | `AlgorithmError` | Shortest-path execution failures |
 | CLI | `AppError` | Binary wrapper with `exit_code()` mapping |
 
-File-input failures are wrapped at the loading boundary:
+File-input failures are wrapped at the loading boundary. [`FileInputError::Parse`]
+carries the source file path alongside the underlying [`ParseError`]:
 
 ```rust
 use shortest_path_finder::data_input::file_input::FileInputError;
 use shortest_path_finder::error::data_input_error::DataInputError;
 use shortest_path_finder::error::parse_error::ParseError;
 
-let err = DataInputError::from(FileInputError::Parse(ParseError::InvalidLineSyntax));
+let err = DataInputError::from(FileInputError::Parse {
+	file_path: "graph.txt".to_string(),
+	source: ParseError::InvalidLineSyntax,
+});
 assert!(err.to_string().contains("File input error"));
 ```
 

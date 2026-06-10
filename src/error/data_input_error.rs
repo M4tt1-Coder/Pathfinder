@@ -27,7 +27,10 @@
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
-//! let file_err = FileInputError::Parse(ParseError::MissingColon);
+//! let file_err = FileInputError::Parse {
+//!     file_path: "graph.txt".to_string(),
+//!     source: ParseError::MissingColon,
+//! };
 //! let err = DataInputError::File(file_err);
 //! assert!(err.to_string().contains("File input error"));
 //! ```
@@ -63,7 +66,10 @@ use crate::data_input::file_input::FileInputError;
 /// use shortest_path_finder::error::data_input_error::DataInputError;
 /// use shortest_path_finder::error::parse_error::ParseError;
 ///
-/// let err = DataInputError::File(FileInputError::Parse(ParseError::InvalidLineSyntax));
+/// let err = DataInputError::File(FileInputError::Parse {
+///     file_path: "graph.txt".to_string(),
+///     source: ParseError::InvalidLineSyntax,
+/// });
 /// assert!(err.to_string().contains("Invalid syntax"));
 /// ```
 #[derive(Debug)]

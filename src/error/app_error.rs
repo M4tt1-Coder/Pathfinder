@@ -46,7 +46,10 @@
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
-//! let file_err = FileInputError::Parse(ParseError::InvalidLineSyntax);
+//! let file_err = FileInputError::Parse {
+//!     file_path: "graph.txt".to_string(),
+//!     source: ParseError::InvalidLineSyntax,
+//! };
 //! let err = AppError::from(DataInputError::File(file_err));
 //! assert_eq!(err.exit_code(), 1);
 //! assert!(err.to_string().contains("Input error"));

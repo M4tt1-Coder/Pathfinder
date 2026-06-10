@@ -51,7 +51,10 @@
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
-//! let err = DataInputError::from(FileInputError::Parse(ParseError::MissingColon));
+//! let err = DataInputError::from(FileInputError::Parse {
+//!     file_path: "graph.txt".to_string(),
+//!     source: ParseError::MissingColon,
+//! });
 //! assert!(err.to_string().contains("File input error"));
 //! ```
 //!

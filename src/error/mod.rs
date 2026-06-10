@@ -48,9 +48,10 @@
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
-//! let err = AppError::from(DataInputError::File(FileInputError::Parse(
-//!     ParseError::InvalidDataInput("bad header".to_string()),
-//! )));
+//! let err = AppError::from(DataInputError::File(FileInputError::Parse {
+//!     file_path: "graph.txt".to_string(),
+//!     source: ParseError::InvalidDataInput("bad header".to_string()),
+//! }));
 //! assert_eq!(err.exit_code(), 1);
 //! ```
 

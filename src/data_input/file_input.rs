@@ -119,7 +119,6 @@ use crate::{
 // different use cases.
 
 // TODO: (Refactor) Improve error handling for the 'file_input' module
-//  - Enhance FileInputError to include file path context in parse failures, providing clearer error messages that specify which file caused the issue.
 //  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
 //  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
 //  - Replace FileInputGraphResult with a ParsedGraph enum (e.g., Directed, Undirected, TwoDimensional) to remove runtime checks and simplify graph parsing logic.
@@ -274,8 +273,9 @@ impl FileInputGraphResult {
 ///
 /// # Variant semantics
 ///
-/// - [`FileInputError::Io`]: Reading raw file text failed.
-/// - [`FileInputError::Parse`]: Reading succeeded, but parser validation failed.
+/// - [`FileInputError::Io`]: Reading raw file text failed (includes `path`).
+/// - [`FileInputError::Parse`]: Reading succeeded, but parser validation failed
+///   (includes `file_path` and the underlying [`ParseError`] as `source`).
 ///
 /// # Example
 ///
@@ -283,8 +283,11 @@ impl FileInputGraphResult {
 /// use shortest_path_finder::data_input::file_input::FileInputError;
 /// use shortest_path_finder::error::parse_error::ParseError;
 ///
-/// let parse_error = FileInputError::Parse(ParseError::InvalidDataInput("bad input".to_string()));
-/// assert!(matches!(parse_error, FileInputError::Parse(_)));
+/// let parse_error = FileInputError::Parse {
+///     file_path: "graph.txt".to_string(),
+///     source: ParseError::InvalidDataInput("bad input".to_string()),
+/// };
+/// assert!(matches!(parse_error, FileInputError::Parse { .. }));
 ///
 /// let io_error = FileInputError::Io {
 ///     path: "graph.txt".to_string(),
@@ -302,7 +305,12 @@ pub enum FileInputError {
         source: io::Error,
     },
     /// File content was read but could not be parsed into a graph.
-    Parse(ParseError),
+    Parse {
+        /// Path of the file that was parsed and caused the error.
+        file_path: String,
+        /// Underlying parsing error returned by the graph parser.
+        source: ParseError,
+    },
 }
 
 impl fmt::Display for FileInputError {
@@ -311,8 +319,12 @@ impl fmt::Display for FileInputError {
             FileInputError::Io { path, source } => {
                 write!(f, "Failed to read graph file '{}': {}", path, source)
             }
-            FileInputError::Parse(source) => {
-                write!(f, "Failed to parse graph file content: {}", source)
+            FileInputError::Parse { file_path, source } => {
+                write!(
+                    f,
+                    "Failed to parse graph from file '{}': {}",
+                    file_path, source
+                )
             }
         }
     }
@@ -322,7 +334,7 @@ impl Error for FileInputError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             FileInputError::Io { source, .. } => Some(source),
-            FileInputError::Parse(source) => Some(source),
+            FileInputError::Parse { source, .. } => Some(source),
         }
     }
 }
@@ -418,7 +430,7 @@ impl Error for FileInputError {
 /// let path_owned = path.to_string_lossy().into_owned();
 /// let err = retrieve_graph_data_from_file(&path_owned)
 ///     .expect_err("invalid directed line should return parse error");
-/// assert!(matches!(err, DataInputError::File(FileInputError::Parse(_))));
+/// assert!(matches!(err, DataInputError::File(FileInputError::Parse { .. })));
 ///
 /// let _ = fs::remove_file(path);
 /// ```
@@ -434,7 +446,10 @@ pub fn retrieve_graph_data_from_file(
         source,
     })?;
 
-    let res = generate_graph_from_file(file_content).map_err(FileInputError::Parse)?;
+    let res = generate_graph_from_file(file_content).map_err(|err| FileInputError::Parse {
+        file_path: file_path.to_string(),
+        source: err,
+    })?;
 
     Ok(res)
 }
