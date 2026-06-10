@@ -418,9 +418,30 @@ Example CLI error output:
 <details>
   <summary><strong>Error handling (library)</strong></summary>
 
-Algorithms return typed errors. If you want a stable classification layer for
-telemetry, exit codes, or user messaging, wrap errors in `AlgorithmError` and
-query `AlgorithmErrorKind`.
+Errors are layered by boundary:
+
+| Layer | Type | Responsibility |
+|-------|------|----------------|
+| Parse | `ParseError` | Line-level graph syntax validation |
+| Input | `DataInputError` | File I/O and graph loading (`FileInputError` today) |
+| Config | `ConfigParseError` | CLI flag parsing and validation |
+| Algorithm | `AlgorithmError` | Shortest-path execution failures |
+| CLI | `AppError` | Binary wrapper with `exit_code()` mapping |
+
+File-input failures are wrapped at the loading boundary:
+
+```rust
+use shortest_path_finder::data_input::file_input::FileInputError;
+use shortest_path_finder::error::data_input_error::DataInputError;
+use shortest_path_finder::error::parse_error::ParseError;
+
+let err = DataInputError::from(FileInputError::Parse(ParseError::InvalidLineSyntax));
+assert!(err.to_string().contains("File input error"));
+```
+
+Algorithms return typed errors. For stable classification in telemetry, exit
+codes, or user messaging, wrap failures in `AlgorithmError` and query
+`AlgorithmErrorKind`:
 
 ```rust
 use shortest_path_finder::algorithms::dijkstra::DijkstraError;
@@ -435,6 +456,16 @@ match err.kind() {
 	AlgorithmErrorKind::MissingNode => println!("node is missing"),
 	_ => println!("other error"),
 }
+```
+
+The CLI collapses configuration, input, and algorithm failures into `AppError`:
+
+```rust
+use shortest_path_finder::error::app_error::AppError;
+use shortest_path_finder::error::config_error::ConfigParseError;
+
+let err = AppError::from(ConfigParseError::MissingRequiredFlag { flag: "--start" });
+assert_eq!(err.exit_code(), 1);
 ```
 </details>
 

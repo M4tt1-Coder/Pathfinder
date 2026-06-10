@@ -5,8 +5,8 @@
 //! This module contributes two things:
 //! - [`WeightType`], an enum used by parsing code when weight types differ by
 //!   graph format.
-//! - Implementations of [`GraphWeight`](crate::graphs::graph::GraphWeight)
-//!   for `u16`, `f32`, and `i32`.
+//! - Implementations of [`crate::graphs::graph::GraphWeight`] for `u16`, `f32`,
+//!   and `i32`.
 //!
 //! # Design Notes
 //!

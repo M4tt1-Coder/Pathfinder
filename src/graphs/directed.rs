@@ -6,7 +6,7 @@
 //! - [`DirectedGraph`] stores [`DefaultNode`] values and adjacency data.
 //! - [`DirectedGraphInsertionError`] reports insertion failures.
 //!
-//! It implements the shared [`Graph`](crate::graphs::graph::Graph) trait and
+//! It implements the shared [`crate::graphs::graph::Graph`] trait and
 //! is used by shortest-path algorithms such as Dijkstra.
 //!
 //! # File Abbreviation

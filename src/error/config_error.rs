@@ -21,33 +21,68 @@ use std::{error::Error, fmt};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfigParseError {
     /// Fewer than the minimum expected argument count was supplied.
-    TooFewArguments { provided: usize, minimum: usize },
+    TooFewArguments {
+        /// Number of arguments actually provided.
+        provided: usize,
+        /// Minimum number of arguments required by the parser.
+        minimum: usize,
+    },
     /// A required flag is missing from the argument list.
-    MissingRequiredFlag { flag: &'static str },
+    MissingRequiredFlag {
+        /// Canonical flag name that was not supplied (for example `--start`).
+        flag: &'static str,
+    },
     /// A flag was provided without a usable value.
-    MissingValueForFlag { flag: String, index: usize },
+    MissingValueForFlag {
+        /// Flag name that lacked a value token.
+        flag: String,
+        /// 1-based position of the flag token in the original argument list.
+        index: usize,
+    },
     /// The same flag appears more than once.
     DuplicateFlag {
+        /// Flag name that was repeated.
         flag: String,
+        /// 1-based position of the first occurrence.
         first_index: usize,
+        /// 1-based position of the duplicate occurrence.
         duplicate_index: usize,
     },
     /// A token looked like a flag but is not supported.
-    UnknownFlag { flag: String, index: usize },
+    UnknownFlag {
+        /// Unrecognized flag token (including the leading `--`).
+        flag: String,
+        /// 1-based position of the unknown flag in the argument list.
+        index: usize,
+    },
     /// A non-flag token appeared where a flag was expected.
-    UnexpectedArgument { value: String, index: usize },
+    UnexpectedArgument {
+        /// Raw token that was not recognized as a flag.
+        value: String,
+        /// 1-based position of the unexpected token.
+        index: usize,
+    },
     /// The end-of-options sentinel (`--`) appeared where a flag was expected.
-    UnexpectedEndOfOptions { index: usize },
+    UnexpectedEndOfOptions {
+        /// 1-based position of the stray `--` token.
+        index: usize,
+    },
     /// A flag value is not one of the expected options.
     InvalidFlagValue {
+        /// Flag name whose value was rejected.
         flag: String,
+        /// Value token supplied by the user.
         value: String,
+        /// Pipe-separated list of accepted values for diagnostics.
         expected: String,
     },
     /// Mutually exclusive or conflicting flags were provided together.
     ConflictingFlags {
+        /// Primary flag involved in the conflict.
         flag: String,
+        /// Secondary flag that cannot be combined with `flag`.
         other: String,
+        /// Human-readable explanation of why the combination is invalid.
         reason: String,
     },
 }

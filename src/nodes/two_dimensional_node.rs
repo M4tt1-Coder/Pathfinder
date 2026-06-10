@@ -7,9 +7,9 @@
 //! - a typed x-coordinate,
 //! - a typed y-coordinate.
 //!
-//! It implements both [`GraphNode`](crate::graphs::graph::GraphNode) and
-//! [`CoordinatesNode`](crate::nodes::trait_decl::coordinates_node::CoordinatesNode),
-//! enabling use in generic graph and pathfinding algorithms.
+//! It implements both [`crate::graphs::graph::GraphNode`] and
+//! [`crate::nodes::trait_decl::coordinates_node::CoordinatesNode`], enabling
+//! use in generic graph and pathfinding algorithms.
 //!
 //! # Coordinate Type
 //!
@@ -17,7 +17,7 @@
 //! - default: `C = i32`,
 //! - supported by default in this crate: `i32` and `f32`,
 //! - custom coordinate types can be used when they implement
-//!   [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//!   [`crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype`].
 //!
 //! # Identity and Ordering Semantics
 //!

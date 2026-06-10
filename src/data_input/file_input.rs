@@ -42,7 +42,7 @@
 //! - Duplicate edges are ignored during insertion.
 //! - The first line is consumed for type detection and is not inserted as an edge.
 //! - Two-dimensional file input is parsed and inserted into
-//!   [`TwoDimensionalCoordinateGraph`] in [`generate_graph_from_file`].
+//!   [`TwoDimensionalCoordinateGraph`] by the internal graph-generation pipeline.
 //! - Two-dimensional parsing currently uses
 //!   [`crate::nodes::two_dimensional_node::TwoDimensionalNode<i32>`] and
 //!   therefore produces
@@ -295,7 +295,12 @@ impl FileInputGraphResult {
 #[derive(Debug)]
 pub enum FileInputError {
     /// File reading failed.
-    Io { path: String, source: io::Error },
+    Io {
+        /// Path that could not be read.
+        path: String,
+        /// Underlying I/O error returned by the filesystem.
+        source: io::Error,
+    },
     /// File content was read but could not be parsed into a graph.
     Parse(ParseError),
 }

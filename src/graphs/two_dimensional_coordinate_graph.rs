@@ -7,8 +7,8 @@
 //! - Edge weights are computed from node coordinates on insertion.
 //! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
 //!
-//! The graph implements the shared [`Graph`](crate::graphs::graph::Graph)
-//! trait and can be consumed by coordinate-aware algorithms such as A*.
+//! The graph implements the shared [`crate::graphs::graph::Graph`] trait and
+//! can be consumed by coordinate-aware algorithms such as A*.
 //!
 //! # Coordinate Type
 //!
@@ -18,7 +18,7 @@
 //! - [`TwoDimensionalGraphInsertionError<C>`]
 //!
 //! `C` must implement
-//! [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//! [`crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype`].
 //! Library users can therefore build coordinate graphs with types such as
 //! `i32` or `f32`.
 //!

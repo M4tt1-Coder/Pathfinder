@@ -23,11 +23,15 @@
 //!
 //! # Error Handling
 //!
-//! Algorithm execution failures are represented by typed error enums. Use
-//! [`error::algorithm_error::AlgorithmErrorKind`] to classify failures when you
-//! want stable categories (for example, for exit codes or telemetry). The CLI
-//! wraps configuration, input, and algorithm errors in [`AppError`] for
-//! consistent exit-code mapping.
+//! Errors are layered by boundary:
+//! - [`error::parse_error::ParseError`] for line-level graph syntax failures.
+//! - [`error::data_input_error::DataInputError`] for file loading and parsing.
+//! - [`error::config_error::ConfigParseError`] for CLI flag validation.
+//! - [`error::algorithm_error::AlgorithmError`] for shortest-path execution.
+//! - [`AppError`] as the binary-level wrapper with exit-code mapping.
+//!
+//! Use [`error::algorithm_error::AlgorithmErrorKind`] when you need stable
+//! categories (for example exit codes or telemetry).
 //!
 //! ```rust
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
@@ -38,6 +42,17 @@
 //!     end: "B".to_string(),
 //! });
 //! assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+//! ```
+//!
+//! File-input failures are typically wrapped before they reach application code:
+//!
+//! ```rust
+//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::parse_error::ParseError;
+//!
+//! let err = DataInputError::from(FileInputError::Parse(ParseError::MissingColon));
+//! assert!(err.to_string().contains("File input error"));
 //! ```
 //!
 //! # Quick Start

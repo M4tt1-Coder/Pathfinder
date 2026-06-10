@@ -1,19 +1,29 @@
-//! Error types used across parsing and algorithm setup.
+//! Error types used across parsing, configuration, and algorithm execution.
 //!
 //! # Overview
 //!
-//! The crate currently exposes parsing-focused error types through
-//! [`parse_error`], CLI setup parsing errors through [`config_error`], and
-//! algorithm execution errors through [`algorithm_error`].
+//! The crate exposes layered error types so each boundary can fail with precise
+//! context while the CLI can still collapse failures into [`AppError`]:
+//!
+//! - [`parse_error`]: low-level graph text parsing failures.
+//! - [`data_input_error`]: unified graph-loading failures (file input today).
+//! - [`config_error`]: CLI argument and configuration parsing failures.
+//! - [`algorithm_error`]: algorithm execution and path reconstruction failures.
+//! - [`app_error`]: top-level CLI wrapper with exit-code mapping.
 //!
 //! # Module Map
 //!
-//! - [`parse_error`]: parse-time failures for graph input.
-//! - [`config_error`]: CLI argument and configuration parsing failures.
-//! - [`algorithm_error`]: algorithm execution and path reconstruction failures.
-//! - [`app_error`]: unified CLI error wrapper with exit-code mapping.
+//! | Module | Primary type | Responsibility |
+//! |--------|--------------|----------------|
+//! | [`parse_error`] | [`parse_error::ParseError`] | Line-level graph syntax validation |
+//! | [`data_input_error`] | [`data_input_error::DataInputError`] | File/graph loading boundary |
+//! | [`config_error`] | [`config_error::ConfigParseError`] | CLI flag parsing |
+//! | [`algorithm_error`] | [`algorithm_error::AlgorithmError`] | Shortest-path runtime failures |
+//! | [`app_error`] | [`AppError`] | Binary exit codes and user messages |
 //!
 //! # Examples
+//!
+//! Classifying an algorithm failure for exit codes:
 //!
 //! ```rust
 //! use shortest_path_finder::error::algorithm_error::AlgorithmErrorKind;
@@ -21,13 +31,27 @@
 //! assert_eq!(AlgorithmErrorKind::NoPath.exit_code(), 6);
 //! ```
 //!
-//! # Usage
+//! Handling a parse-time graph syntax error:
 //!
 //! ```rust
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
 //! let err = ParseError::InvalidLineSyntax;
 //! assert!(err.to_string().contains("Invalid syntax"));
+//! ```
+//!
+//! Wrapping a file-input failure for the CLI:
+//!
+//! ```rust
+//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::error::app_error::AppError;
+//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::parse_error::ParseError;
+//!
+//! let err = AppError::from(DataInputError::File(FileInputError::Parse(
+//!     ParseError::InvalidDataInput("bad header".to_string()),
+//! )));
+//! assert_eq!(err.exit_code(), 1);
 //! ```
 
 pub mod app_error;

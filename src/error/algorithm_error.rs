@@ -182,7 +182,10 @@ pub enum PathReconstructionError {
     /// The closed set was empty when reconstruction started.
     EmptyClosedSet,
     /// A predecessor node could not be found in the closed set.
-    MissingClosedEntry { node_id: String },
+    MissingClosedEntry {
+        /// Identifier of the node missing from the closed set.
+        node_id: String,
+    },
 }
 
 impl fmt::Display for PathReconstructionError {
@@ -220,31 +223,59 @@ pub enum AStarExecutionError {
     /// Graph is not weighted.
     UnweightedGraph,
     /// Start node does not exist in the graph.
-    MissingStartNode { id: String },
+    MissingStartNode {
+        /// Identifier of the missing start node.
+        id: String,
+    },
     /// End node does not exist in the graph.
-    MissingEndNode { id: String },
+    MissingEndNode {
+        /// Identifier of the missing end node.
+        id: String,
+    },
     /// Edge weight violates algorithm constraints.
     InvalidEdgeWeight {
+        /// Source node identifier of the offending edge.
         from: String,
+        /// Destination node identifier of the offending edge.
         to: String,
+        /// String rendering of the rejected weight value.
         weight: String,
+        /// Human-readable explanation of the constraint violation.
         reason: String,
     },
     /// Heuristic produced a non-finite value.
     InvalidHeuristic {
+        /// Start node identifier used for the search.
         start: String,
+        /// Goal node identifier used for the search.
         goal: String,
+        /// Node identifier evaluated when the heuristic failed.
         current: String,
+        /// Non-finite heuristic value that was produced.
         value: f32,
     },
     /// Expected g-cost entry is missing from the bookkeeping map.
-    MissingGCost { node_id: String },
+    MissingGCost {
+        /// Node identifier with no g-cost entry.
+        node_id: String,
+    },
     /// No path exists between the start and end nodes.
-    NoPathFound { start: String, end: String },
+    NoPathFound {
+        /// Start node identifier for the failed search.
+        start: String,
+        /// End node identifier for the failed search.
+        end: String,
+    },
     /// Search result failed validation.
-    InvalidSearchResult { reason: String },
+    InvalidSearchResult {
+        /// Explanation of why the result was rejected.
+        reason: String,
+    },
     /// Path reconstruction failed using closed-set bookkeeping.
-    PathReconstruction { source: PathReconstructionError },
+    PathReconstruction {
+        /// Underlying closed-set reconstruction failure.
+        source: PathReconstructionError,
+    },
 }
 
 impl AStarExecutionError {
@@ -420,13 +451,22 @@ impl fmt::Display for MissingNodeContext {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DijkstraPathReconstructionError {
     /// No distance entry exists for the requested node.
-    MissingDistanceEntry { node_id: String },
+    MissingDistanceEntry {
+        /// Node identifier with no recorded distance.
+        node_id: String,
+    },
     /// Predecessor entry is missing while walking the chain.
-    MissingPredecessor { node_id: String },
+    MissingPredecessor {
+        /// Node identifier whose predecessor could not be resolved.
+        node_id: String,
+    },
     /// Predecessor traversal exceeded the number of known nodes.
     PredecessorLoop {
+        /// Start node identifier for the attempted reconstruction.
         start: String,
+        /// End node identifier for the attempted reconstruction.
         end: String,
+        /// Node identifier where the predecessor chain stalled.
         current: String,
     },
 }
@@ -484,37 +524,66 @@ pub enum DijkstraError {
     /// Graph is not weighted.
     UnweightedGraph,
     /// Start node does not exist in the graph.
-    MissingStartNode { id: String, graph: String },
+    MissingStartNode {
+        /// Identifier of the missing start node.
+        id: String,
+        /// Graph type name included for diagnostics.
+        graph: String,
+    },
     /// End node does not exist in the graph.
-    MissingEndNode { id: String, graph: String },
+    MissingEndNode {
+        /// Identifier of the missing end node.
+        id: String,
+        /// Graph type name included for diagnostics.
+        graph: String,
+    },
     /// A node is missing while computing distances.
     ///
     /// The `context` field indicates whether the missing entry was the current
     /// node or one of its neighbors.
     MissingNodeDuringProcessing {
+        /// Identifier of the node that could not be found in the distance map.
         id: String,
+        /// Whether the missing entry was the current node or a neighbor.
         context: MissingNodeContext,
     },
     /// Edge weight violates algorithm constraints.
     InvalidEdgeWeight {
+        /// Source node identifier of the offending edge.
         from: String,
+        /// Destination node identifier of the offending edge.
         to: String,
+        /// String rendering of the rejected weight value.
         weight: String,
+        /// Classification of the weight violation.
         reason: EdgeWeightViolation,
     },
     /// Edge relaxation would overflow the distance datatype.
     DistanceOverflow {
+        /// Source node identifier during relaxation.
         from: String,
+        /// Destination node identifier during relaxation.
         to: String,
+        /// String rendering of the accumulated distance before overflow.
         current_distance: String,
+        /// String rendering of the edge weight that caused overflow.
         edge_weight: String,
     },
     /// No path exists between the start and end nodes.
-    NoPathFound { start: String, end: String },
+    NoPathFound {
+        /// Start node identifier for the failed search.
+        start: String,
+        /// End node identifier for the failed search.
+        end: String,
+    },
     /// Search result failed validation.
-    InvalidSearchResult { reason: String },
+    InvalidSearchResult {
+        /// Explanation of why the result was rejected.
+        reason: String,
+    },
     /// Path reconstruction failed using predecessor links.
     PathReconstruction {
+        /// Underlying predecessor-chain reconstruction failure.
         source: DijkstraPathReconstructionError,
     },
 }

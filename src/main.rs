@@ -18,9 +18,9 @@
 //! # Error Handling
 //!
 //! The CLI wraps configuration, input, and algorithm failures in
-//! [`AppError`](shortest_path_finder::AppError). Algorithm-specific failures are
-//! still mapped to exit codes via
-//! [`AlgorithmErrorKind::exit_code`](shortest_path_finder::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//! [`shortest_path_finder::AppError`]. Algorithm-specific failures are still
+//! mapped to exit codes via
+//! [`shortest_path_finder::error::algorithm_error::AlgorithmErrorKind::exit_code`].
 //! The CLI logs the error message before exiting.
 //!
 //! ```no_run
@@ -204,6 +204,10 @@ fn run() -> Result<(), AppError> {
     }
 }
 
+/// Binary entrypoint: initializes logging and runs [`run`].
+///
+/// On failure, logs the [`AppError`] message and exits with
+/// [`AppError::exit_code`].
 fn main() {
     // enable logging to the terminal
     env_logger::init();
