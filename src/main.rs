@@ -73,7 +73,8 @@ use shortest_path_finder::{
 // visualization of the algorithm's execution.
 
 // TODO: (Refactor) Refactor code -> apply best practices, apply better error handling -> for each file indiviually, improve the
-// visibility of the code + modulization
+// visibility of the code + modulization => ran the AI over the whole codebase to ensure valid
+// documentation with good doc-tests
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This

@@ -99,7 +99,7 @@ use regex::Regex;
 use strum_macros::EnumString;
 
 use crate::{
-    error::parse_error::ParseError,
+    error::{data_input_error::DataInputError, parse_error::ParseError},
     graphs::{
         directed::DirectedGraph, graph::Graph,
         two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
@@ -118,8 +118,7 @@ use crate::{
 // `convert_line_to_graph_data`. This would make the file input more flexible and compatible with
 // different use cases.
 
-// TODO: Improve error handling for the 'file_input' module
-//  - Introduce a global DataInputError in mod.rs with variants File(FileInputError) and CommandLine(CommandLineInputError) to unify input error handling across sources.
+// TODO: (Refactor) Improve error handling for the 'file_input' module
 //  - Enhance FileInputError to include file path context in parse failures, providing clearer error messages that specify which file caused the issue.
 //  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
 //  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
@@ -382,11 +381,12 @@ impl Error for FileInputError {
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };
+/// use shortest_path_finder::error::data_input_error::DataInputError;
 ///
 /// let err = retrieve_graph_data_from_file(".")
 ///     .expect_err("a directory path cannot be read as graph file text");
 ///
-/// assert!(matches!(err, FileInputError::Io { .. }));
+/// assert!(matches!(err, DataInputError::File(FileInputError::Io { .. })));
 /// ```
 ///
 /// Parse failure classification:
@@ -400,6 +400,7 @@ impl Error for FileInputError {
 ///     fs,
 ///     time::{SystemTime, UNIX_EPOCH},
 /// };
+/// use shortest_path_finder::error::data_input_error::DataInputError;
 ///
 /// let unique_id = SystemTime::now()
 ///     .duration_since(UNIX_EPOCH)
@@ -412,13 +413,13 @@ impl Error for FileInputError {
 /// let path_owned = path.to_string_lossy().into_owned();
 /// let err = retrieve_graph_data_from_file(&path_owned)
 ///     .expect_err("invalid directed line should return parse error");
-/// assert!(matches!(err, FileInputError::Parse(_)));
+/// assert!(matches!(err, DataInputError::File(FileInputError::Parse(_))));
 ///
 /// let _ = fs::remove_file(path);
 /// ```
 pub fn retrieve_graph_data_from_file(
     file_path: &str,
-) -> Result<FileInputGraphResult, FileInputError> {
+) -> Result<FileInputGraphResult, DataInputError> {
     // Normalize user input into a path handle used by std::fs.
     let rel_path = Path::new(file_path);
 

@@ -38,4 +38,6 @@ pub mod parse_error;
 
 pub mod algorithm_error;
 
+pub mod data_input_error;
+
 pub use app_error::AppError;

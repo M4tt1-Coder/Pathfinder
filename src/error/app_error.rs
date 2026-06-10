@@ -6,9 +6,9 @@
 
 use std::{error::Error, fmt};
 
-use crate::{
-    data_input::file_input::FileInputError,
-    error::{algorithm_error::AlgorithmError, config_error::ConfigParseError},
+use crate::error::{
+    algorithm_error::AlgorithmError, config_error::ConfigParseError,
+    data_input_error::DataInputError,
 };
 
 /// Unified CLI error for the Pathfinder binary.
@@ -16,8 +16,8 @@ use crate::{
 pub enum AppError {
     /// Configuration parsing or validation failed.
     Config(ConfigParseError),
-    /// File input or parse failure while loading graph data.
-    Input(FileInputError),
+    /// File input or parse failure while loading graph data or CLI input parsing failure.
+    Input(DataInputError),
     /// Shortest-path algorithm execution failed.
     Algorithm(AlgorithmError),
     /// Input origin is not supported by the CLI runtime yet.
@@ -73,8 +73,8 @@ impl From<ConfigParseError> for AppError {
     }
 }
 
-impl From<FileInputError> for AppError {
-    fn from(err: FileInputError) -> Self {
+impl From<DataInputError> for AppError {
+    fn from(err: DataInputError) -> Self {
         Self::Input(err)
     }
 }

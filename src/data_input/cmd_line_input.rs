@@ -20,4 +20,5 @@
 //! assert!(matches!(origin, InputOrigin::CommandLine));
 //! ```
 
-// TODO: Implement CL-based graph input parsing and construction.
+// TODO: Implement CL-based graph input parsing and construction. + Add 'CommandLineInputError' and
+// map to DataINputError::CommandLine variant. + Add CLI input parsing errors to AppError
