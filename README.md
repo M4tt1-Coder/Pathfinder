@@ -265,11 +265,15 @@ println!("distance: {}", result.get_total_distance());
 ```rust
 use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-use shortest_path_finder::data_input::file_input::retrieve_graph_data_from_file;
+use shortest_path_finder::data_input::file_input::{
+    retrieve_graph_data_from_file, FileInputGraphResult,
+};
 
 let parsed = retrieve_graph_data_from_file("test_files/directed_graph.txt")
     .expect("graph file should parse");
-let graph = parsed.directed_graph.expect("directed graph expected");
+let FileInputGraphResult::DirectedGraph(graph) = parsed else {
+    panic!("directed graph expected");
+};
 
 let dijkstra = DijkstraAlgorithm::new(graph);
 let result = dijkstra.shortest_path("A", "L").expect("path should exist");

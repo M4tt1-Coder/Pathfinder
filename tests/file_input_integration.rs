@@ -7,7 +7,8 @@
 use std::io::Write;
 
 use shortest_path_finder::{
-    data_input::file_input::retrieve_graph_data_from_file, graphs::graph::Graph,
+    data_input::file_input::{FileInputGraphResult, retrieve_graph_data_from_file},
+    graphs::graph::Graph,
 };
 use tempfile::NamedTempFile;
 
@@ -40,13 +41,15 @@ fn parser_reads_directed_graph_from_file() {
 
     let result = retrieve_graph_data_from_file(&path).expect("directed parsing should succeed");
 
-    assert!(result.directed_graph.is_some());
-    assert!(result.undirected_graph.is_none());
-    assert!(result.two_dimensional_graph.is_none());
+    assert!(matches!(result, FileInputGraphResult::DirectedGraph { .. }));
 
-    let graph = result.directed_graph.expect("directed graph must exist");
-    assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(count_directed_edges(&graph), 3);
+    match result {
+        FileInputGraphResult::DirectedGraph(graph) => {
+            assert_eq!(graph.get_all_nodes().len(), 3);
+            assert_eq!(count_directed_edges(&graph), 3);
+        }
+        _ => panic!("expected a directed graph result"),
+    }
 }
 
 #[test]
@@ -56,15 +59,18 @@ fn parser_reads_undirected_graph_from_file() {
 
     let result = retrieve_graph_data_from_file(&path).expect("undirected parsing should succeed");
 
-    assert!(result.directed_graph.is_none());
-    assert!(result.undirected_graph.is_some());
-    assert!(result.two_dimensional_graph.is_none());
+    assert!(matches!(
+        result,
+        FileInputGraphResult::UndirectedGraph { .. }
+    ));
 
-    let graph = result
-        .undirected_graph
-        .expect("undirected graph must exist");
-    assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(count_undirected_edges(&graph), 3);
+    match result {
+        FileInputGraphResult::UndirectedGraph(graph) => {
+            assert_eq!(graph.get_all_nodes().len(), 3);
+            assert_eq!(count_undirected_edges(&graph), 3);
+        }
+        _ => panic!("expected an undirected graph result"),
+    }
 }
 
 #[test]
@@ -75,16 +81,19 @@ fn parser_reads_two_dimensional_graph_from_file() {
     let result =
         retrieve_graph_data_from_file(&path).expect("two-dimensional parsing should succeed");
 
-    assert!(result.directed_graph.is_none());
-    assert!(result.undirected_graph.is_none());
-    assert!(result.two_dimensional_graph.is_some());
+    assert!(matches!(
+        result,
+        FileInputGraphResult::TwoDimensionalGraph { .. }
+    ));
 
-    let graph = result
-        .two_dimensional_graph
-        .expect("two-dimensional graph must exist");
-    assert_eq!(graph.get_all_nodes().len(), 3);
-    assert!(!graph.is_directed());
-    assert!(graph.is_weighted());
+    match result {
+        FileInputGraphResult::TwoDimensionalGraph(graph) => {
+            assert_eq!(graph.get_all_nodes().len(), 3);
+            assert!(!graph.is_directed());
+            assert!(graph.is_weighted());
+        }
+        _ => panic!("expected a two-dimensional graph result"),
+    };
 }
 
 #[test]
@@ -136,9 +145,13 @@ fn parser_ignores_whitespace_only_lines() {
     let result = retrieve_graph_data_from_file(&path)
         .expect("whitespace-only lines should be skipped during parsing");
 
-    let graph = result.directed_graph.expect("directed graph must exist");
-    assert_eq!(graph.get_all_nodes().len(), 3);
-    assert_eq!(count_directed_edges(&graph), 2);
+    match result {
+        FileInputGraphResult::DirectedGraph(graph) => {
+            assert_eq!(graph.get_all_nodes().len(), 3);
+            assert_eq!(count_directed_edges(&graph), 2);
+        }
+        _ => panic!("expected a directed graph result"),
+    };
 }
 
 #[test]

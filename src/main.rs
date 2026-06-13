@@ -62,7 +62,10 @@ use shortest_path_finder::{
         dijkstra::DijkstraAlgorithm,
     },
     cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
-    data_input::file_input::retrieve_graph_data_from_file,
+    data_input::file_input::{
+        FileInputGraphResult::{DirectedGraph, TwoDimensionalGraph, UndirectedGraph},
+        retrieve_graph_data_from_file,
+    },
     error::algorithm_error::AlgorithmError,
 };
 
@@ -73,8 +76,7 @@ use shortest_path_finder::{
 // visualization of the algorithm's execution.
 
 // TODO: (Refactor) Refactor code -> apply best practices, apply better error handling -> for each file indiviually, improve the
-// visibility of the code + modulization => ran the AI over the whole codebase to ensure valid
-// documentation with good doc-tests
+// visibility of the code + modulization
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
@@ -87,6 +89,11 @@ use shortest_path_finder::{
 // TODO: Improve the workspace for working with AI -> let AI always write changes it made into a log
 // file besides the diary so that it can look up what it did in the past and learn from it ->
 // rewatch the video for some ideas => https://youtu.be/SuLHINfqJGI?si=RAqmGfo8pRcH5qjs
+
+// TODO: Review existing tests and manually look for edge cases that are not covered by the existing
+// tests and add tests for them
+
+// TODO: Inspect benchmarks and cover edge cases, use bigger datasets (What about memory usage?)
 
 /// Runs the Pathfinder CLI application lifecycle.
 ///
@@ -134,68 +141,67 @@ fn run() -> Result<(), AppError> {
     // create the graph and execute the algorithm on it
     match app_config.data_input {
         InputOrigin::File => {
-            let graphs = retrieve_graph_data_from_file(&app_config.file_path)?;
-            if let Some(graph) = graphs.directed_graph {
-                let algo = match app_config.algorithm {
-                    Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
-                    _ => {
-                        return Err(AppError::Runtime {
-                            message: format!(
-                                "Algorithm {:?} is not implemented for directed graphs yet or a directed graph is not supported by the implementation of the algorithm!",
-                                app_config.algorithm
-                            ),
-                        });
-                    }
-                };
-                let result = algo
-                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
-                    .map_err(AlgorithmError::from)?;
-                // display the result
-                println!("{}", result);
-                Ok(())
-            } else if let Some(graph) = graphs.undirected_graph {
-                let algo = match app_config.algorithm {
-                    Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
-                    _ => {
-                        return Err(AppError::Runtime {
-                            message: format!(
-                                "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
-                                app_config.algorithm
-                            ),
-                        });
-                    }
-                };
-                let result = algo
-                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
-                    .map_err(AlgorithmError::from)?;
-                // display the result
-                println!("{}", result);
-                Ok(())
-            } else if let Some(graph) = graphs.two_dimensional_graph {
-                let algo = match app_config.algorithm {
-                    Algorithms::AStar => AStar::new(graph),
-                    _ => {
-                        return Err(AppError::Runtime {
-                            message: format!(
-                                "Algorithm {:?} is not implemented for two dimensional graphs yet or a two dimensional graph is not supported by the implementation of the algorithm!",
-                                app_config.algorithm
-                            ),
-                        });
-                    }
-                };
-                let result = algo
-                    .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
-                    .map_err(AlgorithmError::from)?;
-                // display the result
-                println!("{}", result);
-                Ok(())
-            } else {
-                Err(AppError::Runtime {
-                    message: format!(
-                        "No graph was created from the file {}!",
-                        app_config.file_path
-                    ),
-                })
+            let generated_graph_res = retrieve_graph_data_from_file(&app_config.file_path)?;
+
+            // match all possible graph types
+            match generated_graph_res {
+                DirectedGraph(graph) => {
+                    let algo = match app_config.algorithm {
+                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        _ => {
+                            return Err(AppError::Runtime {
+                                message: format!(
+                                    "Algorithm {:?} is not implemented for directed graphs yet or a directed graph is not supported by the implementation of the algorithm!",
+                                    app_config.algorithm
+                                ),
+                            });
+                        }
+                    };
+                    let result = algo
+                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .map_err(AlgorithmError::from)?;
+                    // display the result
+                    println!("{}", result);
+                    Ok(())
+                }
+                UndirectedGraph(graph) => {
+                    let algo = match app_config.algorithm {
+                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        _ => {
+                            return Err(AppError::Runtime {
+                                message: format!(
+                                    "Algorithm {:?} is not implemented for undirected graphs yet or an undirected graph is not supported by the implementation of the algorithm!",
+                                    app_config.algorithm
+                                ),
+                            });
+                        }
+                    };
+                    let result = algo
+                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .map_err(AlgorithmError::from)?;
+                    // display the result
+                    println!("{}", result);
+                    Ok(())
+                }
+                TwoDimensionalGraph(graph) => {
+                    let algo = match app_config.algorithm {
+                        Algorithms::AStar => AStar::new(graph),
+                        _ => {
+                            return Err(AppError::Runtime {
+                                message: format!(
+                                    "Algorithm {:?} is not implemented for two dimensional graphs yet or a two dimensional graph is not supported by the implementation of the algorithm!",
+                                    app_config.algorithm
+                                ),
+                            });
+                        }
+                    };
+                    let result = algo
+                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .map_err(AlgorithmError::from)?;
+                    // display the result
+                    println!("{}", result);
+                    Ok(())
+                }
             }
         }
         InputOrigin::CommandLine => Err(AppError::UnsupportedInputOrigin {

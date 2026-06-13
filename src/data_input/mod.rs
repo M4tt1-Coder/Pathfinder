@@ -6,8 +6,9 @@
 //! - [`file_input`]: production parser for file-based graph definitions.
 //! - [`cmd_line_input`]: placeholder for future interactive terminal input.
 //!
-//! Successful file parsing returns a [`file_input::FileInputGraphResult`] with
-//! exactly one populated graph variant. Failures surface as
+//! Successful file parsing returns a [`file_input::FileInputGraphResult`] enum
+//! variant (`DirectedGraph`, `UndirectedGraph`, or `TwoDimensionalGraph`) that
+//! matches the file header. Failures surface as
 //! [`file_input::FileInputError`] and are typically wrapped in
 //! [`crate::error::data_input_error::DataInputError`] at the CLI boundary.
 //!
