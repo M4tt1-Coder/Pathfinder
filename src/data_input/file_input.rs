@@ -119,7 +119,6 @@ use crate::{
 // different use cases.
 
 // TODO: (Refactor) Improve error handling for the 'file_input' module
-//  - Update documentation -> () Add a first-class InvalidHeader error variant with header and expected values, ensuring header errors are reported with line 1 context for consistency.
 //  - Trim empty lines before the first line check to avoid false empty-file errors when the file
 //    has blank lines at the start.
 //  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
