@@ -166,6 +166,6 @@ fn parser_rejects_prefixed_graph_header() {
 
     assert!(
         err.to_string()
-            .contains("Expected exactly one of: D, UN, TD")
+            .contains("Expected exactly one of: 'D', 'UN', 'TD'.")
     );
 }

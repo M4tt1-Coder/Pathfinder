@@ -119,9 +119,11 @@ use crate::{
 // different use cases.
 
 // TODO: (Refactor) Improve error handling for the 'file_input' module
+//  - Update documentation -> () Add a first-class InvalidHeader error variant with header and expected values, ensuring header errors are reported with line 1 context for consistency.
+//  - Trim empty lines before the first line check to avoid false empty-file errors when the file
+//    has blank lines at the start.
 //  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
 //  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
-//  - Add a first-class InvalidHeader error variant with header and expected values, ensuring header errors are reported with line 1 context for consistency.
 //  - Differentiate internal parser failures (like regex issues or unreachable code) from user data errors by using an Internal variant in FileInputError, preventing false user error reports.
 //  - Improve weight parsing diagnostics by indicating if the input is non-numeric or out-of-range, and specify the allowed range for better error clarity.
 
@@ -613,7 +615,7 @@ fn convert_line_to_graph_data(
 ///
 /// # Errors
 ///
-/// Returns [`ParseError::InvalidDataInput`] if the line is not exactly `D`, `UN`, or `TD`.
+/// Returns [`ParseError::InvalidHeader`] if the line is not exactly `D`, `UN`, or `TD`.
 fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
     let header = first_line.trim();
 
@@ -624,10 +626,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
     } else if header.eq_ignore_ascii_case(&TwoDimensionalCoordinateGraph::<i32>::abbreviation()) {
         Ok(FoundGraphType::TD)
     } else {
-        Err(ParseError::InvalidDataInput(format!(
-            "Invalid graph header '{}'. Expected exactly one of: D, UN, TD.",
-            header
-        )))
+        Err(ParseError::InvalidHeader(header.to_string()))
     }
 }
 

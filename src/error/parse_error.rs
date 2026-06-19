@@ -21,6 +21,8 @@
 //!
 //! # Error Cases
 //!
+//! - [`ParseError::InvalidHeader`]: Graph header is invalid or unrecognized (expected 'D', 'UN',
+//!   'TD').
 //! - [`ParseError::MissingColon`]: Input line does not contain exactly one colon separating node id and coordinates.
 //! - [`ParseError::InvalidCoordinates`]: Coordinates are not two comma-separated values.
 //! - [`ParseError::InvalidInteger`]: Coordinates are not valid numeric values for the selected coordinate datatype.
@@ -43,6 +45,11 @@ use std::fmt;
 /// provide detailed error reporting to the caller.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
+    /// The graph header is invalid or unrecognized.
+    ///
+    /// Expected values are 'D' for directed, 'UN' for undirected, and 'TD' for two-dimensional
+    /// graphs. The provided header string is included in the error for diagnostic purposes.
+    InvalidHeader(String),
     /// The input string does not contain exactly one colon.
     ///
     /// Expected format: `<id>:<coordinates>` (e.g., `A:1,2`)
@@ -94,6 +101,11 @@ impl fmt::Display for ParseError {
     /// Formats the error as a human-readable string.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ParseError::InvalidHeader(invalid_header) => write!(
+                f,
+                "Invalid graph header: '{}'! Expected exactly one of: 'D', 'UN', 'TD'.",
+                invalid_header
+            ),
             ParseError::MissingColon => write!(
                 f,
                 "Input must contain exactly one colon separating id and coordinates"
