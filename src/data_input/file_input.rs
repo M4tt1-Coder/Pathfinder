@@ -119,8 +119,6 @@ use crate::{
 // different use cases.
 
 // TODO: (Refactor) Improve error handling for the 'file_input' module
-//  - Trim empty lines before the first line check to avoid false empty-file errors when the file
-//    has blank lines at the start.
 //  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
 //  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
 //  - Differentiate internal parser failures (like regex issues or unreachable code) from user data errors by using an Internal variant in FileInputError, preventing false user error reports.
