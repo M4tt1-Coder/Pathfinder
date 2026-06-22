@@ -637,6 +637,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 ///
 /// # Behavior
 ///
+/// - Trims the input to handle files with leading/trailing whitespace or blank lines.
 /// - Detects graph type from the first line.
 /// - Parses all remaining non-empty lines as edges of that same graph type.
 /// - Trims surrounding whitespace before per-line validation/parsing.
@@ -655,7 +656,7 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 ///
 /// Two-dimensional graph parsing is supported in this function.
 fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, ParseError> {
-    let mut lines_iter = lines.lines();
+    let mut lines_iter = lines.trim().lines();
 
     // The first line is a mandatory graph-type header (`D`, `UN`, or `TD`).
     let first_line = match lines_iter.next() {

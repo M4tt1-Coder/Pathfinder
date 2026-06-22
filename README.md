@@ -28,10 +28,11 @@
 ## At a glance
 
 | <span style="color:#EF6C00"><strong>Algorithms</strong></span> | <span style="color:#1565C0"><strong>Graphs</strong></span> | <span style="color:#2E7D32"><strong>Input</strong></span> | <span style="color:#6A1B9A"><strong>Runtime</strong></span> |
-| --- | --- | --- | --- |
-| Dijkstra, A\* | Directed, Undirected, 2D coordinate | File (header + edges) | CLI + library |
+| -------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------- |
+| Dijkstra, A\*                                                  | Directed, Undirected, 2D coordinate                        | File (header + edges)                                     | CLI + library                                               |
 
 ## Contents
+
 - [Quickstart](#quickstart)
 - [Overview](#overview)
 - [Runtime status](#runtime-status)
@@ -133,10 +134,10 @@ Distance: <value>
 ### Default settings
 
 | <span style="color:#1565C0"><strong>Setting</strong></span> | <span style="color:#2E7D32"><strong>Default</strong></span> |
-| --- | --- |
-| Input origin | file |
-| Graph file | graph.txt |
-| Algorithm | Dijkstra |
+| ----------------------------------------------------------- | ----------------------------------------------------------- |
+| Input origin                                                | file                                                        |
+| Graph file                                                  | graph.txt                                                   |
+| Algorithm                                                   | Dijkstra                                                    |
 
 ---
 
@@ -187,9 +188,9 @@ Core stack and dependencies:
 Quality and automation:
 
 - Three GitHub Actions workflows:
-	- Rust CI checks (fmt, clippy, tests, docs)
-	- Rust baseline verification on pushes and PRs to main
-	- Automated release publishing on merged PRs into main
+  - Rust CI checks (fmt, clippy, tests, docs)
+  - Rust baseline verification on pushes and PRs to main
+  - Automated release publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ## Project structure
@@ -287,6 +288,7 @@ The current parser format (used by the provided test files) is header plus edge 
 
 > <strong><span style="color:#C62828">Strict format</span></strong>: The parser is line-validated and surfaces file-line context for invalid input.
 
+- Blank lines and whitespace-only lines are ignored.
 - Line 1 is a graph-type header and must be exactly one of: `D`, `UN`, or `TD`.
 - Only lines after line 1 are converted into edges.
 - Line 1 is not inserted as an edge.
@@ -417,6 +419,7 @@ Example CLI error output:
 ```text
 [ERROR] Algorithm error (Dijkstra): no path found from 'A' to 'B'
 ```
+
 </details>
 
 <details>
@@ -424,13 +427,13 @@ Example CLI error output:
 
 Errors are layered by boundary:
 
-| Layer | Type | Responsibility |
-|-------|------|----------------|
-| Parse | `ParseError` | Line-level graph syntax validation |
-| Input | `DataInputError` | File I/O and graph loading (`FileInputError` today) |
-| Config | `ConfigParseError` | CLI flag parsing and validation |
-| Algorithm | `AlgorithmError` | Shortest-path execution failures |
-| CLI | `AppError` | Binary wrapper with `exit_code()` mapping |
+| Layer     | Type               | Responsibility                                      |
+| --------- | ------------------ | --------------------------------------------------- |
+| Parse     | `ParseError`       | Line-level graph syntax validation                  |
+| Input     | `DataInputError`   | File I/O and graph loading (`FileInputError` today) |
+| Config    | `ConfigParseError` | CLI flag parsing and validation                     |
+| Algorithm | `AlgorithmError`   | Shortest-path execution failures                    |
+| CLI       | `AppError`         | Binary wrapper with `exit_code()` mapping           |
 
 File-input failures are wrapped at the loading boundary. [`FileInputError::Parse`]
 carries the source file path alongside the underlying [`ParseError`]:
@@ -475,6 +478,7 @@ use shortest_path_finder::error::config_error::ConfigParseError;
 let err = AppError::from(ConfigParseError::MissingRequiredFlag { flag: "--start" });
 assert_eq!(err.exit_code(), 1);
 ```
+
 </details>
 
 <details>
@@ -525,6 +529,7 @@ Example command to run hooks manually:
 ```sh
 pre-commit run --all-files
 ```
+
 </details>
 
 ## License
