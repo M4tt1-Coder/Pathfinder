@@ -86,7 +86,7 @@ use shortest_path_finder::{
 // TODO: Feature that graphs can be selected to be none weighted -> each edge has weight of one.
 // information is stored and the algorithm is executed accordingly.
 
-// TODO: Improve the workspace for working with AI -> let AI always write changes it made into a log
+// TODO: Try out CLI copilot or other agent cli tools + try out lightweight local open source models + Improve the workspace for working with AI -> let AI always write changes it made into a log
 // file besides the diary so that it can look up what it did in the past and learn from it ->
 // rewatch the video for some ideas => https://youtu.be/SuLHINfqJGI?si=RAqmGfo8pRcH5qjs
 

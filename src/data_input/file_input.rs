@@ -43,6 +43,9 @@
 //! - The first line is consumed for type detection and is not inserted as an edge.
 //! - Two-dimensional file input is parsed and inserted into
 //!   [`TwoDimensionalCoordinateGraph`] by the internal graph-generation pipeline.
+//! - Invalid weight tokens now preserve structured cause information via
+//!   [`ParseError::InvalidWeight`] and [`InvalidWeightError`], which makes it
+//!   easier to distinguish non-numeric input from out-of-range values.
 //! - Two-dimensional parsing currently uses
 //!   [`crate::nodes::two_dimensional_node::TwoDimensionalNode<i32>`] and
 //!   therefore produces
@@ -99,7 +102,10 @@ use regex::Regex;
 use strum_macros::EnumString;
 
 use crate::{
-    error::{data_input_error::DataInputError, parse_error::ParseError},
+    error::{
+        data_input_error::DataInputError,
+        parse_error::{InvalidWeightError, ParseError},
+    },
     graphs::{
         directed::DirectedGraph, graph::Graph,
         two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
@@ -119,10 +125,7 @@ use crate::{
 // different use cases.
 
 // TODO: (Refactor) Improve error handling for the 'file_input' module
-//  - Separate file parsing errors from node parsing errors by using ParseError for nodes and a dedicated FileInputParseError for file-level issues, improving testability and clarity.
 //  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
-//  - Differentiate internal parser failures (like regex issues or unreachable code) from user data errors by using an Internal variant in FileInputError, preventing false user error reports.
-//  - Improve weight parsing diagnostics by indicating if the input is non-numeric or out-of-range, and specify the allowed range for better error clarity.
 
 // ----- Module-level variables and types -----
 
@@ -515,8 +518,21 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
 ///
 /// Returns:
 /// - [`ParseError::InvalidLineSyntax`] when separators or token counts are invalid,
-/// - [`ParseError::InvalidWeightInteger`] when a 1D weight token cannot be parsed,
+/// - [`ParseError::InvalidWeight`] when a 1D weight token cannot be parsed,
 /// - [`ParseError::InvalidGraphType`] when no conversion branch is available.
+///
+/// # Weight diagnostics
+///
+/// One-dimensional graph formats (`D` and `UN`) now preserve the underlying
+/// integer parsing cause. That means callers can distinguish between:
+///
+/// - a token that is not numeric at all,
+/// - a numeric token that is too large or too small for the supported weight
+///   type,
+/// - and other parser-specific numeric failures.
+///
+/// This is surfaced through [`ParseError::InvalidWeight`] with an inner
+/// [`InvalidWeightError`].
 ///
 /// # Examples
 ///
@@ -564,7 +580,7 @@ fn convert_line_to_graph_data(
             let second_node = DefaultNode::new(second_split_results[0].to_string());
             let weight: u16 = match second_split_results[1].parse() {
                 Ok(w) => w,
-                Err(_) => return Err(ParseError::InvalidWeightInteger),
+                Err(err) => return Err(ParseError::InvalidWeight(InvalidWeightError::from(err))),
             };
             Ok((
                 NodeType::DefaultNode(first_node),

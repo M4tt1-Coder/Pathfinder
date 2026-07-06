@@ -102,6 +102,22 @@ pathfinder [--help] [--version] [--origin <file|cmd-line>] [--graph-file <path_t
 
 The CLI parser rejects unknown flags, duplicate flags, missing flag values, invalid flag values, conflicting flags, and unexpected non-flag tokens with explicit errors.
 
+Graph-file parsing also preserves detailed weight diagnostics for one-dimensional edges. If a weight token is malformed, the library returns `ParseError::InvalidWeight` with an inner `InvalidWeightError` so callers can tell whether the failure came from non-numeric input, overflow, or another numeric parsing problem.
+
+```rust
+use shortest_path_finder::error::parse_error::{InvalidWeightError, ParseError};
+
+fn classify_weight_error(err: &ParseError) -> &'static str {
+	match err {
+		ParseError::InvalidWeight(InvalidWeightError::NonNumeric(_)) => "weight token was not numeric",
+		ParseError::InvalidWeight(InvalidWeightError::OutOfRange(_)) => "weight token was out of range",
+		ParseError::InvalidWeight(InvalidWeightError::CannotBeNegative(_)) => "negative weights are unsupported",
+		ParseError::InvalidWeight(InvalidWeightError::UnknownReason(_)) => "weight parser reported an unknown failure",
+		_ => "different parse error",
+	}
+}
+```
+
 ### CLI argument examples
 
 Minimal example using defaults for origin and algorithm:
@@ -293,7 +309,7 @@ The current parser format (used by the provided test files) is header plus edge 
 - Only lines after line 1 are converted into edges.
 - Line 1 is not inserted as an edge.
 - Whitespace-only lines after the header are ignored.
-- Parse errors include file-line context and graph-type-specific expected syntax.
+- Parse errors include file-line context, graph-type-specific expected syntax, and weight-specific diagnostics when an edge weight cannot be parsed.
 
 Directed example:
 
