@@ -75,10 +75,14 @@
 //!   during parser setup.
 //! - [`ParseError::InvalidDataInput`]: Data input line or parser state is
 //!   invalid with a detailed message.
+//! - [`ParseError::GraphInsertionFailed`]: Graph insertion failed due to an internal error (for
+//!   example, duplicate node id).
 
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::num::{IntErrorKind, ParseIntError};
+
+use crate::graphs::GraphInsertionError;
 
 // ----- Implementation of the 'ParseError' enum -----
 
@@ -172,6 +176,12 @@ pub enum ParseError {
     ///
     /// This indicates an internal setup issue rather than malformed user data.
     RegexCompilationFailed(String),
+    /// Graph insertion failed while building a graph from parsed input.
+    ///
+    /// This variant wraps the concrete graph-layer insertion error so callers
+    /// can inspect the exact failure while still handling parse errors through
+    /// a single type.
+    GraphInsertionFailed(GraphInsertionError),
     /// File/data input is invalid and includes a descriptive error message.
     ///
     /// This variant is used when parsing logic can provide additional context
@@ -215,13 +225,16 @@ impl Display for ParseError {
                 write!(f, "Failed to initialize parser regex: {}", message)
             }
             ParseError::InvalidDataInput(message) => write!(f, "{}", message),
+            ParseError::GraphInsertionFailed(err) => {
+                write!(f, "Graph insertion failed: {}", err)
+            }
         }
     }
 }
 
 impl Error for ParseError {}
 
-// ----- Implementation of the 'InvalidWeightError' struct -----
+// ----- Implementation of the 'InvalidWeightError' enum -----
 
 /// Represents the cause of an invalid weight parsing error.
 ///

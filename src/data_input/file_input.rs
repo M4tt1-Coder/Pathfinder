@@ -107,7 +107,7 @@ use crate::{
         parse_error::{InvalidWeightError, ParseError},
     },
     graphs::{
-        directed::DirectedGraph, graph::Graph,
+        GraphInsertionError, directed::DirectedGraph, graph::Graph,
         two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
         undirected::UndirectedGraph,
     },
@@ -123,9 +123,6 @@ use crate::{
 // type in the header line (e.g., `TD<i32>`) and then parse the coordinates accordingly in
 // `convert_line_to_graph_data`. This would make the file input more flexible and compatible with
 // different use cases.
-
-// TODO: (Refactor) Improve error handling for the 'file_input' module
-//  - Convert graph insertion errors into structured enums in graph modules, then map these into specific file-input parse errors to improve error granularity.
 
 // ----- Module-level variables and types -----
 
@@ -799,7 +796,9 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
         }
 
         if let Some(err) = graph.insert_edge(&from, &to, Some(weight)) {
-            return Err(ParseError::InvalidDataInput(err.message));
+            return Err(ParseError::GraphInsertionFailed(
+                GraphInsertionError::Directed(err),
+            ));
         }
     }
 
@@ -898,7 +897,9 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
         }
 
         if let Some(err) = graph.insert_edge(&from, &to, Some(weight)) {
-            return Err(ParseError::InvalidDataInput(err.message));
+            return Err(ParseError::GraphInsertionFailed(
+                GraphInsertionError::Undirected(err),
+            ));
         }
     }
 
@@ -991,7 +992,9 @@ fn generate_two_dimensional_graph_from_file(
         }
 
         if let Some(err) = graph.insert_edge(&node_a, &node_b, None) {
-            return Err(ParseError::InvalidDataInput(err.message));
+            return Err(ParseError::GraphInsertionFailed(
+                GraphInsertionError::TwoDimensional(err),
+            ));
         }
     }
     Ok(graph)

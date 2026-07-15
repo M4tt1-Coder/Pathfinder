@@ -124,45 +124,37 @@ impl Graph for UndirectedGraph {
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(from, to) {
-            return Some(UndirectedGraphInsertionError::new(format!(
-                "The edge between '{}' and '{}' already exists in the graph!",
-                from.get_id(),
-                to.get_id()
-            )));
+            return Some(UndirectedGraphInsertionError::EdgeAlreadyExists {
+                from_id: from.get_id().to_string(),
+                to_id: to.get_id().to_string(),
+            });
         }
 
         let a_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
-                return Some(UndirectedGraphInsertionError::new(format!(
-                    "The node '{}' in the edge from {} to {} isn't part of the graph!",
-                    from.get_id(),
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(UndirectedGraphInsertionError::NodeNotFound {
+                    node_id: from.get_id().to_string(),
+                });
             }
         };
 
         let b_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
-                return Some(UndirectedGraphInsertionError::new(format!(
-                    "The node '{}' in the edge from {} to {} isn't part of the graph!",
-                    to.get_id(),
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(UndirectedGraphInsertionError::NodeNotFound {
+                    node_id: to.get_id().to_string(),
+                });
             }
         };
 
         let weight = match weight {
             Some(w) => w,
             None => {
-                return Some(UndirectedGraphInsertionError::new(format!(
-                    "The edge from {} to {} is missing a weight!",
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(UndirectedGraphInsertionError::MissingWeight {
+                    from_id: from.get_id().to_string(),
+                    to_id: to.get_id().to_string(),
+                });
             }
         };
 
@@ -176,7 +168,6 @@ impl Graph for UndirectedGraph {
 
         None
     }
-
     fn get_node_by_id(&self, id: &str) -> Option<&Self::Node> {
         self.node_index_by_id
             .get(id)
@@ -271,39 +262,102 @@ impl Default for UndirectedGraph {
     }
 }
 
-// ----- Implementation of the 'UndirectedGraphInsertionError' struct -----
+// ----- Implementation of the 'UndirectedGraphInsertionError' enum -----
 
+/// Errors encountered when mutating an [`UndirectedGraph`].
+///
+/// # When this type is returned
+///
+/// The undirected graph rejects an insertion when one of the following is
+/// true:
+///
+/// - the edge already exists in either direction,
+/// - one of the endpoint nodes is missing,
+/// - the caller omits the required edge weight.
+///
+/// # Variant guide
+///
+/// - [`UndirectedGraphInsertionError::EdgeAlreadyExists`][]: the requested
+///   undirected edge is already present.
+/// - [`UndirectedGraphInsertionError::NodeNotFound`][]: one of the endpoint nodes
+///   must be inserted before retrying the edge insertion.
+/// - [`UndirectedGraphInsertionError::MissingWeight`][]: the graph requires an
+///   explicit weight and the caller passed `None`.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::graphs::undirected::UndirectedGraphInsertionError;
+///
+/// let err = UndirectedGraphInsertionError::NodeNotFound {
+///     node_id: "B".to_string(),
+/// };
+///
+/// assert!(err.to_string().contains("was not found in the graph"));
+/// ```
+///
 /// Error returned when undirected graph insertion fails.
 ///
-/// # Typical causes
+/// # Variants
 ///
-/// - duplicate edge insertion,
-/// - inserting an edge for nodes that are missing in the graph.
-#[derive(Debug)]
-pub struct UndirectedGraphInsertionError {
-    /// Human-readable explanation of the insertion failure.
-    pub message: String,
-}
-
-impl UndirectedGraphInsertionError {
-    /// Creates a new insertion error with a descriptive message.
+/// - `EdgeAlreadyExists`: the edge between the two nodes already exists.
+/// - `NodeNotFound`: a node is missing from the graph.
+/// - `MissingWeight`: the weight for the edge was not provided.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UndirectedGraphInsertionError {
+    /// The undirected edge between the two nodes already exists.
     ///
-    /// # Example
+    /// The graph treats `from_id -> to_id` and `to_id -> from_id` as the same
+    /// edge, so either orientation can trigger this error.
+    EdgeAlreadyExists {
+        /// ID of the first endpoint reported by the failed insertion.
+        from_id: String,
+        /// ID of the second endpoint reported by the failed insertion.
+        to_id: String,
+    },
+    /// One of the endpoint nodes is missing from the graph.
     ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::undirected::UndirectedGraphInsertionError;
+    /// Insert the missing node before retrying the edge insertion.
+    NodeNotFound {
+        /// ID of the missing node.
+        node_id: String,
+    },
+    /// The caller omitted a weight for an edge that requires one.
     ///
-    /// let err = UndirectedGraphInsertionError::new("duplicate edge".to_string());
-    /// assert_eq!(err.to_string(), "duplicate edge");
-    /// ```
-    pub fn new(message: String) -> Self {
-        Self { message }
-    }
+    /// Because the graph is weighted, `None` is not a valid insertion weight.
+    MissingWeight {
+        /// ID of the first endpoint.
+        from_id: String,
+        /// ID of the second endpoint.
+        to_id: String,
+    },
 }
 
 impl Display for UndirectedGraphInsertionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
+        match self {
+            UndirectedGraphInsertionError::EdgeAlreadyExists { from_id, to_id } => {
+                write!(
+                    f,
+                    "The edge between '{}' and '{}' already exists in the graph!",
+                    from_id, to_id
+                )
+            }
+            UndirectedGraphInsertionError::NodeNotFound { node_id } => {
+                write!(
+                    f,
+                    "The node with ID '{}' was not found in the graph!",
+                    node_id
+                )
+            }
+            UndirectedGraphInsertionError::MissingWeight { from_id, to_id } => {
+                write!(
+                    f,
+                    "The edge from '{}' to '{}' is missing a weight!",
+                    from_id, to_id
+                )
+            }
+        }
     }
 }
 
