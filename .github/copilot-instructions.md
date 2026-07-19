@@ -4,7 +4,7 @@
 
 - Language: Rust (`edition = "2024"`).
 - Crate type: library + binary (`src/lib.rs`, `src/main.rs`).
-- Core purpose: parse weighted graph input and run shortest-path algorithms (currently Dijkstra is wired in runtime flow).
+- Core purpose: parse weighted graph input and run shortest-path algorithms (Dijkstra for directed/undirected graphs, A* for two-dimensional graphs).
 
 ## High-value file map
 
@@ -13,7 +13,10 @@
 - `src/data_input/file_input.rs`: graph file parsing/validation (`A-B:7` or `A->B:7` formats).
 - `src/graphs/*`: graph traits and directed/undirected graph implementations.
 - `src/algorithms/dijkstra.rs`: shortest path implementation.
-- `.github/workflows/rust.yml`: CI uses `cargo build --verbose` and `cargo test --verbose`.
+- `.github/workflows/rust.yml`: CI checks formatting, clippy, build, tests, and doctests.
+- `.github/workflows/rust-ci.yml`: baseline CI verification on pushes and PRs.
+- `.github/workflows/codeql.yml`: security scanning workflow.
+- `.github/workflows/release.yml`: release publishing workflow.
 
 ## How to work efficiently in this repo
 
@@ -29,11 +32,13 @@
 ## Important behavior and caveats
 
 - Input file syntax is strict:
-  - Directed edge line: `A->B:7`
-  - Undirected edge line: `A-B:7`
+   - First line header: `D`, `UN`, or `TD`
+   - Directed edge line: `A->B:7`
+   - Undirected edge line: `A-B:7`
+   - Two-dimensional edge line: `A:0,0=>B:4,2`
 - Graph type is inferred from the **first line** of the file; subsequent lines must stay consistent.
-- Runtime currently supports file input path in `main`; `InputOrigin::CommandLine` is still `unimplemented!()`.
-- In `AppConfig::retrieve_data_input`, the parser currently checks `--algo` instead of `--origin`; treat this as existing behavior unless your task explicitly targets CLI parsing fixes.
+- Runtime currently supports file input in `main`; `InputOrigin::CommandLine` is parsed but returns a structured unsupported-origin error in the CLI runtime.
+- In `AppConfig::retrieve_data_input`, `--origin` takes precedence and legacy `--algo file|cmd-line` values remain supported as fallback.
 
 ## Tests/quality expectations
 

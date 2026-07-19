@@ -118,12 +118,11 @@ use shortest_path_finder::{
 /// - `8`: algorithm returned an invalid result.
 fn run() -> Result<(), AppError> {
     let args: Vec<String> = env::args().collect();
-    // -> '--graph <relative_path_to_file>' specifies which file to use to generate the graph
-    // -> '--start <node_name>' name of the node to start from
-    // -> '--end <node_name>' destination node
-    // -> '--algo <algorithm_name>' specify which path finder algorithm to use (default Dijkstra)
-    // -> '--origin [file / cmd-line]' set the origin of how the graph data will be inserted
-    // (default: file with the name 'graph.txt')
+    // CLI arguments are parsed by AppConfig:
+    // - --graph-file <path> selects the input file (default: graph.txt)
+    // - --start <node> and --end <node> select the search endpoints
+    // - --algo <algorithm_name> selects Dijkstra or AStar
+    // - --origin <file|cmd-line> selects where graph data should come from
 
     // validate the arguments and generate config data
     let app_config = match AppConfig::setup_config(args)? {

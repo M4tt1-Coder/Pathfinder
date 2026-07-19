@@ -32,7 +32,7 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 | Error types | `src/error/*` |
 | Node models | `src/nodes/*` |
 | Benchmarks | `benches/` (not CI-gated) |
-| CI workflow | `.github/workflows/rust.yml` |
+| CI workflows | `.github/workflows/rust.yml`, `.github/workflows/rust-ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml` |
 | User docs | `README.md` |
 | AI diary | `diary/` — see [`diary/README.md`](diary/README.md) |
 
@@ -84,8 +84,8 @@ Benchmarks exist under `benches/` but are not part of standard CI gating.
 ### Runtime limitations
 
 - File input is the supported runtime path in `main`.
-- `InputOrigin::CommandLine` may still be `unimplemented!()` — do not assume it works unless your task targets it.
-- In `AppConfig::retrieve_data_input`, the parser currently checks `--algo` instead of `--origin`; treat this as existing behavior unless your task explicitly targets CLI parsing fixes.
+- `InputOrigin::CommandLine` is parsed, but the CLI runtime returns a structured unsupported-origin error for it.
+- In `AppConfig::retrieve_data_input`, `--origin` takes precedence and legacy `--algo file|cmd-line` values are still accepted as fallback.
 
 ---
 

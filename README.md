@@ -203,10 +203,11 @@ Core stack and dependencies:
 
 Quality and automation:
 
-- Three GitHub Actions workflows:
-  - Rust CI checks (fmt, clippy, tests, docs)
-  - Rust baseline verification on pushes and PRs to main
-  - Automated release publishing on merged PRs into main
+- Four GitHub Actions workflows:
+	- `rust.yml`: formatting, clippy, build, tests, and doctests
+	- `rust-ci.yml`: baseline verification on pushes and PRs to main
+	- `codeql.yml`: static analysis for security scanning
+	- `release.yml`: automated publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ## Project structure
