@@ -2,8 +2,8 @@
 //!
 //! # Overview
 //!
-//! Interactive graph input is planned but not implemented yet. Runtime support
-//! for [`InputOrigin::CommandLine`](crate::cmd_line::app_config::InputOrigin::CommandLine)
+//! Interactive graph input is not implemented yet. Runtime support for
+//! [`InputOrigin::CommandLine`](crate::cmd_line::app_config::InputOrigin::CommandLine)
 //! currently returns a structured CLI error in the binary flow.
 //!
 //! # Current Status
