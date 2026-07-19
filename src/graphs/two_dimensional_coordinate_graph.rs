@@ -7,8 +7,8 @@
 //! - Edge weights are computed from node coordinates on insertion.
 //! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
 //!
-//! The graph implements the shared [`Graph`](crate::graphs::graph::Graph)
-//! trait and can be consumed by coordinate-aware algorithms such as A*.
+//! The graph implements the shared [`crate::graphs::graph::Graph`] trait and
+//! can be consumed by coordinate-aware algorithms such as A*.
 //!
 //! # Coordinate Type
 //!
@@ -18,7 +18,7 @@
 //! - [`TwoDimensionalGraphInsertionError<C>`]
 //!
 //! `C` must implement
-//! [`CoordinateDatatype`](crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype).
+//! [`crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype`].
 //! Library users can therefore build coordinate graphs with types such as
 //! `i32` or `f32`.
 //!
@@ -47,7 +47,7 @@
 
 use std::{collections::HashMap, error::Error, fmt::Display};
 
-use log::{debug, warn};
+use log::warn;
 
 use crate::{
     graphs::{
@@ -186,39 +186,26 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(from, to) {
-            return Some(TwoDimensionalGraphInsertionError::new(
-                format!(
-                    "The edge between '{}' and '{}' already exists in the graph!",
-                    from.get_id(),
-                    to.get_id()
-                ),
-                Some([from.clone(), to.clone()]),
-            ));
+            return Some(TwoDimensionalGraphInsertionError::EdgeAlreadyExists {
+                cause_nodes: Some([from.clone(), to.clone()]),
+            });
         }
 
         let node_one_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
-                return Some(TwoDimensionalGraphInsertionError::new(
-                    format!(
-                        "The source node '{}' does not exist in the graph!",
-                        from.get_id()
-                    ),
-                    Some([from.clone(), to.clone()]),
-                ));
+                return Some(TwoDimensionalGraphInsertionError::SourceNodeMissing {
+                    node_id: from.get_id().to_string(),
+                });
             }
         };
 
         let node_two_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
-                return Some(TwoDimensionalGraphInsertionError::new(
-                    format!(
-                        "The destination node '{}' does not exist in the graph!",
-                        to.get_id()
-                    ),
-                    Some([from.clone(), to.clone()]),
-                ));
+                return Some(TwoDimensionalGraphInsertionError::TargetNodeMissing {
+                    node_id: to.get_id().to_string(),
+                });
             }
         };
 
@@ -326,75 +313,98 @@ impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
     }
 }
 
-// ----- Implementation of the 'TwoDimensionalGraphInsertionError' struct -----
+// ----- Implementation of the 'TwoDimensionalGraphInsertionError' enum -----
 
-/// Error type for failed insertions into [`TwoDimensionalCoordinateGraph`].
+/// Errors encountered when mutating a [`TwoDimensionalCoordinateGraph`].
 ///
-/// # Fields
+/// # When this type is returned
 ///
-/// - `message`: human-readable error description.
-/// - `cause_nodes`: node pair that may have caused the error.
+/// The coordinate graph rejects an insertion when one of the following is
+/// true:
 ///
-/// # Type Parameter
+/// - the edge already exists between the requested nodes,
+/// - the source node is missing from the graph,
+/// - the target node is missing from the graph.
 ///
-/// - `C`: coordinate scalar type used by node payloads in this error.
-#[derive(Debug)]
-pub struct TwoDimensionalGraphInsertionError<C: CoordinateDatatype = i32> {
-    /// Detailed description of the error.
-    pub message: String,
-    /// Two nodes passed when they caused the issue.
-    cause_nodes: Option<[TwoDimensionalNode<C>; 2]>,
-}
-
-impl<C: CoordinateDatatype> TwoDimensionalGraphInsertionError<C> {
-    /// Creates a new insertion error value.
+/// # Variant guide
+///
+/// - [`TwoDimensionalGraphInsertionError::EdgeAlreadyExists`][]: the graph
+///   already contains the requested edge.
+/// - [`TwoDimensionalGraphInsertionError::SourceNodeMissing`][]: the source node
+///   must be inserted before the edge can be added.
+/// - [`TwoDimensionalGraphInsertionError::TargetNodeMissing`][]: the target node
+///   must be inserted before the edge can be added.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
+///
+/// let err = TwoDimensionalGraphInsertionError::<i32>::TargetNodeMissing {
+///     node_id: "B".to_string(),
+/// };
+///
+/// assert!(err.to_string().contains("target node 'B' does not exist"));
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TwoDimensionalGraphInsertionError<C: CoordinateDatatype = i32> {
+    /// The edge to be inserted already exists.
     ///
-    /// If `message` is empty, a default fallback message is used.
+    /// When available, `cause_nodes` contains the two node values that led to
+    /// the duplicate-edge detection. The value is optional because some call
+    /// sites can detect duplicates before materializing the exact nodes.
+    EdgeAlreadyExists {
+        /// The pair of nodes that caused the duplicate-edge detection.
+        cause_nodes: Option<[TwoDimensionalNode<C>; 2]>,
+    },
+    /// The source node is missing in the graph.
     ///
-    /// # Arguments
+    /// Insert the source node before retrying the edge insertion.
+    SourceNodeMissing {
+        /// ID of the missing source node.
+        node_id: String,
+    },
+    /// The target node is missing in the graph.
     ///
-    /// - `message` -> Descriptive message about what caused the error.
-    /// - `nodes` -> Optional pair of nodes relevant to the failure.
-    ///
-    /// # Returns
-    ///
-    /// New instance of [`TwoDimensionalGraphInsertionError`].
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
-    ///
-    /// let err = TwoDimensionalGraphInsertionError::<i32>::new(
-    ///     "invalid insertion".to_string(),
-    ///     None,
-    /// );
-    /// assert!(err.to_string().contains("invalid insertion"));
-    /// ```
-    pub fn new(message: String, nodes: Option<[TwoDimensionalNode<C>; 2]>) -> Self {
-        let err_message = if message.is_empty() {
-            debug!("No message was provided for 'TwoDimensionalGraphInsertionError'!");
-            String::from(
-                "An insertion error occurred while trying to add data to the two-dimensional graph!",
-            )
-        } else {
-            message
-        };
-
-        Self {
-            message: err_message,
-            cause_nodes: nodes,
-        }
-    }
+    /// Insert the target node before retrying the edge insertion.
+    TargetNodeMissing {
+        /// ID of the missing target node.
+        node_id: String,
+    },
 }
 
 impl<C: CoordinateDatatype> Display for TwoDimensionalGraphInsertionError<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}; nodes involved in the occurred error: {:?}",
-            self.message, self.cause_nodes
-        )
+        match self {
+            TwoDimensionalGraphInsertionError::EdgeAlreadyExists { cause_nodes } => {
+                write!(
+                    f,
+                    "The edge between '{}' and '{}' already exists in the graph!",
+                    cause_nodes
+                        .as_ref()
+                        .map(|nodes| nodes[0].get_id())
+                        .unwrap_or("unknown"),
+                    cause_nodes
+                        .as_ref()
+                        .map(|nodes| nodes[1].get_id())
+                        .unwrap_or("unknown")
+                )
+            }
+            TwoDimensionalGraphInsertionError::SourceNodeMissing { node_id } => {
+                write!(
+                    f,
+                    "The source node '{}' does not exist in the graph!",
+                    node_id
+                )
+            }
+            TwoDimensionalGraphInsertionError::TargetNodeMissing { node_id } => {
+                write!(
+                    f,
+                    "The target node '{}' does not exist in the graph!",
+                    node_id
+                )
+            }
+        }
     }
 }
 

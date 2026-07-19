@@ -5,7 +5,7 @@
 
 use shortest_path_finder::{
     algorithms::algorithm::Algorithms,
-    cmd_line::app_config::{AppConfig, InputOrigin},
+    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
     error::config_error::ConfigParseError,
 };
 
@@ -13,11 +13,15 @@ fn build_args(parts: &[&str]) -> Vec<String> {
     parts.iter().map(|part| (*part).to_string()).collect()
 }
 
+fn unwrap_config(outcome: AppConfigOutcome) -> AppConfig {
+    outcome.into_config().expect("expected config")
+}
+
 #[test]
 fn setup_config_parses_required_arguments_and_defaults() {
     let args = build_args(&["pathfinder", "--start", "A", "--end", "D"]);
 
-    let config = AppConfig::setup_config(args).expect("expected valid config");
+    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
 
     assert_eq!(config.file_path, "graph.txt");
     assert_eq!(config.start_node_id, "A");
@@ -40,7 +44,7 @@ fn setup_config_parses_optional_graph_file_and_algorithm() {
         "B",
     ]);
 
-    let config = AppConfig::setup_config(args).expect("expected valid config");
+    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
 
     assert_eq!(config.file_path, "test_files/directed_graph.txt");
     assert!(matches!(config.algorithm, Algorithms::AStar));
@@ -68,18 +72,12 @@ fn setup_config_requires_end_node() {
 }
 
 #[test]
-fn setup_config_requires_minimum_argument_count() {
+fn setup_config_reports_missing_end_node_when_incomplete() {
     let args = build_args(&["pathfinder", "--start", "A"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected argument count error");
+    let err = AppConfig::setup_config(args).expect_err("expected missing end error");
 
-    assert_eq!(
-        err,
-        ConfigParseError::TooFewArguments {
-            provided: 3,
-            minimum: 4,
-        }
-    );
+    assert_eq!(err, ConfigParseError::MissingRequiredFlag { flag: "--end" });
 }
 
 #[test]
@@ -94,9 +92,10 @@ fn setup_config_parses_origin_from_origin_flag() {
         "B",
     ]);
 
-    let config = AppConfig::setup_config(args).expect("expected valid config");
+    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
 
     assert!(matches!(config.data_input, InputOrigin::CommandLine));
+    assert!(matches!(config.algorithm, Algorithms::Dijkstra));
 }
 
 #[test]
@@ -111,9 +110,102 @@ fn setup_config_keeps_legacy_origin_fallback_from_algo() {
         "B",
     ]);
 
-    let config = AppConfig::setup_config(args).expect("expected valid config");
+    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
 
     assert!(matches!(config.data_input, InputOrigin::CommandLine));
+    assert!(matches!(config.algorithm, Algorithms::Dijkstra));
+}
+
+#[test]
+fn setup_config_rejects_invalid_origin_value() {
+    let args = build_args(&[
+        "pathfinder",
+        "--origin",
+        "nowhere",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let err = AppConfig::setup_config(args).expect_err("expected invalid origin error");
+
+    assert_eq!(
+        err,
+        ConfigParseError::InvalidFlagValue {
+            flag: "--origin".to_string(),
+            value: "nowhere".to_string(),
+            expected: "file | cmd-line".to_string(),
+        }
+    );
+}
+
+#[test]
+fn setup_config_rejects_invalid_algorithm_value() {
+    let args = build_args(&[
+        "pathfinder",
+        "--algo",
+        "Whoops",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let err = AppConfig::setup_config(args).expect_err("expected invalid algorithm error");
+
+    assert_eq!(
+        err,
+        ConfigParseError::InvalidFlagValue {
+            flag: "--algo".to_string(),
+            value: "Whoops".to_string(),
+            expected: "Dijkstra | AStar".to_string(),
+        }
+    );
+}
+
+#[test]
+fn setup_config_rejects_conflicting_origin_and_graph_file() {
+    let args = build_args(&[
+        "pathfinder",
+        "--origin",
+        "cmd-line",
+        "--graph-file",
+        "graph.txt",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let err = AppConfig::setup_config(args).expect_err("expected conflict error");
+
+    assert_eq!(
+        err,
+        ConfigParseError::ConflictingFlags {
+            flag: "--origin".to_string(),
+            other: "--graph-file".to_string(),
+            reason: "command-line origin cannot be combined with --graph-file".to_string(),
+        }
+    );
+}
+
+#[test]
+fn setup_config_returns_help_requested() {
+    let args = build_args(&["pathfinder", "--help"]);
+
+    let outcome = AppConfig::setup_config(args).expect("expected help outcome");
+
+    assert!(matches!(outcome, AppConfigOutcome::HelpRequested));
+}
+
+#[test]
+fn setup_config_returns_version_requested() {
+    let args = build_args(&["pathfinder", "--version"]);
+
+    let outcome = AppConfig::setup_config(args).expect("expected version outcome");
+
+    assert!(matches!(outcome, AppConfigOutcome::VersionRequested));
 }
 
 #[test]
@@ -126,9 +218,36 @@ fn setup_config_rejects_missing_value_for_flag() {
         err,
         ConfigParseError::MissingValueForFlag {
             flag: "--start".to_string(),
-            index: 1,
+            index: 2,
         }
     );
+}
+
+#[test]
+fn setup_config_accepts_double_dash_value_escape() {
+    let args = build_args(&[
+        "pathfinder",
+        "--graph-file",
+        "--",
+        "--strange",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+
+    assert_eq!(config.file_path, "--strange");
+}
+
+#[test]
+fn setup_config_rejects_unexpected_end_of_options() {
+    let args = build_args(&["pathfinder", "--", "--start", "A", "--end", "B"]);
+
+    let err = AppConfig::setup_config(args).expect_err("expected end-of-options error");
+
+    assert_eq!(err, ConfigParseError::UnexpectedEndOfOptions { index: 2 });
 }
 
 #[test]
@@ -141,7 +260,7 @@ fn setup_config_rejects_unknown_flag() {
         err,
         ConfigParseError::UnknownFlag {
             flag: "--whoops".to_string(),
-            index: 1,
+            index: 2,
         }
     );
 }
@@ -156,8 +275,8 @@ fn setup_config_rejects_duplicate_flag() {
         err,
         ConfigParseError::DuplicateFlag {
             flag: "--start".to_string(),
-            first_index: 1,
-            duplicate_index: 3,
+            first_index: 2,
+            duplicate_index: 4,
         }
     );
 }
@@ -172,7 +291,7 @@ fn setup_config_rejects_unexpected_non_flag_token() {
         err,
         ConfigParseError::UnexpectedArgument {
             value: "start".to_string(),
-            index: 1,
+            index: 2,
         }
     );
 }

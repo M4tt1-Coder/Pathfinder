@@ -6,7 +6,18 @@
 //! - [`GraphNode`] for node identity,
 //! - [`GraphWeight`] for numeric edge weights.
 //!
-//! The traits are designed to support both directed and undirected graphs.
+//! # Key Concepts
+//!
+//! - `Graph` is the container and exposes neighbor traversal.
+//! - `GraphNode` provides a stable string ID used by algorithms and I/O.
+//! - `GraphWeight` is the numeric weight type with overflow-aware addition.
+//!
+//! # Design Goals
+//!
+//! - Support directed and undirected graphs.
+//! - Support weighted and unweighted graphs.
+//! - Keep algorithms generic while preserving readable node identifiers.
+//!
 //! Concrete implementations live in sibling modules such as
 //! `graphs::directed`, `graphs::undirected`, and
 //! `graphs::two_dimensional_coordinate_graph`.
@@ -39,11 +50,17 @@ use std::{
 /// and can expose custom node and weight types as long as those types satisfy
 /// the associated trait bounds.
 ///
-/// # Design Notes
+/// # Semantics
+///
 /// - Nodes are represented by [`Graph::Node`] and are identified by stable IDs.
 /// - Edges are represented implicitly through adjacency lists using the weight
 ///   type [`Graph::Weight`].
 /// - Neighbor traversal returns `(neighbor, weight)` pairs.
+///
+/// # Error Behavior
+///
+/// Edge and node insertion operations may return implementation-specific errors
+/// when constraints are violated (duplicates, missing nodes, invalid weights).
 ///
 /// # Example
 ///
@@ -118,6 +135,10 @@ pub trait Graph {
     ///
     /// Iterator over `(neighbor, weight)` pairs.
     ///
+    /// # Notes
+    ///
+    /// The iterator yields borrowed nodes. Ordering is implementation-specific.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -188,12 +209,19 @@ pub trait Graph {
     ///
     /// # Parameters
     ///
-    /// - `edge`: Edge to add.
+    /// - `from`: Source node.
+    /// - `to`: Destination node.
+    /// - `weight`: Optional edge weight, when applicable.
     ///
     /// # Returns
     ///
     /// - `None` if insertion succeeded.
     /// - `Some(Self::InsertionError)` if insertion failed.
+    ///
+    /// # Notes
+    ///
+    /// Implementations decide how to treat `weight = None` for unweighted
+    /// graphs (ignore, use a default, or reject).
     fn insert_edge(
         &mut self,
         from: &Self::Node,
@@ -254,6 +282,10 @@ pub trait Graph {
     ///
     /// Borrowed vector of all graph nodes.
     ///
+    /// # Notes
+    ///
+    /// Ordering is implementation-specific and should not be relied upon.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -298,7 +330,14 @@ pub trait Graph {
 /// This trait is implemented for types that:
 /// - are `Copy`, allowing for inexpensive duplication,
 /// - implement `PartialOrd`, enabling comparison of weights,
-/// - and support addition with `Add<Output = Self>`, allowing weights to be combined.
+/// - support addition with `Add<Output = Self>`, allowing weights to be combined,
+/// - and can perform overflow-aware addition via [`GraphWeight::checked_add`].
+///
+/// # Overflow Handling
+///
+/// Algorithms use `checked_add` to prevent overflow or non-finite sums. For
+/// floating-point weights, `checked_add` should return `None` for NaN or
+/// infinite results.
 ///
 /// # Usage
 /// Use `GraphWeight` as a trait bound for generic types in graph algorithms,
@@ -337,11 +376,25 @@ pub trait GraphWeight:
     /// # Returns
     /// The zero value of the implementing type.
     fn zero() -> Self;
+
+    /// Returns the sum of two weights if it can be represented safely.
+    ///
+    /// Implementations should return `None` if the addition would overflow or
+    /// produce a non-finite value (for floating-point weights).
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: The weight to add to `self`.
+    fn checked_add(self, other: Self) -> Option<Self>;
 }
 
 /// Trait for node values stored in graph implementations.
 ///
-/// A node must have a stable textual identifier retrievable via [`GraphNode::get_id`].
+/// # Requirements
+///
+/// A node must have a stable textual identifier retrievable via
+/// [`GraphNode::get_id`]. The identifier is used for lookup, display, and
+/// serialization.
 ///
 /// # Example
 ///

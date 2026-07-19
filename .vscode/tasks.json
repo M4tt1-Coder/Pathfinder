@@ -150,6 +150,86 @@
 				"diary/feature/a_star/022-commit-all-current-unstaged-changes.md"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "rust: clippy-missing-docs",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+				"-D",
+				"missing_docs"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "rust: clippy-missing-docs",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+				"-D",
+				"missing_docs"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "rust: clippy-missing-docs",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+				"-D",
+				"missing_docs"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "rust: clippy-missing-docs",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"clippy",
+				"--all-targets",
+				"--all-features",
+				"--",
+				"-D",
+				"warnings",
+				"-D",
+				"missing_docs"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
 		}
 	]
 }

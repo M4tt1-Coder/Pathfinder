@@ -17,26 +17,61 @@ use divan::bench;
 use shortest_path_finder::{
     data_input::file_input::{FileInputGraphResult, retrieve_graph_data_from_file},
     error::parse_error::ParseError,
-    graphs::{directed::DirectedGraph, undirected::UndirectedGraph},
+    graphs::{
+        directed::DirectedGraph, two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
+        undirected::UndirectedGraph,
+    },
+    nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode},
 };
 
 fn main() {
     divan::main();
 }
 
-// ----- Benchmarks for the 'FileInputGraphResult' struct -----
+// ----- Benchmarks for the 'FileInputGraphResult' enum -----
 
 #[bench(
     args = [
-        (None, None),
-        (Some(UndirectedGraph::new(vec![])), Some(DirectedGraph::new(vec![]))),
-        (None, Some(DirectedGraph::new(vec![]))),
-        (Some(UndirectedGraph::new(vec![])), None)
+        DirectedGraph::new(vec![]),
+        DirectedGraph::new(vec![
+            DefaultNode::new("A".to_string()),
+            DefaultNode::new("B".to_string()),
+            DefaultNode::new("C".to_string())
+        ])
     ]
 )]
-fn create_file_input_grap_result(graphs: &(Option<UndirectedGraph>, Option<DirectedGraph>)) {
-    let _file_input_graph_result =
-        FileInputGraphResult::new(graphs.1.clone(), graphs.0.clone(), None);
+fn create_file_input_graph_result_with_directed_graph(dir_graph: &DirectedGraph) {
+    let _result = FileInputGraphResult::DirectedGraph(dir_graph.clone());
+}
+
+#[bench(
+    args = [
+        UndirectedGraph::new(vec![]),
+        UndirectedGraph::new(vec![
+            DefaultNode::new("X".to_string()),
+            DefaultNode::new("Y".to_string()),
+            DefaultNode::new("Z".to_string())
+        ])
+    ]
+)]
+fn create_file_input_graph_result_with_undirected_graph(undir_graph: &UndirectedGraph) {
+    let _result = FileInputGraphResult::UndirectedGraph(undir_graph.clone());
+}
+
+#[bench(
+    args = [
+        TwoDimensionalCoordinateGraph::<i32>::new(vec![]),
+        TwoDimensionalCoordinateGraph::<i32>::new(vec![
+            TwoDimensionalNode::new(1, 2, "P1".to_string()).expect("Failed to create node"),
+            TwoDimensionalNode::new(3, 4, "P2".to_string()).expect("Failed to create node"),
+            TwoDimensionalNode::new(5, 6, "P3".to_string()).expect("Failed to create node")
+        ])
+    ]
+)]
+fn create_file_input_graph_result_with_2d_coordinate_graph(
+    coord_graph: &TwoDimensionalCoordinateGraph,
+) {
+    let _result = FileInputGraphResult::TwoDimensionalGraph(coord_graph.clone());
 }
 
 // ----- Benchmarks of the 'ParseError' enum -----

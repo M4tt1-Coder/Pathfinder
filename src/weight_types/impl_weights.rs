@@ -5,8 +5,14 @@
 //! This module contributes two things:
 //! - [`WeightType`], an enum used by parsing code when weight types differ by
 //!   graph format.
-//! - Implementations of [`GraphWeight`](crate::graphs::graph::GraphWeight)
-//!   for `u16`, `f32`, and `i32`.
+//! - Implementations of [`crate::graphs::graph::GraphWeight`] for `u16`, `f32`,
+//!   and `i32`.
+//!
+//! # Design Notes
+//!
+//! The `GraphWeight` implementations follow the overflow semantics of the
+//! underlying primitive types. For `f32`, `checked_add` rejects non-finite
+//! results to keep algorithms safe.
 //!
 //! # Usage
 //!
@@ -37,6 +43,11 @@ use crate::graphs::graph::GraphWeight;
 /// - `F32(f32)`: Represents a 32-bit floating point weight.
 /// - `I32(i32)`: Represents a signed 32-bit integer weight.
 /// - `NotNecessary`: Marker used when a graph derives weights internally.
+///
+/// # Conversion
+///
+/// Parsing code can select a variant based on graph type and then convert into
+/// the target weight type used by the graph implementation.
 ///
 /// # Example
 ///
@@ -71,6 +82,11 @@ impl GraphWeight for u16 {
     fn max_value() -> Self {
         u16::MAX
     }
+
+    /// Returns the checked sum for `u16` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        u16::checked_add(self, other)
+    }
 }
 
 /// Implements the `GraphWeight` trait for `f32`.
@@ -84,6 +100,12 @@ impl GraphWeight for f32 {
     fn max_value() -> Self {
         f32::MAX
     }
+
+    /// Returns the checked sum for `f32` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        let sum = self + other;
+        if sum.is_finite() { Some(sum) } else { None }
+    }
 }
 
 /// Implements the `GraphWeight` trait for `i32`.
@@ -96,5 +118,10 @@ impl GraphWeight for i32 {
     /// Returns the maximum possible value for `i32` weights.
     fn max_value() -> Self {
         i32::MAX
+    }
+
+    /// Returns the checked sum for `i32` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        i32::checked_add(self, other)
     }
 }

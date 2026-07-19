@@ -5,7 +5,7 @@
 
 use shortest_path_finder::{
     graphs::{
-        directed::DirectedGraph,
+        directed::{DirectedGraph, DirectedGraphInsertionError},
         graph::{Graph, GraphNode},
         two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
         undirected::UndirectedGraph,
@@ -27,7 +27,11 @@ fn directed_graph_rejects_edge_when_nodes_are_missing() {
         .insert_edge(&from, &to, Some(5))
         .expect("insertion should fail when nodes do not exist");
 
-    assert!(err.message.contains("doesn't exist"));
+    assert!(matches!(
+        err,
+        DirectedGraphInsertionError::SourceNodeDoesNotExist { node_id }
+            if node_id == "A"
+    ));
 }
 
 #[test]

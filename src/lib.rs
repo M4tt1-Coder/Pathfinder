@@ -18,8 +18,45 @@
 //! - [`nodes`]: node models used by graph implementations.
 //! - [`data_input`]: graph input parsing (currently file-based).
 //! - [`cmd_line`]: CLI configuration parsing helpers.
-//! - [`error`]: parse-time and CLI configuration error definitions.
+//! - [`error`]: parse-time, CLI configuration, and algorithm execution errors.
 //! - [`weight_types`] and [`numeric_datatypes`]: numeric traits and impls.
+//!
+//! # Error Handling
+//!
+//! Errors are layered by boundary:
+//! - [`error::parse_error::ParseError`] for line-level graph syntax failures.
+//! - [`error::data_input_error::DataInputError`] for file loading and parsing.
+//! - [`error::config_error::ConfigParseError`] for CLI flag validation.
+//! - [`error::algorithm_error::AlgorithmError`] for shortest-path execution.
+//! - [`AppError`] as the binary-level wrapper with exit-code mapping.
+//!
+//! Use [`error::algorithm_error::AlgorithmErrorKind`] when you need stable
+//! categories (for example exit codes or telemetry).
+//!
+//! ```rust
+//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//!
+//! let err = AlgorithmError::from(DijkstraError::NoPathFound {
+//!     start: "A".to_string(),
+//!     end: "B".to_string(),
+//! });
+//! assert_eq!(err.kind(), AlgorithmErrorKind::NoPath);
+//! ```
+//!
+//! File-input failures are typically wrapped before they reach application code:
+//!
+//! ```rust
+//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::parse_error::ParseError;
+//!
+//! let err = DataInputError::from(FileInputError::Parse {
+//!     file_path: "graph.txt".to_string(),
+//!     source: ParseError::MissingColon,
+//! });
+//! assert!(err.to_string().contains("File input error"));
+//! ```
 //!
 //! # Quick Start
 //!
@@ -50,3 +87,5 @@ pub mod graphs;
 pub mod nodes;
 pub mod numeric_datatypes;
 pub mod weight_types;
+
+pub use error::AppError;

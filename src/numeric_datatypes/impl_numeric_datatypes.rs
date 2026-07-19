@@ -3,8 +3,8 @@
 //! # Overview
 //!
 //! This module provides concrete implementations of
-//! [`NumericDatatype`](crate::weight_types::numeric_datatype::NumericDatatype)
-//! for selected primitive types used by graph algorithms and heuristics.
+//! [`crate::weight_types::numeric_datatype::NumericDatatype`] for selected
+//! primitive types used by graph algorithms and heuristics.
 //!
 //! Currently implemented:
 //! - `f32`

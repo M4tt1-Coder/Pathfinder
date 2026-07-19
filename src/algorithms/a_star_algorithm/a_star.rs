@@ -25,6 +25,29 @@
 //! - The graph must be weighted (`graph.is_weighted() == true`).
 //! - `start_node_id` and `end_node_id` must exist in the graph.
 //!
+//! # Algorithm Steps
+//!
+//! 1. Validate the graph and resolve start and goal nodes.
+//! 2. Seed the open queue with the start node and initialize the g-cost map.
+//! 3. Pop the lowest `f(n)` entry, relax neighbors, and reopen nodes when a
+//!    cheaper g-cost is found.
+//! 4. Stop when the goal is reached and reconstruct the path from predecessors.
+//!
+//! # Complexity Notes
+//!
+//! Queue operations are `O(log V)` and the traversal is typically `O(E log V)`.
+//! This implementation uses linear scans to check open and closed membership,
+//! which can increase runtime on large graphs.
+//!
+//! # Error Handling
+//!
+//! - Runtime validation and bookkeeping failures are surfaced as
+//!   [`AStarExecutionError`].
+//! - In the CLI, these errors are wrapped in
+//!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
+//!   mapped to exit codes via
+//!   [`AlgorithmErrorKind::exit_code`](crate::error::algorithm_error::AlgorithmErrorKind::exit_code).
+//!
 //! # Usage Example
 //!
 //! ```no_run
@@ -51,11 +74,12 @@
 
 use std::{
     collections::{BinaryHeap, HashMap},
-    error::Error,
     fmt::Display,
 };
 
 use log::warn;
+
+pub use crate::error::algorithm_error::AStarExecutionError;
 
 use crate::{
     algorithms::{
@@ -82,6 +106,11 @@ use crate::{
 /// - Resolve start and goal nodes by ID.
 /// - Execute the open/closed queue loop.
 /// - Reconstruct path and distance.
+///
+/// # Error Handling
+///
+/// Use [`AStar::shortest_path`] to surface validation, heuristic, or
+/// reconstruction failures as [`AStarExecutionError`].
 ///
 /// # Example
 ///
@@ -134,7 +163,10 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// - graph is not weighted,
     /// - `start_node_id` does not exist,
     /// - `end_node_id` does not exist,
-    /// - path reconstruction fails.
+    /// - an edge weight is negative or non-finite,
+    /// - the heuristic produces a non-finite value,
+    /// - no path can be found,
+    /// - path reconstruction fails or the result is invalid.
     ///
     /// # Example
     ///
@@ -158,33 +190,30 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
         end_node_id: &str,
     ) -> Result<Self::AlgorithmSearchResult, Self::ExecutionError> {
         if !self.graph.is_weighted() {
-            return Err(Self::ExecutionError::new(
-                "The graph needs to be weighted for the A* algorithm to work!".to_string(),
-            ));
+            return Err(Self::ExecutionError::UnweightedGraph);
         }
 
         let start_node = self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
-            Self::ExecutionError::new(format!(
-                "Start node with id '{}' not found in the graph!",
-                start_node_id
-            ))
+            Self::ExecutionError::MissingStartNode {
+                id: start_node_id.to_string(),
+            }
         })?;
 
         let end_node = self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
-            Self::ExecutionError::new(format!(
-                "End node with id '{}' not found in the graph!",
-                end_node_id
-            ))
+            Self::ExecutionError::MissingEndNode {
+                id: end_node_id.to_string(),
+            }
         })?;
 
         // "open" queue with nodes that haven't been visited yet
         // add the start node to the queue
         let mut open_queue: BinaryHeap<AStarQueueElement<WD, N>> = BinaryHeap::new();
 
+        let start_h_cost = self.heuristic(start_node, end_node, start_node)?;
         open_queue.push(AStarQueueElement::new(
             start_node,
             WD::zero(),
-            self.heuristic(start_node, end_node, start_node),
+            start_h_cost,
             None,
         ));
 
@@ -214,6 +243,25 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
             // get all neighbours and check if ... -> add all neighbours to "open_queue" + add
             // current node to the "closed_queue"
             for (neighbour, weight) in self.graph.neighbors(node) {
+                let weight_value = weight.to_f32();
+                if !weight_value.is_finite() {
+                    return Err(Self::ExecutionError::InvalidEdgeWeight {
+                        from: node.get_id().to_string(),
+                        to: neighbour.get_id().to_string(),
+                        weight: format!("{}", weight),
+                        reason: "non-finite".to_string(),
+                    });
+                }
+
+                if weight < WD::zero() {
+                    return Err(Self::ExecutionError::InvalidEdgeWeight {
+                        from: node.get_id().to_string(),
+                        to: neighbour.get_id().to_string(),
+                        weight: format!("{}", weight),
+                        reason: "negative".to_string(),
+                    });
+                }
+
                 // Candidate g-cost if we reach `neighbour` through `node`.
                 let tentative_g_cost = g_cost + weight;
                 // get the 'g_cost' of the neighbour from the "open_queue" if it exists
@@ -230,21 +278,19 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     .iter()
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
-                let g_cost_neighbour = g_costs.get(neighbour.get_id());
+                let g_cost_neighbour = g_costs.get(neighbour.get_id()).ok_or_else(|| {
+                    Self::ExecutionError::MissingGCost {
+                        node_id: neighbour.get_id().to_string(),
+                    }
+                })?;
 
-                if neighbour_is_in_open_queue
-                    && let Some(o_g_cost) = g_cost_neighbour
-                    && tentative_g_cost < *o_g_cost
-                {
+                if neighbour_is_in_open_queue && tentative_g_cost < *g_cost_neighbour {
                     // Remove stale entry so the improved version can be inserted below.
                     open_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
 
                 // If a cheaper route is found for a closed node, move it back to open.
-                if neighbour_is_in_closed_queue
-                    && let Some(c_g_cost) = g_cost_neighbour
-                    && tentative_g_cost < *c_g_cost
-                {
+                if neighbour_is_in_closed_queue && tentative_g_cost < *g_cost_neighbour {
                     // Re-open nodes from closed set when a strictly better route is found.
                     closed_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
                 }
@@ -264,22 +310,34 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     g_costs.insert(neighbour.get_id().to_string(), tentative_g_cost);
 
                     // Insert queue element with updated predecessor and heuristic score.
+                    let heuristic = self.heuristic(start_node, end_node, neighbour)?;
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,
-                        self.heuristic(start_node, end_node, neighbour),
+                        heuristic,
                         Some(node),
                     ));
                 }
             }
         }
 
+        let reached_end = closed_queue
+            .last()
+            .is_some_and(|entry| entry.get_node() == end_node);
+        if !reached_end {
+            return Err(Self::ExecutionError::NoPathFound {
+                start: start_node_id.to_string(),
+                end: end_node_id.to_string(),
+            });
+        }
+
         // the last element in the "closed_queue" is the destination node, so we can reconstruct
         // the path from the destination node to the start node by following the predecessors
         let (path, distance) =
-            determine_path_cost(closed_queue).map_err(|e| Self::ExecutionError::new(e.message))?;
+            determine_path_cost(closed_queue).map_err(AStarExecutionError::from)?;
 
-        AStarSearchResult::new(distance, path).map_err(Self::ExecutionError::new)
+        let result = AStarSearchResult::new(distance, path)?;
+        Ok(result)
     }
 }
 
@@ -327,13 +385,14 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// # Returns
     ///
-    /// Heuristic estimate from `current` toward `goal`.
+    /// - `Ok(estimate)` with the heuristic value.
+    /// - `Err(AStarExecutionError)` if the heuristic yields a non-finite value.
     ///
     /// # Notes
     ///
     /// This helper is private and is called during `shortest_path` queue
     /// expansion to compute the heuristic term.
-    fn heuristic(&self, start: &N, goal: &N, current: &N) -> WD {
+    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarExecutionError> {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();
         let dx2 = start.get_x().to_f32() - goal.get_x().to_f32();
@@ -342,8 +401,27 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
         // Cross product magnitude for heuristic estimation in coordinate space.
         let cross = (dx1 * dy2 - dx2 * dy1).abs();
 
+        if !cross.is_finite() {
+            return Err(AStarExecutionError::InvalidHeuristic {
+                start: start.get_id().to_string(),
+                goal: goal.get_id().to_string(),
+                current: current.get_id().to_string(),
+                value: cross,
+            });
+        }
+
+        let adjusted = cross.adjust_for_heuristic();
+        if !adjusted.is_finite() {
+            return Err(AStarExecutionError::InvalidHeuristic {
+                start: start.get_id().to_string(),
+                goal: goal.get_id().to_string(),
+                current: current.get_id().to_string(),
+                value: adjusted,
+            });
+        }
+
         // Convert the scaled heuristic to the graph's weight datatype.
-        WD::from_f32(cross.adjust_for_heuristic())
+        Ok(WD::from_f32(adjusted))
     }
 }
 
@@ -356,7 +434,17 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 /// - `distance`: total path cost.
 /// - `path`: ordered node sequence from start to destination.
 ///
-/// # Example
+/// # Validation
+///
+/// Use [`AStarSearchResult::new`] to enforce the non-empty path and
+/// non-negative distance invariants before constructing the result.
+///
+/// # Display
+///
+/// The display format is a human-readable `Path: ...` string followed by the
+/// total distance.
+///
+/// # Examples
 ///
 /// ```rust
 /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
@@ -369,13 +457,15 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 ///
 /// assert_eq!(result.get_total_distance(), 1);
 /// assert_eq!(result.get_path().len(), 2);
+///
+/// let output = format!("{}", result);
+/// assert!(output.contains("Path:"));
 /// ```
 #[derive(Debug)]
 pub struct AStarSearchResult<WD: NumericDatatype, N: CoordinatesNode> {
-    /// Total distance from one node A to node B.
+    /// Total distance of the computed path.
     distance: WD,
-    /// List of nodes in order of the nodes that where visited to get the shortest path from the
-    /// start to the destination node.
+    /// Ordered node sequence from start to destination.
     ///
     /// Must have at least 1 node (the `start == destination` case produces a single-node path).
     path: Vec<N>,
@@ -397,7 +487,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Returns
     ///
     /// - `Ok(Self)` when inputs are valid.
-    /// - `Err(String)` when one or more rules are violated.
+    /// - `Err(AStarExecutionError)` when one or more rules are violated.
     ///
     /// # Examples
     ///
@@ -419,17 +509,19 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
     /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
     /// ```
-    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, String> {
+    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, AStarExecutionError> {
         // path needs to have at least 1 node
         if path.is_empty() {
-            return Err("A valid result must have at least one representative node!".to_string());
+            return Err(AStarExecutionError::InvalidSearchResult {
+                reason: "path must contain at least one node".to_string(),
+            });
         }
 
         // the distance must not be negative
         if distance < WD::zero() {
-            return Err(
-                "A distance from a node A to B can not be less smaller then 0!".to_string(),
-            );
+            return Err(AStarExecutionError::InvalidSearchResult {
+                reason: "distance cannot be negative".to_string(),
+            });
         }
 
         Ok(Self { path, distance })
@@ -480,6 +572,16 @@ impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult
 ///
 /// - `WD`: numeric cost type implementing [`NumericDatatype`].
 /// - `N`: coordinate-based node type.
+///
+/// # Lifetimes
+///
+/// The `'n` lifetime ties queue entries to graph-owned node references; callers
+/// must ensure the graph outlives the queue entries.
+///
+/// # Notes
+///
+/// `f_cost` is computed when the element is created as `g_cost + h_cost` and
+/// drives the queue ordering.
 ///
 /// # Example
 ///
@@ -619,45 +721,3 @@ impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialEq for AStarQueueElemen
 }
 
 impl<'n, WD: NumericDatatype, N: CoordinatesNode> Eq for AStarQueueElement<'n, WD, N> {}
-
-// ----- Implementation of the 'AStarExecutionError' struct -----
-
-/// Error type returned by A* execution and helper utilities.
-///
-/// # Contents
-///
-/// - `message`: user-facing diagnostic description.
-///
-/// # Example
-///
-/// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarExecutionError;
-///
-/// let err = AStarExecutionError::new("missing start node".to_string());
-/// assert!(err.to_string().contains("missing start node"));
-/// ```
-#[derive(Debug)]
-pub struct AStarExecutionError {
-    /// Message of the error
-    pub message: String,
-    // potentially more fields
-}
-
-impl AStarExecutionError {
-    /// Creates a new execution error with a custom message.
-    ///
-    /// # Parameters
-    ///
-    /// - `message`: descriptive error text.
-    pub fn new(message: String) -> Self {
-        Self { message }
-    }
-}
-
-impl Display for AStarExecutionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "A* Execution Error: {}", self.message)
-    }
-}
-
-impl Error for AStarExecutionError {}

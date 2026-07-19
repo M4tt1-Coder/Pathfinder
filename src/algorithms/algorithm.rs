@@ -55,6 +55,35 @@ pub enum Algorithms {
     AStar,
 }
 
+/// Error returned when parsing an [`Algorithms`] value from user input.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AlgorithmParseError {
+    /// Raw input that failed to match a known algorithm name.
+    pub value: String,
+}
+
+impl std::fmt::Display for AlgorithmParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Unknown algorithm '{}'", self.value)
+    }
+}
+
+impl Error for AlgorithmParseError {}
+
+impl TryFrom<&str> for Algorithms {
+    type Error = AlgorithmParseError;
+
+    fn try_from(src: &str) -> Result<Self, Self::Error> {
+        match src {
+            "Dijkstra" => Ok(Self::Dijkstra),
+            "AStar" => Ok(Self::AStar),
+            _ => Err(AlgorithmParseError {
+                value: src.to_string(),
+            }),
+        }
+    }
+}
+
 impl Algorithms {
     /// Converts a user-provided string into an [`Algorithms`] value.
     ///
@@ -66,7 +95,8 @@ impl Algorithms {
     /// - `"Dijkstra"`
     /// - `"AStar"`
     ///
-    /// Any unknown value falls back to [`Algorithms::Dijkstra`].
+    /// Any unknown value falls back to [`Algorithms::Dijkstra`]. For strict
+    /// parsing, prefer [`Algorithms::try_from`].
     ///
     /// # Returns
     ///
@@ -82,13 +112,12 @@ impl Algorithms {
     ///
     /// // Unknown input currently defaults to Dijkstra.
     /// assert!(matches!(Algorithms::get_from_string("unknown"), Algorithms::Dijkstra));
+    ///
+    /// // Strict parsing is available via TryFrom.
+    /// assert!(Algorithms::try_from("unknown").is_err());
     /// ```
     pub fn get_from_string(src: &str) -> Self {
-        match src {
-            "Dijkstra" => Self::Dijkstra,
-            "AStar" => Self::AStar,
-            _ => Self::Dijkstra,
-        }
+        Self::try_from(src).unwrap_or(Self::Dijkstra)
     }
 }
 

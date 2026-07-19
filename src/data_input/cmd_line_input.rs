@@ -2,9 +2,9 @@
 //!
 //! # Overview
 //!
-//! Interactive graph input is planned but not implemented yet. Runtime support
-//! for [`InputOrigin::CommandLine`](crate::cmd_line::app_config::InputOrigin::CommandLine)
-//! currently resolves to `unimplemented!()` in the binary flow.
+//! Interactive graph input is not implemented yet. Runtime support for
+//! [`InputOrigin::CommandLine`](crate::cmd_line::app_config::InputOrigin::CommandLine)
+//! currently returns a structured CLI error in the binary flow.
 //!
 //! # Current Status
 //!
@@ -20,4 +20,5 @@
 //! assert!(matches!(origin, InputOrigin::CommandLine));
 //! ```
 
-// TODO: Implement terminal-based graph input parsing and construction.
+// TODO: Implement CL-based graph input parsing and construction. + Add 'CommandLineInputError' and
+// map to DataINputError::CommandLine variant. + Add CLI input parsing errors to AppError

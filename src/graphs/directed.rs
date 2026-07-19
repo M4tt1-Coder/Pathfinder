@@ -6,7 +6,7 @@
 //! - [`DirectedGraph`] stores [`DefaultNode`] values and adjacency data.
 //! - [`DirectedGraphInsertionError`] reports insertion failures.
 //!
-//! It implements the shared [`Graph`](crate::graphs::graph::Graph) trait and
+//! It implements the shared [`crate::graphs::graph::Graph`] trait and
 //! is used by shortest-path algorithms such as Dijkstra.
 //!
 //! # File Abbreviation
@@ -30,8 +30,6 @@
 //! ```
 
 use std::{collections::HashMap, error::Error, fmt::Display};
-
-use log::info;
 
 use crate::{
     graphs::graph::{Graph, GraphNode},
@@ -123,44 +121,35 @@ impl Graph for DirectedGraph {
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(from, to) {
-            return Some(DirectedGraphInsertionError::new(format!(
-                "Edge from '{}' to '{}' already exists!",
-                from.get_id(),
-                to.get_id()
-            )));
+            return Some(DirectedGraphInsertionError::EdgeAlreadyExists {
+                from: from.get_id().to_string(),
+                to: to.get_id().to_string(),
+            });
         }
 
         let from_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
-                return Some(DirectedGraphInsertionError::new(format!(
-                    "The source node '{}' in edge from '{}' to '{}' doesn't exist!",
-                    from.get_id(),
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(DirectedGraphInsertionError::SourceNodeDoesNotExist {
+                    node_id: from.get_id().to_string(),
+                });
             }
         };
         let to_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
-                return Some(DirectedGraphInsertionError::new(format!(
-                    "The destination node '{}' in edge from '{}' to '{}' doesn't exist!",
-                    to.get_id(),
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(DirectedGraphInsertionError::DestinationNodeDoesNotExist {
+                    node_id: to.get_id().to_string(),
+                });
             }
         };
 
         let weight = match weight {
             Some(w) => w,
             None => {
-                return Some(DirectedGraphInsertionError::new(format!(
-                    "Edge from '{}' to '{}' must have a weight!",
-                    from.get_id(),
-                    to.get_id()
-                )));
+                return Some(DirectedGraphInsertionError::MissingEdgeWeight {
+                    expected_weight: "u16".to_string(),
+                });
             }
         };
 
@@ -282,53 +271,99 @@ impl Default for DirectedGraph {
     }
 }
 
-// ----- Implementation of the 'DirectedGraphInsertionError' struct -----
+// ----- Implementation of the 'DirectedGraphInsertionError' enum -----
 
-/// Error returned when inserting nodes/edges into [`DirectedGraph`] fails.
+/// Errors encountered when mutating a [`DirectedGraph`].
 ///
-/// # Typical causes
+/// # When this type is returned
 ///
-/// - duplicate edge insertion,
-/// - inserting an edge whose endpoint node does not exist.
-#[derive(Debug)]
-pub struct DirectedGraphInsertionError {
-    /// Human-readable description of the insertion failure.
-    pub message: String,
-}
+/// The directed graph rejects an insertion when one of the following is true:
+///
+/// - the edge already exists,
+/// - the source node is missing,
+/// - the destination node is missing,
+/// - the caller omits a required edge weight.
+///
+/// # Variant guide
+///
+/// - [`DirectedGraphInsertionError::EdgeAlreadyExists`][]: the exact `from -> to`
+///   edge is already present.
+/// - [`DirectedGraphInsertionError::SourceNodeDoesNotExist`][]: the source node
+///   must be inserted before retrying the edge insertion.
+/// - [`DirectedGraphInsertionError::DestinationNodeDoesNotExist`][]: the
+///   destination node must be inserted before retrying the edge insertion.
+/// - [`DirectedGraphInsertionError::MissingEdgeWeight`][]: the graph expects a
+///   weight and the caller passed `None`.
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
+///
+/// let err = DirectedGraphInsertionError::SourceNodeDoesNotExist {
+///     node_id: "A".to_string(),
+/// };
+///
+/// assert!(err.to_string().contains("Source node 'A' does not exist"));
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DirectedGraphInsertionError {
+    /// The directed edge from `from` to `to` already exists.
+    ///
+    /// The graph remains unchanged when this error is returned.
+    EdgeAlreadyExists {
+        /// ID of the source node whose outgoing edge already exists.
+        from: String,
+        /// ID of the destination node already targeted by `from`.
+        to: String,
+    },
 
-impl DirectedGraphInsertionError {
-    /// Creates a new insertion error with a descriptive message.
+    /// The source node does not exist in the graph yet.
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
-    ///
-    /// let err = DirectedGraphInsertionError::new("duplicate edge".to_string());
-    /// assert_eq!(err.to_string(), "duplicate edge");
-    /// ```
-    pub fn new(message: String) -> Self {
-        DirectedGraphInsertionError { message }
-    }
+    /// Insert the source node before retrying the edge insertion.
+    SourceNodeDoesNotExist {
+        /// ID of the missing source node.
+        node_id: String,
+    },
 
-    /// Logs the error message using the crate logger.
+    /// The destination node does not exist in the graph yet.
     ///
-    /// # Example
+    /// Insert the destination node before retrying the edge insertion.
+    DestinationNodeDoesNotExist {
+        /// ID of the missing destination node.
+        node_id: String,
+    },
+
+    /// The caller omitted a required edge weight.
     ///
-    /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
-    ///
-    /// let err = DirectedGraphInsertionError::new("duplicate edge".to_string());
-    /// err.display();
-    /// ```
-    pub fn display(&self) {
-        info!("{}", self.message)
-    }
+    /// The `expected_weight` text is intended for diagnostics and usually names
+    /// the concrete weight type expected by the graph.
+    MissingEdgeWeight {
+        /// Human-readable description of the expected weight type.
+        expected_weight: String,
+    },
 }
 
 impl Display for DirectedGraphInsertionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
+        match self {
+            DirectedGraphInsertionError::EdgeAlreadyExists { from, to } => {
+                write!(f, "Edge from '{}' to '{}' already exists!", from, to)
+            }
+            DirectedGraphInsertionError::SourceNodeDoesNotExist { node_id } => {
+                write!(f, "Source node '{}' does not exist in the graph!", node_id)
+            }
+            DirectedGraphInsertionError::DestinationNodeDoesNotExist { node_id } => {
+                write!(
+                    f,
+                    "Destination node '{}' does not exist in the graph!",
+                    node_id
+                )
+            }
+            DirectedGraphInsertionError::MissingEdgeWeight { expected_weight } => {
+                write!(f, "Missing edge weight: {}", expected_weight)
+            }
+        }
     }
 }
 
