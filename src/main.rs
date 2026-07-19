@@ -75,7 +75,7 @@ use shortest_path_finder::{
 // algorithm. The user can then call this method after calling the 'shortest_path' method to see the
 // visualization of the algorithm's execution.
 
-// TODO: (Refactor) Refactor code -> apply best practices, apply better error handling -> for each file indiviually, improve the
+// TODO: (Refactor) Refactor code -> apply best practices -> for each file indiviually, improve the
 // visibility of the code + modulization
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
