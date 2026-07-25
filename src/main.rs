@@ -77,6 +77,12 @@ use shortest_path_finder::{
 
 // TODO: (Refactor) Refactor code -> apply best practices -> for each file indiviually, improve the
 // visibility of the code + modulization
+// - flatten import statements for the whole project with `use` in the the lib.rs file (code
+//   elements in modules for the main functionality of the project) -> should be available in the
+//   root -> also apply for all modules
+// - export optional modules for the core functionality of the project (e.g. algorithms, data_input,
+//   cmd_line, error) in the lib.rs with 'pub mod' -> longer import path with granular namespacing
+// - private modules should stay private 'mod'
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
