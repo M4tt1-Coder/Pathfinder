@@ -9,9 +9,9 @@
 //!
 //! # Intended Scope
 //!
-//! Functions in this module are public for testability and composability, but
-//! they are designed as algorithm-internal building blocks rather than stable
-//! high-level APIs.
+//! These helpers are intentionally kept internal to the A* implementation.
+//! They exist to support path reconstruction and cost initialization without
+//! forming part of the crate's public API surface.
 //!
 //! # Notes
 //!
@@ -19,22 +19,6 @@
 //!   "infinite" sentinel for all nodes except the start.
 //! - `determine_path_cost` expects the destination to be the final entry in the
 //!   visited list.
-//!
-//! # Usage Example
-//!
-//! ```rust
-//! use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
-//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
-//!
-//! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-//! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
-//! let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
-//! let costs = prepare_g_cost_map(&graph, "A");
-//!
-//! assert_eq!(costs["A"], 0.0_f32);
-//! assert_eq!(costs["B"], f32::MAX);
-//! ```
 
 use std::collections::HashMap;
 
@@ -67,22 +51,6 @@ use crate::{
 /// `ND::max_value()` is treated as an "infinite" placeholder. Ensure the
 /// numeric datatype uses a large finite value so later comparisons behave as
 /// expected.
-///
-/// # Examples
-///
-/// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::utils::prepare_g_cost_map;
-/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
-///
-/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-/// let b = TwoDimensionalNode::new(2, 0, "B".to_string()).unwrap();
-/// let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
-///
-/// let g_costs = prepare_g_cost_map(&graph, "A");
-/// assert_eq!(g_costs["A"], 0.0_f32);
-/// assert_eq!(g_costs["B"], f32::MAX);
-/// ```
 pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
     graph: &G,
     start_node_id: &str,
@@ -132,31 +100,6 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 ///
 /// The predecessor chain is followed until no predecessor is found, so the
 /// visited list must include every node referenced by `predecessor` fields.
-///
-/// # Examples
-///
-/// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::{
-///     a_star::AStarQueueElement,
-///     utils::determine_path_cost,
-/// };
-/// use shortest_path_finder::graphs::graph::GraphNode;
-/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
-///
-/// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
-/// let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
-///
-/// let visited = vec![
-///     AStarQueueElement::new(&a, 0_i32, 0_i32, None),
-///     AStarQueueElement::new(&b, 5_i32, 0_i32, Some(&a)),
-/// ];
-///
-/// let (path, cost) = determine_path_cost(visited).unwrap();
-/// assert_eq!(cost, 5_i32);
-/// assert_eq!(path.len(), 2);
-/// assert_eq!(path[0].get_id(), "A");
-/// assert_eq!(path[1].get_id(), "B");
-/// ```
 pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
     visited_nodes: Vec<AStarQueueElement<WD, N>>,
 ) -> Result<(Vec<N>, WD), PathReconstructionError> {
@@ -193,4 +136,44 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
     }
 
     Ok((path, distance))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        algorithms::a_star_algorithm::a_star::AStarQueueElement,
+        graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
+        nodes::two_dimensional_node::TwoDimensionalNode,
+    };
+
+    #[test]
+    fn prepare_g_cost_map_assigns_zero_to_start_and_max_to_other_nodes() {
+        let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+        let b = TwoDimensionalNode::new(2, 0, "B".to_string()).unwrap();
+        let graph = TwoDimensionalCoordinateGraph::new(vec![a.clone(), b]);
+
+        let g_costs = prepare_g_cost_map(&graph, "A");
+
+        assert_eq!(g_costs["A"], 0.0_f32);
+        assert_eq!(g_costs["B"], f32::MAX);
+    }
+
+    #[test]
+    fn determine_path_cost_reconstructs_the_full_path() {
+        let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
+        let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
+
+        let visited = vec![
+            AStarQueueElement::new(&a, 0_i32, 0_i32, None),
+            AStarQueueElement::new(&b, 5_i32, 0_i32, Some(&a)),
+        ];
+
+        let (path, cost) = determine_path_cost(visited).unwrap();
+
+        assert_eq!(cost, 5_i32);
+        assert_eq!(path.len(), 2);
+        assert_eq!(path[0].get_id(), "A");
+        assert_eq!(path[1].get_id(), "B");
+    }
 }

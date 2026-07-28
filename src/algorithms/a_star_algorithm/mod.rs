@@ -10,8 +10,8 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-//! use shortest_path_finder::algorithms::algorithm::SearchResult;
+//! use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+//! use shortest_path_finder::algorithms::SearchResult;
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -20,5 +20,14 @@
 //! assert_eq!(result.get_path().len(), 2);
 //! ```
 
-pub mod a_star;
-pub mod utils;
+mod a_star;
+
+// ~ flatten module paths ~
+
+pub use a_star::*;
+
+// ~ public modules ~
+
+// ~ private modules ~
+
+mod utils;

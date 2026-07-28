@@ -4,7 +4,7 @@
 //! validate defaults, optional flags, and required field handling.
 
 use shortest_path_finder::{
-    algorithms::algorithm::Algorithms,
+    algorithms::Algorithms,
     cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
     error::config_error::ConfigParseError,
 };

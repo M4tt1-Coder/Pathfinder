@@ -29,7 +29,7 @@
 //! # Example
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::Algorithms;
+//! use shortest_path_finder::algorithms::Algorithms;
 //! use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
 //!
 //! let args = vec![
@@ -61,7 +61,7 @@
 
 use std::{error::Error as StdError, fmt};
 
-use crate::{algorithms::algorithm::Algorithms, error::config_error::ConfigParseError};
+use crate::{algorithms::Algorithms, error::config_error::ConfigParseError};
 
 /// Default file path used when `--graph-file` is not provided.
 const DEFAULT_GRAPH_FILE: &str = "graph.txt";
@@ -467,7 +467,7 @@ impl fmt::Display for InputOrigin {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::algorithm::Algorithms;
+/// use shortest_path_finder::algorithms::Algorithms;
 /// use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
 ///
 /// let args = vec![
@@ -579,7 +579,7 @@ impl AppConfig {
     /// Successful parsing with defaults:
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::Algorithms;
+    /// use shortest_path_finder::algorithms::Algorithms;
     /// use shortest_path_finder::cmd_line::app_config::{AppConfig, InputOrigin};
     ///
     /// let args = vec![

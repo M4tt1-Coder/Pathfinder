@@ -35,11 +35,7 @@ use std::{
 
 use divan::{Bencher, bench};
 use shortest_path_finder::{
-    algorithms::{
-        a_star_algorithm::a_star::AStar,
-        algorithm::{Algorithm, SearchResult},
-        dijkstra::DijkstraAlgorithm,
-    },
+    algorithms::{Algorithm, SearchResult, a_star_algorithm::AStar, dijkstra::DijkstraAlgorithm},
     graphs::graph::{Graph, GraphNode, GraphWeight},
     nodes::two_dimensional_node::TwoDimensionalNode,
     weight_types::numeric_datatype::NumericDatatype,

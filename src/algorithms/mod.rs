@@ -11,7 +11,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
@@ -29,6 +29,15 @@
 //! assert_eq!(result.get_total_distance(), 4);
 //! ```
 
+mod algorithm;
+
+// ~ flatten module paths ~
+
+pub use algorithm::*;
+
+// ~ public modules ~
+
 pub mod a_star_algorithm;
-pub mod algorithm;
 pub mod dijkstra;
+
+// ~ private modules ~

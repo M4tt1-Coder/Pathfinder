@@ -13,7 +13,7 @@
 //! Convert CLI/user text input to an algorithm selection:
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::Algorithms;
+//! use shortest_path_finder::algorithms::Algorithms;
 //!
 //! let algorithm = Algorithms::get_from_string("Dijkstra");
 //! assert!(matches!(algorithm, Algorithms::Dijkstra));
@@ -22,7 +22,7 @@
 //! Consume a search result produced by a concrete algorithm implementation:
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::SearchResult;
+//! use shortest_path_finder::algorithms::SearchResult;
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
@@ -105,7 +105,7 @@ impl Algorithms {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::Algorithms;
+    /// use shortest_path_finder::algorithms::Algorithms;
     ///
     /// assert!(matches!(Algorithms::get_from_string("Dijkstra"), Algorithms::Dijkstra));
     /// assert!(matches!(Algorithms::get_from_string("AStar"), Algorithms::AStar));
@@ -160,7 +160,7 @@ pub trait Algorithm {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
     /// use shortest_path_finder::graphs::graph::Graph;
@@ -216,7 +216,7 @@ pub trait SearchResult: Display + Debug {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::SearchResult;
+    /// use shortest_path_finder::algorithms::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
     /// use shortest_path_finder::graphs::graph::GraphNode;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
@@ -243,7 +243,7 @@ pub trait SearchResult: Display + Debug {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::algorithm::SearchResult;
+    /// use shortest_path_finder::algorithms::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
     /// use shortest_path_finder::graphs::graph::GraphNode;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;

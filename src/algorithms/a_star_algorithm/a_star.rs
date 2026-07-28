@@ -51,8 +51,8 @@
 //! # Usage Example
 //!
 //! ```no_run
-//! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::a_star_algorithm::AStar;
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 //!
@@ -115,7 +115,7 @@ use crate::{
 /// # Example
 ///
 /// ```no_run
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+/// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
 /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
@@ -171,8 +171,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
+    /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
@@ -357,7 +357,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
     /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
     ///
     /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![]);
@@ -447,8 +447,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 /// # Examples
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-/// use shortest_path_finder::algorithms::algorithm::SearchResult;
+/// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+/// use shortest_path_finder::algorithms::SearchResult;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -492,7 +492,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let path = vec![
@@ -503,7 +503,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// ```
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
@@ -586,7 +586,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarQueueElement;
+/// use shortest_path_finder::algorithms::a_star_algorithm::AStarQueueElement;
 /// use shortest_path_finder::graphs::graph::GraphNode;
 /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 ///

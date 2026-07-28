@@ -68,7 +68,7 @@
 //! # Example
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
@@ -98,7 +98,7 @@ use std::{
 };
 
 use crate::{
-    algorithms::algorithm::{Algorithm, SearchResult},
+    algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
         DijkstraPathReconstructionError, EdgeWeightViolation, MissingNodeContext,
     },
@@ -184,7 +184,7 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+/// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 /// use shortest_path_finder::graphs::directed::DirectedGraph;
 /// use shortest_path_finder::graphs::graph::Graph;
@@ -257,7 +257,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+    /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graphs::directed::DirectedGraph;
     /// use shortest_path_finder::graphs::graph::Graph;

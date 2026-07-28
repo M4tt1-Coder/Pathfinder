@@ -38,7 +38,7 @@
 
 use shortest_path_finder::{
     algorithms::{
-        algorithm::{Algorithm, SearchResult},
+        Algorithm, SearchResult,
         dijkstra::{DijkstraAlgorithm, DijkstraError},
     },
     error::algorithm_error::{

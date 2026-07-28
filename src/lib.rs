@@ -61,7 +61,7 @@
 //! # Quick Start
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graphs::directed::DirectedGraph;
 //! use shortest_path_finder::graphs::graph::Graph;
