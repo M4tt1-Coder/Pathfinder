@@ -4,8 +4,8 @@
 //!
 //! This crate provides reusable building blocks for shortest-path workflows:
 //! - graph abstractions and concrete graph implementations,
-//! - file-based graph parsing,
-//! - command-line configuration models,
+//! - file-based graph parsing and its CLI configuration boundary,
+//! - planned command-line graph input plumbing,
 //! - shortest-path algorithms (currently Dijkstra and A* modules).
 //!
 //! The binary target wires these modules together, but consumers can use the
@@ -16,8 +16,8 @@
 //! - [`algorithms`]: algorithm traits and concrete implementations.
 //! - [`graphs`]: graph traits and graph data structures.
 //! - [`nodes`]: node models used by graph implementations.
-//! - [`data_input`]: graph input parsing (currently file-based).
-//! - [`cmd_line`]: CLI configuration parsing helpers.
+//! - [`data_input`]: graph-input boundaries, including file parsing and the
+//!   planned command-line input namespace.
 //! - [`error`]: parse-time, CLI configuration, and algorithm execution errors.
 //! - [`weight_types`] and [`numeric_datatypes`]: numeric traits and impls.
 //!
@@ -47,7 +47,7 @@
 //! File-input failures are typically wrapped before they reach application code:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
@@ -80,7 +80,6 @@
 //! ```
 
 pub mod algorithms;
-pub mod cmd_line;
 pub mod data_input;
 pub mod error;
 pub mod graphs;

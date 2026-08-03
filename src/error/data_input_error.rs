@@ -23,7 +23,7 @@
 //! Creating a parse failure from a file-input error:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
@@ -38,7 +38,7 @@
 //! Converting via [`From<FileInputError>`]:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //!
 //! let io_err = FileInputError::Io {
@@ -51,7 +51,7 @@
 
 use std::error::Error;
 
-use crate::data_input::file_input::FileInputError;
+use crate::data_input::file::FileInputError;
 
 /// Represents errors that can occur during data input operations.
 ///
@@ -62,7 +62,7 @@ use crate::data_input::file_input::FileInputError;
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputError;
+/// use shortest_path_finder::data_input::file::FileInputError;
 /// use shortest_path_finder::error::data_input_error::DataInputError;
 /// use shortest_path_finder::error::parse_error::ParseError;
 ///

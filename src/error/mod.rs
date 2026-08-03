@@ -43,7 +43,7 @@
 //! Wrapping a file-input failure for the CLI:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
+//! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::app_error::AppError;
 //! use shortest_path_finder::error::data_input_error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;

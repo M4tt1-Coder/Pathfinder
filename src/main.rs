@@ -57,8 +57,8 @@ use log::error;
 use shortest_path_finder::{
     AppError,
     algorithms::{Algorithm, Algorithms, a_star_algorithm::AStar, dijkstra::DijkstraAlgorithm},
-    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
-    data_input::file_input::{
+    data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
+    data_input::file::{
         FileInputGraphResult::{DirectedGraph, TwoDimensionalGraph, UndirectedGraph},
         retrieve_graph_data_from_file,
     },
@@ -80,6 +80,7 @@ use shortest_path_finder::{
 //   cmd_line, error) in the lib.rs with 'pub mod' -> longer import path with granular namespacing
 // - private modules should stay private 'mod'
 // => use 'pub(...)' and new patterns for scoping
+// => update the documentation accordingly at the end of the refactoring process
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This

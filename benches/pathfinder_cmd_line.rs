@@ -15,7 +15,7 @@
 
 use divan::{Bencher, bench};
 use shortest_path_finder::{
-    cmd_line::app_config::{AppConfig, InputOrigin},
+    data_input::file::cli_config::{AppConfig, InputOrigin},
     error::config_error::ConfigParseError,
 };
 

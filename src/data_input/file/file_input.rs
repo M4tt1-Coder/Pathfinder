@@ -56,7 +56,7 @@
 //! Runnable doctest with a temporary graph file:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::{
+//! use shortest_path_finder::data_input::file::{
 //!     retrieve_graph_data_from_file, FileInputGraphResult,
 //! };
 //! use std::{
@@ -82,7 +82,7 @@
 //! Repository fixture example:
 //!
 //! ```no_run
-//! use shortest_path_finder::data_input::file_input::retrieve_graph_data_from_file;
+//! use shortest_path_finder::data_input::file::retrieve_graph_data_from_file;
 //!
 //! let parsed = retrieve_graph_data_from_file("test_files/directed_graph.txt");
 //! assert!(parsed.is_ok());
@@ -206,7 +206,7 @@ struct LineSyntaxRegexes {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputGraphResult;
+/// use shortest_path_finder::data_input::file::FileInputGraphResult;
 ///
 /// fn graph_kind(result: &FileInputGraphResult) -> &'static str {
 ///     match result {
@@ -244,7 +244,7 @@ pub enum FileInputGraphResult {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputError;
+/// use shortest_path_finder::data_input::file::FileInputError;
 /// use shortest_path_finder::error::parse_error::ParseError;
 ///
 /// let parse_error = FileInputError::Parse {
@@ -333,7 +333,7 @@ impl Error for FileInputError {
 /// Successful parsing with a temporary file:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file, FileInputGraphResult,
 /// };
 /// use std::{
@@ -358,7 +358,7 @@ impl Error for FileInputError {
 /// I/O failure classification:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };
@@ -373,7 +373,7 @@ impl Error for FileInputError {
 /// Parse failure classification:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };

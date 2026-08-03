@@ -7,7 +7,7 @@
 use std::io::Write;
 
 use shortest_path_finder::{
-    data_input::file_input::{FileInputGraphResult, retrieve_graph_data_from_file},
+    data_input::file::{FileInputGraphResult, retrieve_graph_data_from_file},
     graphs::graph::Graph,
 };
 use tempfile::NamedTempFile;

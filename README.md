@@ -283,7 +283,7 @@ println!("distance: {}", result.get_total_distance());
 ```rust
 use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
 use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-use shortest_path_finder::data_input::file_input::{
+use shortest_path_finder::data_input::file::{
     retrieve_graph_data_from_file, FileInputGraphResult,
 };
 
@@ -456,7 +456,7 @@ File-input failures are wrapped at the loading boundary. [`FileInputError::Parse
 carries the source file path alongside the underlying [`ParseError`]:
 
 ```rust
-use shortest_path_finder::data_input::file_input::FileInputError;
+use shortest_path_finder::data_input::file::FileInputError;
 use shortest_path_finder::error::data_input_error::DataInputError;
 use shortest_path_finder::error::parse_error::ParseError;
 

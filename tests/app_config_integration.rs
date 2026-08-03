@@ -5,7 +5,7 @@
 
 use shortest_path_finder::{
     algorithms::Algorithms,
-    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
+    data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
     error::config_error::ConfigParseError,
 };
 

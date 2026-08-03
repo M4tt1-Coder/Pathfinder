@@ -1,7 +1,7 @@
 //! Global error types for command-line configuration parsing.
 //!
 //! This module defines [`ConfigParseError`], a structured error enum used by
-//! CLI argument parsing in [`crate::cmd_line::app_config`].
+//! CLI argument parsing in [`crate::data_input::file::cli_config`].
 //!
 //! # Example
 //!
