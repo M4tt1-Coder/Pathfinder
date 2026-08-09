@@ -39,7 +39,7 @@
 - [Library usage (Rust)](#library-usage-rust)
 - [Input format](#input-format)
 - [Challenges and roadmap](#challenges-and-roadmap)
-- [Dev workflow](#dev-workflow)
+- [Development workflow](#development-workflow)
 - [Advanced details](#advanced-details)
 
 ---
@@ -213,10 +213,11 @@ Quality and automation:
 ## Project structure
 
 - src/main.rs: CLI entrypoint and runtime wiring
-- src/cmd_line/app_config.rs: argument parsing and defaults
-- src/data_input/file_input.rs: graph-file parsing and validation
+- src/data_input/file/cli_config/config.rs: CLI argument parsing and defaults
+- src/data_input/file/file_input.rs: graph-file parsing and validation
 - src/algorithms/: algorithm traits and implementations
 - src/graphs/: graph trait and concrete graph types
+- src/error/: layered errors for parsing, configuration, and algorithm execution
 - benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
 ## Library usage (Rust)

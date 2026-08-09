@@ -24,7 +24,7 @@ use std::collections::HashMap;
 
 use crate::{
     algorithms::a_star_algorithm::a_star::AStarQueueElement,
-    error::algorithm_error::PathReconstructionError,
+    error::algorithm_error::a_star_error::PathReconstructionError,
     graphs::graph::{Graph, GraphNode},
     nodes::trait_decl::coordinates_node::CoordinatesNode,
     weight_types::numeric_datatype::NumericDatatype,

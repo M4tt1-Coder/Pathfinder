@@ -6,7 +6,7 @@
 //! - [`AStar`]: the algorithm engine,
 //! - [`AStarSearchResult`]: the output type returned by successful searches,
 //! - [`AStarQueueElement`]: queue payload used by the internal priority queue,
-//! - [`AStarExecutionError`]: execution error type.
+//! - [`AStarError`]: execution error type.
 //!
 //! # Algorithm Model
 //!
@@ -42,7 +42,7 @@
 //! # Error Handling
 //!
 //! - Runtime validation and bookkeeping failures are surfaced as
-//!   [`AStarExecutionError`].
+//!   [`AStarError`].
 //! - In the CLI, these errors are wrapped in
 //!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
 //!   mapped to exit codes via
@@ -79,13 +79,12 @@ use std::{
 
 use log::warn;
 
-pub use crate::error::algorithm_error::AStarExecutionError;
-
 use crate::{
     algorithms::{
         a_star_algorithm::utils::{determine_path_cost, prepare_g_cost_map},
         algorithm::{Algorithm, SearchResult},
     },
+    error::algorithm_error::AStarError,
     graphs::graph::Graph,
     nodes::trait_decl::{
         coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
@@ -110,7 +109,7 @@ use crate::{
 /// # Error Handling
 ///
 /// Use [`AStar::shortest_path`] to surface validation, heuristic, or
-/// reconstruction failures as [`AStarExecutionError`].
+/// reconstruction failures as [`AStarError`].
 ///
 /// # Example
 ///
@@ -142,7 +141,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
     type NodeOfUsedGraph = N;
 
-    type ExecutionError = AStarExecutionError;
+    type ExecutionError = AStarError;
 
     /// Computes a shortest path between two node IDs using A*.
     ///
@@ -154,7 +153,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Returns
     ///
     /// - `Ok(AStarSearchResult<...>)` when a route can be produced.
-    /// - `Err(AStarExecutionError)` when graph constraints are violated or
+    /// - `Err(AStarError)` when graph constraints are violated or
     ///   required nodes cannot be found.
     ///
     /// # Errors
@@ -333,8 +332,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
         // the last element in the "closed_queue" is the destination node, so we can reconstruct
         // the path from the destination node to the start node by following the predecessors
-        let (path, distance) =
-            determine_path_cost(closed_queue).map_err(AStarExecutionError::from)?;
+        let (path, distance) = determine_path_cost(closed_queue).map_err(AStarError::from)?;
 
         let result = AStarSearchResult::new(distance, path)?;
         Ok(result)
@@ -386,13 +384,13 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Returns
     ///
     /// - `Ok(estimate)` with the heuristic value.
-    /// - `Err(AStarExecutionError)` if the heuristic yields a non-finite value.
+    /// - `Err(AStarError)` if the heuristic yields a non-finite value.
     ///
     /// # Notes
     ///
     /// This helper is private and is called during `shortest_path` queue
     /// expansion to compute the heuristic term.
-    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarExecutionError> {
+    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarError> {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();
         let dx2 = start.get_x().to_f32() - goal.get_x().to_f32();
@@ -402,7 +400,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
         let cross = (dx1 * dy2 - dx2 * dy1).abs();
 
         if !cross.is_finite() {
-            return Err(AStarExecutionError::InvalidHeuristic {
+            return Err(AStarError::InvalidHeuristic {
                 start: start.get_id().to_string(),
                 goal: goal.get_id().to_string(),
                 current: current.get_id().to_string(),
@@ -412,7 +410,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
         let adjusted = cross.adjust_for_heuristic();
         if !adjusted.is_finite() {
-            return Err(AStarExecutionError::InvalidHeuristic {
+            return Err(AStarError::InvalidHeuristic {
                 start: start.get_id().to_string(),
                 goal: goal.get_id().to_string(),
                 current: current.get_id().to_string(),
@@ -487,7 +485,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Returns
     ///
     /// - `Ok(Self)` when inputs are valid.
-    /// - `Err(AStarExecutionError)` when one or more rules are violated.
+    /// - `Err(AStarError)` when one or more rules are violated.
     ///
     /// # Examples
     ///
@@ -509,17 +507,17 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
     /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
     /// ```
-    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, AStarExecutionError> {
+    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, AStarError> {
         // path needs to have at least 1 node
         if path.is_empty() {
-            return Err(AStarExecutionError::InvalidSearchResult {
+            return Err(AStarError::InvalidSearchResult {
                 reason: "path must contain at least one node".to_string(),
             });
         }
 
         // the distance must not be negative
         if distance < WD::zero() {
-            return Err(AStarExecutionError::InvalidSearchResult {
+            return Err(AStarError::InvalidSearchResult {
                 reason: "distance cannot be negative".to_string(),
             });
         }

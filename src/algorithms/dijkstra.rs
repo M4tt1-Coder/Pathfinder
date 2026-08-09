@@ -99,8 +99,8 @@ use std::{
 
 use crate::{
     algorithms::{Algorithm, SearchResult},
-    error::algorithm_error::{
-        DijkstraPathReconstructionError, EdgeWeightViolation, MissingNodeContext,
+    error::algorithm_error::dijkstra_error::{
+        EdgeWeightViolation, MissingNodeContext, PathReconstructionError,
     },
     graphs::graph::{Graph, GraphNode, GraphWeight},
 };
@@ -322,7 +322,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             distances
                 .get(end.get_id())
                 .ok_or_else(|| DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                    source: PathReconstructionError::MissingDistanceEntry {
                         node_id: end.get_id().to_string(),
                     },
                 })?;
@@ -343,7 +343,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         loop {
             if remaining_steps == 0 {
                 return Err(DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::PredecessorLoop {
+                    source: PathReconstructionError::PredecessorLoop {
                         start: start_node_id.to_string(),
                         end: end_node_id.to_string(),
                         current: current_node.get_id().to_string(),
@@ -359,7 +359,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
             let distance = distances.get(current_node.get_id()).ok_or_else(|| {
                 DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                    source: PathReconstructionError::MissingDistanceEntry {
                         node_id: current_node.get_id().to_string(),
                     },
                 }
@@ -367,7 +367,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
             let prev = distance.previous_node.as_ref().ok_or_else(|| {
                 DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingPredecessor {
+                    source: PathReconstructionError::MissingPredecessor {
                         node_id: current_node.get_id().to_string(),
                     },
                 }

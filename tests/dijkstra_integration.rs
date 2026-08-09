@@ -42,8 +42,8 @@ use shortest_path_finder::{
         dijkstra::{DijkstraAlgorithm, DijkstraError},
     },
     error::algorithm_error::{
-        AlgorithmErrorKind, DijkstraPathReconstructionError, EdgeWeightViolation,
-        MissingNodeContext,
+        AlgorithmErrorKind,
+        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
     graphs::{
         directed::DirectedGraph,
@@ -231,7 +231,7 @@ fn dijkstra_error_kind_mapping_is_stable() {
         edge_weight: "1".to_string(),
     };
     let reconstruction = DijkstraError::PathReconstruction {
-        source: DijkstraPathReconstructionError::MissingPredecessor {
+        source: PathReconstructionError::MissingPredecessor {
             node_id: "X".to_string(),
         },
     };
