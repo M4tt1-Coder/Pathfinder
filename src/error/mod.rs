@@ -64,10 +64,10 @@ pub use cli_parse_error::CLIParseError;
 
 // ~ public modules ~
 
+pub mod algorithm_error;
 pub mod app_error;
 
 // ~ private modules ~
 
-pub mod algorithm_error;
 pub mod data_input_error;
 pub mod parse_error;
