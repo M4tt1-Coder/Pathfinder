@@ -12,7 +12,7 @@
 //!
 //! - Recognize supported CLI flags and sentinel tokens.
 //! - Collect raw flag/value pairs with stable duplicate detection.
-//! - Produce structured [`crate::error::config_error::ConfigParseError`] values.
+//! - Produce structured [`crate::error::CLIParseError`] values.
 //!
 //! # Notes
 //!
@@ -20,7 +20,7 @@
 //! [`crate::data_input::file::cli_config::AppConfig`] instead of depending on
 //! these helpers directly.
 
-use crate::error::config_error::ConfigParseError;
+use crate::error::CLIParseError;
 
 /// Default file path used when `--graph-file` is not provided.
 pub const DEFAULT_GRAPH_FILE: &str = "graph.txt";
@@ -126,15 +126,15 @@ impl ParsedCliValues {
     ///
     /// # Errors
     ///
-    /// Returns [`ConfigParseError::DuplicateFlag`] when `slot` is already set.
+    /// Returns [`CLIParseError::DuplicateFlag`] when `slot` is already set.
     fn set_value(
         slot: &mut Option<(usize, String)>,
         flag: KnownFlag,
         index: usize,
         value: &str,
-    ) -> Result<(), ConfigParseError> {
+    ) -> Result<(), CLIParseError> {
         if let Some((first_index, _)) = slot {
-            return Err(ConfigParseError::DuplicateFlag {
+            return Err(CLIParseError::DuplicateFlag {
                 flag: flag.as_str().to_string(),
                 first_index: *first_index,
                 duplicate_index: index,
@@ -156,12 +156,7 @@ impl ParsedCliValues {
     /// # Errors
     ///
     /// Propagates duplicate-flag errors from [`ParsedCliValues::set_value`].
-    fn insert(
-        &mut self,
-        flag: KnownFlag,
-        index: usize,
-        value: &str,
-    ) -> Result<(), ConfigParseError> {
+    fn insert(&mut self, flag: KnownFlag, index: usize, value: &str) -> Result<(), CLIParseError> {
         match flag {
             KnownFlag::GraphFile => Self::set_value(&mut self.graph_file, flag, index, value),
             KnownFlag::Start => Self::set_value(&mut self.start, flag, index, value),
@@ -227,12 +222,12 @@ pub enum CliParseOutcome {
 /// # Errors
 ///
 /// Returns:
-/// - [`ConfigParseError::UnexpectedArgument`] for non-flag tokens,
-/// - [`ConfigParseError::UnknownFlag`] for unsupported switches,
-/// - [`ConfigParseError::MissingValueForFlag`] when a flag has no usable value,
-/// - [`ConfigParseError::DuplicateFlag`] when a known flag appears multiple times,
-/// - [`ConfigParseError::UnexpectedEndOfOptions`] when `--` appears where a flag is expected.
-pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseError> {
+/// - [`CLIParseError::UnexpectedArgument`] for non-flag tokens,
+/// - [`CLIParseError::UnknownFlag`] for unsupported switches,
+/// - [`CLIParseError::MissingValueForFlag`] when a flag has no usable value,
+/// - [`CLIParseError::DuplicateFlag`] when a known flag appears multiple times,
+/// - [`CLIParseError::UnexpectedEndOfOptions`] when `--` appears where a flag is expected.
+pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, CLIParseError> {
     let mut parsed = ParsedCliValues::default();
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     // Skip argv[0] when it looks like the executable name.
@@ -257,14 +252,14 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseE
 
         // A stray `--` is invalid outside a value-escape sequence.
         if token == END_OF_OPTIONS {
-            return Err(ConfigParseError::UnexpectedEndOfOptions {
+            return Err(CLIParseError::UnexpectedEndOfOptions {
                 index: display_index,
             });
         }
 
         // Validate that the current token is a flag.
         if !token.starts_with("--") {
-            return Err(ConfigParseError::UnexpectedArgument {
+            return Err(CLIParseError::UnexpectedArgument {
                 value: token.clone(),
                 index: display_index,
             });
@@ -273,7 +268,7 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseE
         let flag = match KnownFlag::from_token(token) {
             Some(flag) => flag,
             None => {
-                return Err(ConfigParseError::UnknownFlag {
+                return Err(CLIParseError::UnknownFlag {
                     flag: token.clone(),
                     index: display_index,
                 });
@@ -290,7 +285,7 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseE
                 let escaped_value = match escaped_value {
                     Some(value) if !value.is_empty() => value,
                     _ => {
-                        return Err(ConfigParseError::MissingValueForFlag {
+                        return Err(CLIParseError::MissingValueForFlag {
                             flag: flag.as_str().to_string(),
                             index: display_index,
                         });
@@ -300,7 +295,7 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, ConfigParseE
             }
             Some(value) if !value.is_empty() && !value.starts_with("--") => (value, index + 2),
             _ => {
-                return Err(ConfigParseError::MissingValueForFlag {
+                return Err(CLIParseError::MissingValueForFlag {
                     flag: flag.as_str().to_string(),
                     index: display_index,
                 });

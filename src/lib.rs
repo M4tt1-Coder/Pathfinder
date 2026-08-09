@@ -26,7 +26,7 @@
 //! Errors are layered by boundary:
 //! - [`error::parse_error::ParseError`] for line-level graph syntax failures.
 //! - [`error::data_input_error::DataInputError`] for file loading and parsing.
-//! - [`error::config_error::ConfigParseError`] for CLI flag validation.
+//! - [`error::CLIParseError`] for CLI flag validation.
 //! - [`error::algorithm_error::AlgorithmError`] for shortest-path execution.
 //! - [`AppError`] as the binary-level wrapper with exit-code mapping.
 //!

@@ -7,7 +7,7 @@
 //!
 //! - [`parse_error`]: low-level graph text parsing failures.
 //! - [`data_input_error`]: unified graph-loading failures (file input today).
-//! - [`config_error`]: CLI argument and configuration parsing failures.
+//! - [`cli_parse_error`]: CLI argument and configuration parsing failures.
 //! - [`algorithm_error`]: algorithm execution and path reconstruction failures.
 //! - [`app_error`]: top-level CLI wrapper with exit-code mapping.
 //!
@@ -17,7 +17,7 @@
 //! |--------|--------------|----------------|
 //! | [`parse_error`] | [`parse_error::ParseError`] | Line-level graph syntax validation |
 //! | [`data_input_error`] | [`data_input_error::DataInputError`] | File/graph loading boundary |
-//! | [`config_error`] | [`config_error::ConfigParseError`] | CLI flag parsing |
+//! | [`cli_parse_error`] | [`CLIParseError`] | CLI flag parsing |
 //! | [`algorithm_error`] | [`algorithm_error::AlgorithmError`] | Shortest-path runtime failures |
 //! | [`app_error`] | [`AppError`] | Binary exit codes and user messages |
 //!
@@ -55,14 +55,19 @@
 //! assert_eq!(err.exit_code(), 1);
 //! ```
 
-pub mod app_error;
+mod cli_parse_error;
 
-pub mod config_error;
-
-pub mod parse_error;
-
-pub mod algorithm_error;
-
-pub mod data_input_error;
+// ~ flatten module paths ~
 
 pub use app_error::AppError;
+pub use cli_parse_error::CLIParseError;
+
+// ~ public modules ~
+
+pub mod app_error;
+
+// ~ private modules ~
+
+pub mod algorithm_error;
+pub mod data_input_error;
+pub mod parse_error;

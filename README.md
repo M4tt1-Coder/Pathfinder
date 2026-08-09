@@ -448,7 +448,7 @@ Errors are layered by boundary:
 | --------- | ------------------ | --------------------------------------------------- |
 | Parse     | `ParseError`       | Line-level graph syntax validation                  |
 | Input     | `DataInputError`   | File I/O and graph loading (`FileInputError` today) |
-| Config    | `ConfigParseError` | CLI flag parsing and validation                     |
+| Config    | `CLIParseError` | CLI flag parsing and validation                     |
 | Algorithm | `AlgorithmError`   | Shortest-path execution failures                    |
 | CLI       | `AppError`         | Binary wrapper with `exit_code()` mapping           |
 
@@ -490,9 +490,9 @@ The CLI collapses configuration, input, and algorithm failures into `AppError`:
 
 ```rust
 use shortest_path_finder::error::app_error::AppError;
-use shortest_path_finder::error::config_error::ConfigParseError;
+use shortest_path_finder::error::CLIParseError;
 
-let err = AppError::from(ConfigParseError::MissingRequiredFlag { flag: "--start" });
+let err = AppError::from(CLIParseError::MissingRequiredFlag { flag: "--start" });
 assert_eq!(err.exit_code(), 1);
 ```
 

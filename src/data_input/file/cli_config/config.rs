@@ -24,7 +24,7 @@
 //!   origin values from `--algo` (`file` or `cmd-line`).
 //! - Use `--` between a flag and its value to allow values that start with `--`.
 //! - Unknown flags, duplicate flags, missing values, and unexpected tokens are
-//!   rejected with structured [`ConfigParseError`] values.
+//!   rejected with structured [`CLIParseError`] values.
 //!
 //! # Example
 //!
@@ -67,7 +67,7 @@ use crate::{
         APP_NAME, CliParseOutcome, DEFAULT_GRAPH_FILE, ParsedCliValues, VALID_ALGORITHMS,
         VALID_ORIGINS, expected_values, parse_cli_values,
     },
-    error::config_error::ConfigParseError,
+    error::CLIParseError,
 };
 
 /// Declares where graph data should be read from.
@@ -271,7 +271,7 @@ impl AppConfig {
     /// - `Ok(AppConfigOutcome::Config)` when required information is present.
     /// - `Ok(AppConfigOutcome::HelpRequested)` when help flags are present.
     /// - `Ok(AppConfigOutcome::VersionRequested)` when version flags are present.
-    /// - `Err(ConfigParseError)` when parsing or validation fails.
+    /// - `Err(CLIParseError)` when parsing or validation fails.
     ///
     /// # Errors
     ///
@@ -284,14 +284,14 @@ impl AppConfig {
     /// - or unexpected non-flag tokens appear.
     ///
     /// Concrete variant mapping:
-    /// - [`ConfigParseError::MissingRequiredFlag`]
-    /// - [`ConfigParseError::MissingValueForFlag`]
-    /// - [`ConfigParseError::UnknownFlag`]
-    /// - [`ConfigParseError::DuplicateFlag`]
-    /// - [`ConfigParseError::InvalidFlagValue`]
-    /// - [`ConfigParseError::ConflictingFlags`]
-    /// - [`ConfigParseError::UnexpectedArgument`]
-    /// - [`ConfigParseError::UnexpectedEndOfOptions`]
+    /// - [`CLIParseError::MissingRequiredFlag`]
+    /// - [`CLIParseError::MissingValueForFlag`]
+    /// - [`CLIParseError::UnknownFlag`]
+    /// - [`CLIParseError::DuplicateFlag`]
+    /// - [`CLIParseError::InvalidFlagValue`]
+    /// - [`CLIParseError::ConflictingFlags`]
+    /// - [`CLIParseError::UnexpectedArgument`]
+    /// - [`CLIParseError::UnexpectedEndOfOptions`]
     ///
     /// # Examples
     ///
@@ -346,7 +346,7 @@ impl AppConfig {
     ///
     /// ```rust
     /// use shortest_path_finder::data_input::file::cli_config::AppConfig;
-    /// use shortest_path_finder::error::config_error::ConfigParseError;
+    /// use shortest_path_finder::error::CLIParseError;
     ///
     /// let args = vec![
     ///     "pathfinder",
@@ -362,9 +362,9 @@ impl AppConfig {
     /// .collect();
     ///
     /// let err = AppConfig::setup_config(args).expect_err("unknown flag should fail");
-    /// assert!(matches!(err, ConfigParseError::UnknownFlag { .. }));
+    /// assert!(matches!(err, CLIParseError::UnknownFlag { .. }));
     /// ```
-    pub fn setup_config(args: Vec<String>) -> Result<AppConfigOutcome, ConfigParseError> {
+    pub fn setup_config(args: Vec<String>) -> Result<AppConfigOutcome, CLIParseError> {
         let parsed = match parse_cli_values(&args)? {
             CliParseOutcome::Values(values) => values,
             CliParseOutcome::HelpRequested => return Ok(AppConfigOutcome::HelpRequested),
@@ -383,10 +383,10 @@ impl AppConfig {
 
         let start_node_id = parsed
             .start_value()
-            .ok_or(ConfigParseError::MissingRequiredFlag { flag: "--start" })?;
+            .ok_or(CLIParseError::MissingRequiredFlag { flag: "--start" })?;
         let end_node_id = parsed
             .end_value()
-            .ok_or(ConfigParseError::MissingRequiredFlag { flag: "--end" })?;
+            .ok_or(CLIParseError::MissingRequiredFlag { flag: "--end" })?;
 
         Ok(AppConfigOutcome::Config(Self {
             file_path,
@@ -446,14 +446,14 @@ Notes:\n\
     fn retrieve_algorithm(
         raw_algorithm: Option<&str>,
         used_legacy_origin: bool,
-    ) -> Result<Algorithms, ConfigParseError> {
+    ) -> Result<Algorithms, CLIParseError> {
         // Legacy origin markers consume --algo, so default to Dijkstra here.
         if used_legacy_origin || raw_algorithm.is_none() {
             return Ok(Algorithms::Dijkstra);
         }
 
         let token = raw_algorithm.expect("algorithm token should be present");
-        Algorithms::try_from(token).map_err(|err| ConfigParseError::InvalidFlagValue {
+        Algorithms::try_from(token).map_err(|err| CLIParseError::InvalidFlagValue {
             flag: "--algo".to_string(),
             value: err.value,
             expected: expected_values(&VALID_ALGORITHMS),
@@ -469,11 +469,11 @@ Notes:\n\
     fn retrieve_data_input(
         parsed: &ParsedCliValues,
         raw_algorithm: Option<&str>,
-    ) -> Result<(InputOrigin, bool), ConfigParseError> {
+    ) -> Result<(InputOrigin, bool), CLIParseError> {
         // `--origin` takes precedence over legacy origin markers.
         if let Some(origin) = parsed.origin_value() {
             let origin = InputOrigin::try_from(origin.as_str()).map_err(|err| {
-                ConfigParseError::InvalidFlagValue {
+                CLIParseError::InvalidFlagValue {
                     flag: "--origin".to_string(),
                     value: err.value,
                     expected: expected_values(&VALID_ORIGINS),
@@ -506,10 +506,10 @@ Notes:\n\
     fn validate_flag_combinations(
         parsed: &ParsedCliValues,
         data_input: &InputOrigin,
-    ) -> Result<(), ConfigParseError> {
+    ) -> Result<(), CLIParseError> {
         // Command-line input conflicts with explicit file-path selection.
         if matches!(data_input, InputOrigin::CommandLine) && parsed.has_graph_file() {
-            return Err(ConfigParseError::ConflictingFlags {
+            return Err(CLIParseError::ConflictingFlags {
                 flag: "--origin".to_string(),
                 other: "--graph-file".to_string(),
                 reason: "command-line origin cannot be combined with --graph-file".to_string(),

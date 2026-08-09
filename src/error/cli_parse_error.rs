@@ -1,14 +1,14 @@
 //! Global error types for command-line configuration parsing.
 //!
-//! This module defines [`ConfigParseError`], a structured error enum used by
+//! This module defines [`CLIParseError`], a structured error enum used by
 //! CLI argument parsing in [`crate::data_input::file::cli_config`].
 //!
 //! # Example
 //!
 //! ```rust
-//! use shortest_path_finder::error::config_error::ConfigParseError;
+//! use shortest_path_finder::error::CLIParseError;
 //!
-//! let err = ConfigParseError::MissingRequiredFlag { flag: "--start" };
+//! let err = CLIParseError::MissingRequiredFlag { flag: "--start" };
 //! assert!(err.to_string().contains("--start"));
 //! ```
 
@@ -19,7 +19,7 @@ use std::{error::Error, fmt};
 /// Argument indices reported in this enum are 1-based positions from the
 /// original argument list.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ConfigParseError {
+pub enum CLIParseError {
     /// Fewer than the minimum expected argument count was supplied.
     TooFewArguments {
         /// Number of arguments actually provided.
@@ -87,23 +87,23 @@ pub enum ConfigParseError {
     },
 }
 
-impl fmt::Display for ConfigParseError {
+impl fmt::Display for CLIParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ConfigParseError::TooFewArguments { provided, minimum } => write!(
+            CLIParseError::TooFewArguments { provided, minimum } => write!(
                 f,
                 "Not enough arguments passed (provided {}, minimum {}).",
                 provided, minimum
             ),
-            ConfigParseError::MissingRequiredFlag { flag } => {
+            CLIParseError::MissingRequiredFlag { flag } => {
                 write!(f, "Missing required flag {}.", flag)
             }
-            ConfigParseError::MissingValueForFlag { flag, index } => write!(
+            CLIParseError::MissingValueForFlag { flag, index } => write!(
                 f,
                 "Missing value for flag {} at argument position {}.",
                 flag, index
             ),
-            ConfigParseError::DuplicateFlag {
+            CLIParseError::DuplicateFlag {
                 flag,
                 first_index,
                 duplicate_index,
@@ -112,20 +112,20 @@ impl fmt::Display for ConfigParseError {
                 "Flag {} was provided more than once (first at position {}, duplicate at position {}).",
                 flag, first_index, duplicate_index
             ),
-            ConfigParseError::UnknownFlag { flag, index } => {
+            CLIParseError::UnknownFlag { flag, index } => {
                 write!(f, "Unknown flag {} at argument position {}.", flag, index)
             }
-            ConfigParseError::UnexpectedArgument { value, index } => write!(
+            CLIParseError::UnexpectedArgument { value, index } => write!(
                 f,
                 "Unexpected argument '{}' at position {}. Flags must start with '--'.",
                 value, index
             ),
-            ConfigParseError::UnexpectedEndOfOptions { index } => write!(
+            CLIParseError::UnexpectedEndOfOptions { index } => write!(
                 f,
                 "Unexpected end-of-options marker '--' at position {}.",
                 index
             ),
-            ConfigParseError::InvalidFlagValue {
+            CLIParseError::InvalidFlagValue {
                 flag,
                 value,
                 expected,
@@ -134,7 +134,7 @@ impl fmt::Display for ConfigParseError {
                 "Invalid value '{}' for flag {} (expected {}).",
                 value, flag, expected
             ),
-            ConfigParseError::ConflictingFlags {
+            CLIParseError::ConflictingFlags {
                 flag,
                 other,
                 reason,
@@ -143,4 +143,4 @@ impl fmt::Display for ConfigParseError {
     }
 }
 
-impl Error for ConfigParseError {}
+impl Error for CLIParseError {}
