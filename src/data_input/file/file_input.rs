@@ -103,7 +103,7 @@ use strum_macros::EnumString;
 
 use crate::{
     error::{
-        data_input_error::DataInputError,
+        DataInputError,
         parse_error::{InvalidWeightError, ParseError},
     },
     graphs::{
@@ -362,7 +362,7 @@ impl Error for FileInputError {
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };
-/// use shortest_path_finder::error::data_input_error::DataInputError;
+/// use shortest_path_finder::error::DataInputError;
 ///
 /// let err = retrieve_graph_data_from_file(".")
 ///     .expect_err("a directory path cannot be read as graph file text");
@@ -381,7 +381,7 @@ impl Error for FileInputError {
 ///     fs,
 ///     time::{SystemTime, UNIX_EPOCH},
 /// };
-/// use shortest_path_finder::error::data_input_error::DataInputError;
+/// use shortest_path_finder::error::DataInputError;
 ///
 /// let unique_id = SystemTime::now()
 ///     .duration_since(UNIX_EPOCH)

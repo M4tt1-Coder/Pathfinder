@@ -4,8 +4,7 @@
 //!
 //! [`DataInputError`] is the unified boundary error for graph-loading failures.
 //! It wraps origin-specific errors (currently file input only) so callers such as
-//! [`crate::error::app_error::AppError`] can handle every input failure through
-//! one enum.
+//! [`crate::error::AppError`] can handle every input failure through one enum.
 //!
 //! # Variant Map
 //!
@@ -24,7 +23,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
@@ -39,7 +38,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::DataInputError;
 //!
 //! let io_err = FileInputError::Io {
 //!     path: "graph.txt".to_string(),
@@ -57,13 +56,13 @@ use crate::data_input::file::FileInputError;
 ///
 /// This enum encapsulates origin-specific input failures. New origins (for
 /// example interactive CLI input) can add variants here without changing the
-/// public [`crate::error::app_error::AppError`] surface.
+/// public [`crate::error::AppError`] surface.
 ///
 /// # Example
 ///
 /// ```rust
 /// use shortest_path_finder::data_input::file::FileInputError;
-/// use shortest_path_finder::error::data_input_error::DataInputError;
+/// use shortest_path_finder::error::DataInputError;
 /// use shortest_path_finder::error::parse_error::ParseError;
 ///
 /// let err = DataInputError::File(FileInputError::Parse {

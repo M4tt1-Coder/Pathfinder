@@ -30,8 +30,7 @@
 //! Converting a configuration error:
 //!
 //! ```rust
-//! use shortest_path_finder::error::app_error::AppError;
-//! use shortest_path_finder::error::CLIParseError;
+//! use shortest_path_finder::error::{AppError, CLIParseError};
 //!
 //! let err = AppError::from(CLIParseError::MissingRequiredFlag { flag: "--start" });
 //! assert_eq!(err.exit_code(), 1);
@@ -42,8 +41,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::app_error::AppError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::{AppError, DataInputError};
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
@@ -60,7 +58,7 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
 //! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
-//! use shortest_path_finder::error::app_error::AppError;
+//! use shortest_path_finder::error::AppError;
 //!
 //! let err = AppError::from(AlgorithmError::from(DijkstraError::NoPathFound {
 //!     start: "A".to_string(),
@@ -88,7 +86,7 @@ use crate::error::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::error::app_error::AppError;
+/// use shortest_path_finder::error::AppError;
 ///
 /// let err = AppError::UnsupportedInputOrigin {
 ///     origin: "cmd-line".to_string(),
@@ -125,8 +123,7 @@ impl AppError {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::error::app_error::AppError;
-    /// use shortest_path_finder::error::CLIParseError;
+    /// use shortest_path_finder::error::{AppError, CLIParseError};
     ///
     /// let err = AppError::Config(CLIParseError::MissingRequiredFlag { flag: "--end" });
     /// assert_eq!(err.exit_code(), 1);

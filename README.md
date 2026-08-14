@@ -213,11 +213,14 @@ Quality and automation:
 ## Project structure
 
 - src/main.rs: CLI entrypoint and runtime wiring
-- src/data_input/file/cli_config/config.rs: CLI argument parsing and defaults
+- src/data_input/mod.rs: public input boundary for file and command-line origins
+- src/data_input/file/mod.rs: file-input namespace re-export
 - src/data_input/file/file_input.rs: graph-file parsing and validation
-- src/algorithms/: algorithm traits and implementations
+- src/data_input/file/cli_config/: CLI argument parsing, validation, and default values
 - src/graphs/: graph trait and concrete graph types
+- src/algorithms/: algorithm trait and implementations
 - src/error/: layered errors for parsing, configuration, and algorithm execution
+- src/lib.rs: crate-level docs and public re-exports
 - benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
 ## Library usage (Rust)
@@ -458,8 +461,7 @@ carries the source file path alongside the underlying [`ParseError`]:
 
 ```rust
 use shortest_path_finder::data_input::file::FileInputError;
-use shortest_path_finder::error::data_input_error::DataInputError;
-use shortest_path_finder::error::parse_error::ParseError;
+use shortest_path_finder::error::{DataInputError, parse_error::ParseError};
 
 let err = DataInputError::from(FileInputError::Parse {
 	file_path: "graph.txt".to_string(),
@@ -490,8 +492,7 @@ match err.kind() {
 The CLI collapses configuration, input, and algorithm failures into `AppError`:
 
 ```rust
-use shortest_path_finder::error::app_error::AppError;
-use shortest_path_finder::error::CLIParseError;
+use shortest_path_finder::error::{AppError, CLIParseError};
 
 let err = AppError::from(CLIParseError::MissingRequiredFlag { flag: "--start" });
 assert_eq!(err.exit_code(), 1);

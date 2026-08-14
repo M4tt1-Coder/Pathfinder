@@ -25,10 +25,10 @@
 //!
 //! Errors are layered by boundary:
 //! - [`error::parse_error::ParseError`] for line-level graph syntax failures.
-//! - [`error::data_input_error::DataInputError`] for file loading and parsing.
+//! - [`error::DataInputError`] for file loading and parsing.
 //! - [`error::CLIParseError`] for CLI flag validation.
 //! - [`error::algorithm_error::AlgorithmError`] for shortest-path execution.
-//! - [`AppError`] as the binary-level wrapper with exit-code mapping.
+//! - [`error::AppError`] as the binary-level wrapper with exit-code mapping.
 //!
 //! Use [`error::algorithm_error::AlgorithmErrorKind`] when you need stable
 //! categories (for example exit codes or telemetry).
@@ -48,7 +48,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
 //! let err = DataInputError::from(FileInputError::Parse {

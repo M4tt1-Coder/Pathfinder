@@ -11,8 +11,7 @@
 //! [`file::retrieve_graph_data_from_file`] returns a [`file::FileInputGraphResult`]
 //! variant (`DirectedGraph`, `UndirectedGraph`, or `TwoDimensionalGraph`) that
 //! matches the file header. Failures surface as [`file::FileInputError`] and are
-//! typically wrapped in [`crate::error::data_input_error::DataInputError`] at the
-//! CLI boundary.
+//! typically wrapped in [`crate::error::DataInputError`] at the CLI boundary.
 //!
 //! # File Input
 //!
@@ -45,7 +44,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::retrieve_graph_data_from_file;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::DataInputError;
 //!
 //! let err = retrieve_graph_data_from_file("definitely/missing.graph").unwrap_err();
 //! assert!(matches!(err, DataInputError::File(_)));

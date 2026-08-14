@@ -16,7 +16,7 @@
 //! | Module | Primary type | Responsibility |
 //! |--------|--------------|----------------|
 //! | [`parse_error`] | [`parse_error::ParseError`] | Line-level graph syntax validation |
-//! | [`data_input_error`] | [`data_input_error::DataInputError`] | File/graph loading boundary |
+//! | [`data_input_error`] | [`DataInputError`] | File/graph loading boundary |
 //! | [`cli_parse_error`] | [`CLIParseError`] | CLI flag parsing |
 //! | [`algorithm_error`] | [`algorithm_error::AlgorithmError`] | Shortest-path runtime failures |
 //! | [`app_error`] | [`AppError`] | Binary exit codes and user messages |
@@ -44,8 +44,8 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::app_error::AppError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::error::AppError;
+//! use shortest_path_finder::error::DataInputError;
 //! use shortest_path_finder::error::parse_error::ParseError;
 //!
 //! let err = AppError::from(DataInputError::File(FileInputError::Parse {
@@ -56,11 +56,13 @@
 //! ```
 
 mod cli_parse_error;
+mod data_input_error;
 
 // ~ flatten module paths ~
 
 pub use app_error::AppError;
 pub use cli_parse_error::CLIParseError;
+pub use data_input_error::DataInputError;
 
 // ~ public modules ~
 
@@ -69,5 +71,4 @@ pub mod app_error;
 
 // ~ private modules ~
 
-pub mod data_input_error;
 pub mod parse_error;
