@@ -8,11 +8,12 @@
 //!
 //! # Error Taxonomy
 //!
-//! - [`AlgorithmErrorKind`] groups error categories used by the CLI.
-//! - [`AlgorithmError`] wraps algorithm-specific error payloads.
-//! - [`AStarExecutionError`] and [`DijkstraError`] describe concrete failures.
-//! - [`PathReconstructionError`] captures failures while rebuilding A* paths.
-//! - [`DijkstraPathReconstructionError`] captures Dijkstra reconstruction failures.
+//! - [`AlgorithmErrorKind`]: groups error categories used by the CLI.
+//! - [`AlgorithmError`]: wraps algorithm-specific error payloads.
+//! - [`a_star_error::AStarError`]: A* execution failures.
+//! - [`dijkstra_error::DijkstraError`]: Dijkstra execution failures.
+//! - [`a_star_error::PathReconstructionError`]: A* path reconstruction failures.
+//! - [`dijkstra_error::PathReconstructionError`]: Dijkstra path reconstruction failures.
 //!
 //! # CLI Integration
 //!

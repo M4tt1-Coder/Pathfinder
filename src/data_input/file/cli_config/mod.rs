@@ -2,10 +2,11 @@
 //!
 //! # Overview
 //!
-//! This submodule re-exports the types used to parse command-line arguments
-//! that control file-based graph loading. The public surface lives in
-//! [`config`], while the nested [`parser`] module contains the lower-level
-//! tokenization and validation helpers.
+//! This module re-exports the types used to parse command-line arguments
+//! that control file-based graph loading. The public surface includes:
+//! - [`AppConfig`]: runtime configuration extracted from CLI arguments.
+//! - [`InputOrigin`]: enumeration for specifying graph data input source.
+//! - Lower-level tokenization and validation helpers (private).
 //!
 //! # Example
 //!

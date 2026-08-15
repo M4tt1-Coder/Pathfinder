@@ -24,7 +24,7 @@
 //! # Error Handling
 //!
 //! Errors are layered by boundary:
-//! - [`error::parse_error::ParseError`] for line-level graph syntax failures.
+//! - [`error::ParseError`] for line-level graph syntax failures.
 //! - [`error::DataInputError`] for file loading and parsing.
 //! - [`error::CLIParseError`] for CLI flag validation.
 //! - [`error::algorithm_error::AlgorithmError`] for shortest-path execution.
@@ -49,7 +49,7 @@
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::DataInputError;
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let err = DataInputError::from(FileInputError::Parse {
 //!     file_path: "graph.txt".to_string(),

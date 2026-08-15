@@ -63,7 +63,7 @@ use std::{
 };
 
 use crate::{
-    error::parse_error::ParseError,
+    error::ParseError,
     graphs::graph::GraphNode,
     nodes::trait_decl::{
         coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,

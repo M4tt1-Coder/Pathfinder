@@ -78,7 +78,7 @@ mod utils;
 /// - Pattern-match on a variant when you need graph-specific recovery logic.
 /// - Call [`std::string::ToString::to_string`] or use the [`std::fmt::Display`]
 ///   implementation for user-facing diagnostics.
-/// - Convert it into higher-level errors such as [`crate::error::parse_error::ParseError`].
+/// - Convert it into higher-level errors such as [`crate::error::ParseError`].
 ///
 /// # Variants
 ///

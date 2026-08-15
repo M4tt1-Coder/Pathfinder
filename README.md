@@ -105,7 +105,8 @@ The CLI parser rejects unknown flags, duplicate flags, missing flag values, inva
 Graph-file parsing also preserves detailed weight diagnostics for one-dimensional edges. If a weight token is malformed, the library returns `ParseError::InvalidWeight` with an inner `InvalidWeightError` so callers can tell whether the failure came from non-numeric input, overflow, or another numeric parsing problem.
 
 ```rust
-use shortest_path_finder::error::parse_error::{InvalidWeightError, ParseError};
+use shortest_path_finder::error::parse_error::InvalidWeightError;
+use shortest_path_finder::error::ParseError;
 
 fn classify_weight_error(err: &ParseError) -> &'static str {
 	match err {
@@ -461,7 +462,7 @@ carries the source file path alongside the underlying [`ParseError`]:
 
 ```rust
 use shortest_path_finder::data_input::file::FileInputError;
-use shortest_path_finder::error::{DataInputError, parse_error::ParseError};
+use shortest_path_finder::error::{DataInputError, ParseError};
 
 let err = DataInputError::from(FileInputError::Parse {
 	file_path: "graph.txt".to_string(),

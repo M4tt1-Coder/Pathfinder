@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! This namespace groups every supported graph input origin:
-//! - [`file`]: production file parser and its CLI configuration helpers.
+//! - [`mod@file`]: production file parser and its CLI configuration helpers.
 //! - [`cmd_line`]: placeholder for the interactive terminal input path that is
 //!   planned for a later release.
 //!

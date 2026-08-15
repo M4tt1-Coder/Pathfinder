@@ -24,7 +24,7 @@
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::DataInputError;
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
 //!     file_path: "graph.txt".to_string(),
@@ -63,7 +63,7 @@ use crate::data_input::file::FileInputError;
 /// ```rust
 /// use shortest_path_finder::data_input::file::FileInputError;
 /// use shortest_path_finder::error::DataInputError;
-/// use shortest_path_finder::error::parse_error::ParseError;
+/// use shortest_path_finder::error::ParseError;
 ///
 /// let err = DataInputError::File(FileInputError::Parse {
 ///     file_path: "graph.txt".to_string(),

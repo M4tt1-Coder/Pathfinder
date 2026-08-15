@@ -25,7 +25,7 @@
 //! Basic line validation:
 //!
 //! ```rust
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! fn parse_node_line(line: &str) -> Result<(), ParseError> {
 //!     if !line.contains(':') {
@@ -42,7 +42,8 @@
 //! Weight classification:
 //!
 //! ```rust
-//! use shortest_path_finder::error::parse_error::{InvalidWeightError, ParseError};
+//! use shortest_path_finder::error::parse_error::InvalidWeightError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let err = ParseError::InvalidWeight(InvalidWeightError::NonNumeric(
 //!     "u16 weight expected".to_string(),
@@ -101,7 +102,7 @@ use crate::graphs::GraphInsertionError;
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::error::parse_error::ParseError;
+/// use shortest_path_finder::error::ParseError;
 ///
 /// fn classify_line(line: &str) -> Result<(), ParseError> {
 ///     if line.trim().is_empty() {
@@ -145,7 +146,8 @@ pub enum ParseError {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::error::parse_error::{InvalidWeightError, ParseError};
+    /// use shortest_path_finder::error::parse_error::InvalidWeightError;
+    /// use shortest_path_finder::error::ParseError;
     ///
     /// let err = ParseError::InvalidWeight(InvalidWeightError::OutOfRange(
     ///     "expected a u16-compatible value".to_string(),

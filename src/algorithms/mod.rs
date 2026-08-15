@@ -4,7 +4,8 @@
 //!
 //! This module groups all shortest-path algorithm related code used by this
 //! crate:
-//! - [`algorithm`]: shared traits and algorithm-selection enum.
+//! - [`Algorithm`]: shared trait for algorithm implementations.
+//! - [`Algorithms`]: enumeration for selecting between available algorithms.
 //! - [`dijkstra`]: concrete Dijkstra implementation.
 //! - [`a_star_algorithm`]: coordinate-based A* implementation.
 //!

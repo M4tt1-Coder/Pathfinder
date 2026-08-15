@@ -2,10 +2,11 @@
 //!
 //! # Overview
 //!
-//! This namespace contains:
-//! - [`a_star`]: public A* implementation and related types.
-//! - [`utils`]: public helper utilities (intended for internal use and tests)
-//!   used by A* path reconstruction and cost bookkeeping.
+//! This namespace re-exports the public A* algorithm implementation and types
+//! used for coordinate-based shortest-path searches. The module provides:
+//! - [`AStar`]: the A* algorithm implementation.
+//! - [`AStarSearchResult`]: the result wrapper for A* searches.
+//! - Helper utilities for path reconstruction and cost bookkeeping (private).
 //!
 //! # Usage
 //!

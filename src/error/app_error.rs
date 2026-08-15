@@ -42,7 +42,7 @@
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
 //! use shortest_path_finder::error::{AppError, DataInputError};
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
 //!     file_path: "graph.txt".to_string(),
