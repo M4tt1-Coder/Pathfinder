@@ -63,8 +63,8 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
@@ -82,7 +82,7 @@
 pub mod algorithms;
 pub mod data_input;
 pub mod error;
-pub mod graphs;
+pub mod graph;
 pub mod nodes;
 pub mod numeric_datatypes;
 pub mod weight_types;

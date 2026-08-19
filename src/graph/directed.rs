@@ -16,8 +16,8 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
@@ -32,7 +32,7 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use crate::{
-    graphs::graph::{Graph, GraphNode},
+    graph::{Graph, GraphNode},
     nodes::default_node::DefaultNode,
 };
 
@@ -52,8 +52,8 @@ use crate::{
 ///
 /// # Example
 /// ```
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
-/// use shortest_path_finder::graphs::graph::Graph;
+/// use shortest_path_finder::graph::DirectedGraph;
+/// use shortest_path_finder::graph::Graph;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::new(vec![
@@ -222,8 +222,8 @@ impl DirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
     /// assert_eq!(graph.get_all_nodes().len(), 0);
@@ -260,8 +260,8 @@ impl Default for DirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::default();
     /// assert!(graph.get_all_nodes().is_empty());
@@ -298,7 +298,7 @@ impl Default for DirectedGraph {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
+/// use shortest_path_finder::graph::directed::DirectedGraphInsertionError;
 ///
 /// let err = DirectedGraphInsertionError::SourceNodeDoesNotExist {
 ///     node_id: "A".to_string(),

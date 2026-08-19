@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use shortest_path_finder::{
     error::ParseError,
-    graphs::graph::GraphNode,
+    graph::GraphNode,
     nodes::{
         trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
     },

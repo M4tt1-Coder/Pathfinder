@@ -83,7 +83,7 @@ use std::error::Error;
 use std::fmt::{self, Display};
 use std::num::{IntErrorKind, ParseIntError};
 
-use crate::graphs::GraphInsertionError;
+use crate::graph::GraphInsertionError;
 
 // ----- Implementation of the 'ParseError' enum -----
 

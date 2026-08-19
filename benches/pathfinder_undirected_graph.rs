@@ -13,7 +13,7 @@
 
 use divan::{Bencher, bench};
 use shortest_path_finder::{
-    graphs::{graph::Graph, undirected::UndirectedGraph},
+    graph::{Graph, UndirectedGraph},
     nodes::default_node::DefaultNode,
 };
 

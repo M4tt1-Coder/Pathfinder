@@ -11,7 +11,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let node = DefaultNode::new("Hub".to_string());

@@ -8,7 +8,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::GraphWeight;
+//! use shortest_path_finder::graph::GraphWeight;
 //!
 //! assert_eq!(u16::zero(), 0);
 //! assert!(<u16 as GraphWeight>::max_value() > 1000);

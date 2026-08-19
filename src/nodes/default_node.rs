@@ -17,7 +17,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let node = DefaultNode::new("Hub".to_string());
@@ -29,7 +29,7 @@
 
 use std::{fmt::Display, str::FromStr};
 
-use crate::graphs::graph::GraphNode;
+use crate::graph::GraphNode;
 
 /// Node type identified by a unique string ID.
 ///
@@ -44,7 +44,7 @@ use crate::graphs::graph::GraphNode;
 /// # Examples
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::graph::GraphNode;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
 /// let source = DefaultNode::new("Source".to_string());
@@ -111,7 +111,7 @@ impl FromStr for DefaultNode {
     ///
     /// ```rust
     /// use std::str::FromStr;
-    /// use shortest_path_finder::graphs::graph::GraphNode;
+    /// use shortest_path_finder::graph::GraphNode;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let node = DefaultNode::from_str("Station-42").unwrap();

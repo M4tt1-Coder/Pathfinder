@@ -70,8 +70,8 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
+//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
@@ -102,7 +102,7 @@ use crate::{
     error::algorithm_error::dijkstra_error::{
         EdgeWeightViolation, MissingNodeContext, PathReconstructionError,
     },
-    graphs::graph::{Graph, GraphNode, GraphWeight},
+    graph::{Graph, GraphNode, GraphWeight},
 };
 
 pub use crate::error::algorithm_error::DijkstraError;
@@ -186,8 +186,8 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// ```rust
 /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
 /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
-/// use shortest_path_finder::graphs::graph::Graph;
+/// use shortest_path_finder::graph::DirectedGraph;
+/// use shortest_path_finder::graph::Graph;
 /// use shortest_path_finder::nodes::default_node::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::default();
@@ -259,8 +259,8 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// ```no_run
     /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     /// use shortest_path_finder::nodes::default_node::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::default();
@@ -401,7 +401,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::graph::DirectedGraph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
     /// let _algorithm = DijkstraAlgorithm::new(graph);

@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use crate::{
     algorithms::a_star_algorithm::a_star::AStarQueueElement,
     error::algorithm_error::a_star_error::PathReconstructionError,
-    graphs::graph::{Graph, GraphNode},
+    graph::{Graph, GraphNode},
     nodes::trait_decl::coordinates_node::CoordinatesNode,
     weight_types::numeric_datatype::NumericDatatype,
 };
@@ -143,8 +143,7 @@ mod tests {
     use super::*;
     use crate::{
         algorithms::a_star_algorithm::a_star::AStarQueueElement,
-        graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
-        nodes::two_dimensional_node::TwoDimensionalNode,
+        graph::TwoDimensionalCoordinateGraph, nodes::two_dimensional_node::TwoDimensionalNode,
     };
 
     #[test]

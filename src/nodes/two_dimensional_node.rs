@@ -35,7 +35,7 @@
 //!
 //! ```rust
 //! use std::str::FromStr;
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::{
 //!     trait_decl::coordinates_node::CoordinatesNode,
 //!     two_dimensional_node::TwoDimensionalNode,
@@ -64,7 +64,7 @@ use std::{
 
 use crate::{
     error::ParseError,
-    graphs::graph::GraphNode,
+    graph::GraphNode,
     nodes::trait_decl::{
         coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
     },
@@ -86,7 +86,7 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::graph::GraphNode;
 /// use shortest_path_finder::nodes::{
 ///     trait_decl::coordinates_node::CoordinatesNode,
 ///     two_dimensional_node::TwoDimensionalNode,
@@ -237,7 +237,7 @@ where
     ///
     /// ```rust
     /// use std::str::FromStr;
-    /// use shortest_path_finder::graphs::graph::GraphNode;
+    /// use shortest_path_finder::graph::GraphNode;
     /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::<i32>::from_str("P:10,12").unwrap();

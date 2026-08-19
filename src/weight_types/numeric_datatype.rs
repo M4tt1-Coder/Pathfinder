@@ -28,7 +28,7 @@
 
 use std::ops::{Div, Mul, Sub};
 
-use crate::graphs::graph::GraphWeight;
+use crate::graph::GraphWeight;
 
 /// Numeric contract for algorithm weight/coordinate datatypes.
 ///

@@ -17,7 +17,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::GraphWeight;
+//! use shortest_path_finder::graph::GraphWeight;
 //! use shortest_path_finder::weight_types::impl_weights::WeightType;
 //!
 //! let weight = WeightType::U16(7);
@@ -27,7 +27,7 @@
 //! assert!(<u16 as GraphWeight>::max_value() > 1_000);
 //! ```
 
-use crate::graphs::graph::GraphWeight;
+use crate::graph::GraphWeight;
 
 /// Runtime weight wrapper used by parsing and intermediate conversion code.
 ///

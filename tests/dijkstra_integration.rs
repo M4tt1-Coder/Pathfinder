@@ -45,10 +45,8 @@ use shortest_path_finder::{
         AlgorithmErrorKind,
         dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
-    graphs::{
-        directed::DirectedGraph,
-        graph::{Graph, GraphNode},
-        undirected::UndirectedGraph,
+    graph::{
+        DirectedGraph, UndirectedGraph, {Graph, GraphNode},
     },
     nodes::default_node::DefaultNode,
 };

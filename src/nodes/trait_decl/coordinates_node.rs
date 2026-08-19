@@ -16,7 +16,7 @@
 //!
 //! ```rust
 //! use std::fmt::{Display, Formatter};
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::trait_decl::{
 //!     coordinate_datatype::CoordinateDatatype,
 //!     coordinates_node::CoordinatesNode,
@@ -67,7 +67,7 @@
 //! assert_eq!(scaled, 4);
 //! ```
 
-use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
+use crate::{graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
 
 /// Trait for nodes that expose two coordinates in addition to an identifier.
 ///

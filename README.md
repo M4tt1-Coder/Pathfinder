@@ -205,10 +205,10 @@ Core stack and dependencies:
 Quality and automation:
 
 - Four GitHub Actions workflows:
-	- `rust.yml`: formatting, clippy, build, tests, and doctests
-	- `rust-ci.yml`: baseline verification on pushes and PRs to main
-	- `codeql.yml`: static analysis for security scanning
-	- `release.yml`: automated publishing on merged PRs into main
+  - `rust.yml`: formatting, clippy, build, tests, and doctests
+  - `rust-ci.yml`: baseline verification on pushes and PRs to main
+  - `codeql.yml`: static analysis for security scanning
+  - `release.yml`: automated publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ## Project structure
@@ -265,8 +265,8 @@ Swap `DirectedGraph` for `UndirectedGraph` when you want a non-directional graph
 ```rust
 use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
 use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-use shortest_path_finder::graphs::graph::Graph;
-use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+use shortest_path_finder::graph::Graph;
+use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
 use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
 
 let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -449,13 +449,13 @@ Example CLI error output:
 
 Errors are layered by boundary:
 
-| Layer     | Type               | Responsibility                                      |
-| --------- | ------------------ | --------------------------------------------------- |
-| Parse     | `ParseError`       | Line-level graph syntax validation                  |
-| Input     | `DataInputError`   | File I/O and graph loading (`FileInputError` today) |
-| Config    | `CLIParseError` | CLI flag parsing and validation                     |
-| Algorithm | `AlgorithmError`   | Shortest-path execution failures                    |
-| CLI       | `AppError`         | Binary wrapper with `exit_code()` mapping           |
+| Layer     | Type             | Responsibility                                      |
+| --------- | ---------------- | --------------------------------------------------- |
+| Parse     | `ParseError`     | Line-level graph syntax validation                  |
+| Input     | `DataInputError` | File I/O and graph loading (`FileInputError` today) |
+| Config    | `CLIParseError`  | CLI flag parsing and validation                     |
+| Algorithm | `AlgorithmError` | Shortest-path execution failures                    |
+| CLI       | `AppError`       | Binary wrapper with `exit_code()` mapping           |
 
 File-input failures are wrapped at the loading boundary. [`FileInputError::Parse`]
 carries the source file path alongside the underlying [`ParseError`]:
@@ -519,6 +519,7 @@ Release authentication requirement:
 Important release rule:
 
 - Always bump `version` in `Cargo.toml` before merging a release-worthy PR into `main`
+
 </details>
 
 <details>

@@ -14,8 +14,8 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::graphs::undirected::UndirectedGraph;
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::graph::UndirectedGraph;
 //! use shortest_path_finder::nodes::default_node::DefaultNode;
 //!
 //! let mut graph = UndirectedGraph::default();
@@ -30,7 +30,7 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use crate::{
-    graphs::graph::{Graph, GraphNode},
+    graph::{Graph, GraphNode},
     nodes::default_node::DefaultNode,
 };
 
@@ -216,8 +216,8 @@ impl UndirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::graphs::undirected::UndirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::graph::UndirectedGraph;
     ///
     /// let graph = UndirectedGraph::new(vec![]);
     /// assert_eq!(graph.get_all_nodes().len(), 0);
@@ -287,7 +287,7 @@ impl Default for UndirectedGraph {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::undirected::UndirectedGraphInsertionError;
+/// use shortest_path_finder::graph::undirected::UndirectedGraphInsertionError;
 ///
 /// let err = UndirectedGraphInsertionError::NodeNotFound {
 ///     node_id: "B".to_string(),

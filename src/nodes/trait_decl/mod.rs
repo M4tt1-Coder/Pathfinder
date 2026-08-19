@@ -10,7 +10,7 @@
 //!
 //! ```rust
 //! use std::fmt::{Display, Formatter};
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::trait_decl::coordinate_datatype::CoordinateDatatype;
 //! use shortest_path_finder::nodes::trait_decl::coordinates_node::CoordinatesNode;
 //!

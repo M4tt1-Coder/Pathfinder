@@ -106,10 +106,8 @@ use crate::{
         DataInputError,
         parse_error::{InvalidWeightError, ParseError},
     },
-    graphs::{
-        GraphInsertionError, directed::DirectedGraph, graph::Graph,
-        two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
-        undirected::UndirectedGraph,
+    graph::{
+        DirectedGraph, Graph, GraphInsertionError, TwoDimensionalCoordinateGraph, UndirectedGraph,
     },
     nodes::{
         default_node::DefaultNode, node_types::NodeType, two_dimensional_node::TwoDimensionalNode,
