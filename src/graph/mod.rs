@@ -52,9 +52,6 @@
 //! ));
 //! ```
 
-// TODO: Finish simplifying the modulization of the 'graph' module -> adjust imports, update
-// documentation -> shorten imports in the whole project with new module structure
-
 use std::{
     error::Error,
     fmt::{Debug, Display},
