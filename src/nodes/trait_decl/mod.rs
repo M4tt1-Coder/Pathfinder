@@ -11,8 +11,8 @@
 //! ```rust
 //! use std::fmt::{Display, Formatter};
 //! use shortest_path_finder::graph::GraphNode;
-//! use shortest_path_finder::nodes::trait_decl::coordinate_datatype::CoordinateDatatype;
-//! use shortest_path_finder::nodes::trait_decl::coordinates_node::CoordinatesNode;
+//! use shortest_path_finder::nodes::trait_decl::CoordinateDatatype;
+//! use shortest_path_finder::nodes::trait_decl::CoordinatesNode;
 //!
 //! #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
 //! struct N { id: String, x: i32, y: i32 }
@@ -42,5 +42,14 @@
 //! assert_eq!(distance_on_x(9_i32, 3_i32), 6_i32);
 //! ```
 
-pub mod coordinate_datatype;
-pub mod coordinates_node;
+// ~ private modules ~
+
+mod coordinate_datatype;
+mod coordinates_node;
+
+// ~ public modules ~
+
+// ~ public re-exports ~
+
+pub use coordinate_datatype::CoordinateDatatype;
+pub use coordinates_node::CoordinatesNode;

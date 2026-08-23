@@ -18,7 +18,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graph::GraphNode;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let node = DefaultNode::new("Hub".to_string());
 //! assert_eq!(node.get_id(), "Hub");
@@ -45,7 +45,7 @@ use crate::graph::GraphNode;
 ///
 /// ```rust
 /// use shortest_path_finder::graph::GraphNode;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let source = DefaultNode::new("Source".to_string());
 /// assert_eq!(source.get_id(), "Source");
@@ -70,7 +70,7 @@ impl DefaultNode {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::new("N-01".to_string());
     /// assert_eq!(node.id, "N-01");
@@ -112,7 +112,7 @@ impl FromStr for DefaultNode {
     /// ```rust
     /// use std::str::FromStr;
     /// use shortest_path_finder::graph::GraphNode;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::from_str("Station-42").unwrap();
     /// assert_eq!(node.get_id(), "Station-42");

@@ -26,7 +26,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use shortest_path_finder::nodes::trait_decl::coordinate_datatype::CoordinateDatatype;
+//! use shortest_path_finder::nodes::trait_decl::CoordinateDatatype;
 //!
 //! fn manhattan_step<C: CoordinateDatatype>(a: C, b: C) -> C {
 //!     (a - b).abs()

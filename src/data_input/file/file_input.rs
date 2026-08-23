@@ -109,9 +109,7 @@ use crate::{
     graph::{
         DirectedGraph, Graph, GraphInsertionError, TwoDimensionalCoordinateGraph, UndirectedGraph,
     },
-    nodes::{
-        default_node::DefaultNode, node_types::NodeType, two_dimensional_node::TwoDimensionalNode,
-    },
+    nodes::{DefaultNode, NodeType, TwoDimensionalNode},
     weight_types::impl_weights::WeightType,
 };
 

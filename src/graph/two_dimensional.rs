@@ -31,7 +31,7 @@
 //! ```rust
 //! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(2, 3, "B".to_string()).unwrap();
@@ -55,8 +55,8 @@ use crate::{
         {Graph, GraphNode},
     },
     nodes::{
-        trait_decl::{coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode},
-        two_dimensional_node::TwoDimensionalNode,
+        TwoDimensionalNode,
+        trait_decl::{CoordinateDatatype, CoordinatesNode},
     },
 };
 
@@ -120,7 +120,7 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
     /// ```rust
     /// use shortest_path_finder::graph::Graph;
     /// use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(1, 2, "N1".to_string()).unwrap();
     /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);

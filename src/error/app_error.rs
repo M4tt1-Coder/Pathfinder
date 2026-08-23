@@ -56,8 +56,8 @@
 //! Mapping an algorithm failure to a non-default exit code:
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind,
+//! dijkstra_error::DijkstraError};
 //! use shortest_path_finder::error::AppError;
 //!
 //! let err = AppError::from(AlgorithmError::from(DijkstraError::NoPathFound {

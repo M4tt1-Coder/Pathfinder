@@ -16,7 +16,7 @@
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graph::DirectedGraph;
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());

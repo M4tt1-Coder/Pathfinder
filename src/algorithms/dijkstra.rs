@@ -72,7 +72,7 @@
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graph::DirectedGraph;
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -99,13 +99,12 @@ use std::{
 
 use crate::{
     algorithms::{Algorithm, SearchResult},
-    error::algorithm_error::dijkstra_error::{
-        EdgeWeightViolation, MissingNodeContext, PathReconstructionError,
+    error::algorithm_error::{
+        DijkstraError,
+        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
     graph::{Graph, GraphNode, GraphWeight},
 };
-
-pub use crate::error::algorithm_error::DijkstraError;
 
 /// Internal bookkeeping entry used while distances are being relaxed.
 ///
@@ -188,7 +187,7 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 /// use shortest_path_finder::graph::DirectedGraph;
 /// use shortest_path_finder::graph::Graph;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::default();
 /// let a = DefaultNode::new("A".to_string());
@@ -261,7 +260,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graph::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::default();
     /// let a = DefaultNode::new("A".to_string());
@@ -654,7 +653,7 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let path = vec![
     ///     DefaultNode::new("A".to_string()),
@@ -669,7 +668,7 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let invalid_path: Vec<DefaultNode> = vec![];
     /// let result = DijkstraSearchResult::new(invalid_path, 0u16);

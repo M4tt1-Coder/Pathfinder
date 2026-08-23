@@ -8,9 +8,7 @@ use std::str::FromStr;
 use shortest_path_finder::{
     error::ParseError,
     graph::GraphNode,
-    nodes::{
-        trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
-    },
+    nodes::{TwoDimensionalNode, trait_decl::CoordinatesNode},
 };
 
 #[test]

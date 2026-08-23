@@ -24,8 +24,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind, dijkstra_error::DijkstraError};
 //!
 //! let err = AlgorithmError::from(DijkstraError::NoPathFound {
 //!     start: "A".to_string(),
@@ -104,8 +103,8 @@ impl AlgorithmErrorKind {
 /// # Usage
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-/// use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+/// use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind,
+/// dijkstra_error::DijkstraError};
 ///
 /// let err = AlgorithmError::from(DijkstraError::NoPathFound {
 ///     start: "A".to_string(),

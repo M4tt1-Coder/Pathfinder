@@ -26,7 +26,7 @@ use crate::{
     algorithms::a_star_algorithm::a_star::AStarQueueElement,
     error::algorithm_error::a_star_error::PathReconstructionError,
     graph::{Graph, GraphNode},
-    nodes::trait_decl::coordinates_node::CoordinatesNode,
+    nodes::trait_decl::CoordinatesNode,
     weight_types::numeric_datatype::NumericDatatype,
 };
 
@@ -143,7 +143,7 @@ mod tests {
     use super::*;
     use crate::{
         algorithms::a_star_algorithm::a_star::AStarQueueElement,
-        graph::TwoDimensionalCoordinateGraph, nodes::two_dimensional_node::TwoDimensionalNode,
+        graph::TwoDimensionalCoordinateGraph, nodes::TwoDimensionalNode,
     };
 
     #[test]

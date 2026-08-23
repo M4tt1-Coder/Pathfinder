@@ -150,7 +150,7 @@ impl std::error::Error for GraphInsertionError {}
 /// ```rust
 /// use shortest_path_finder::graph::DirectedGraph;
 /// use shortest_path_finder::graph::{Graph, GraphNode};
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let a = DefaultNode::new("A".to_string());
 /// let b = DefaultNode::new("B".to_string());
@@ -229,7 +229,7 @@ pub trait Graph {
     ///     DirectedGraph,
     ///     Graph, GraphNode,
     /// };
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::new(vec![
     ///     DefaultNode::new("A".to_string()),
@@ -280,7 +280,7 @@ pub trait Graph {
     /// ```rust
     /// use shortest_path_finder::graph::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::new(vec![]);
     /// graph.insert_node(DefaultNode::new("A".to_string()));
@@ -350,7 +350,7 @@ pub trait Graph {
     /// ```rust
     /// use shortest_path_finder::graph::DirectedGraph;
     /// use shortest_path_finder::graph::{Graph, GraphNode};
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::new("A".to_string());
     /// let graph = DirectedGraph::new(vec![node]);
@@ -374,7 +374,7 @@ pub trait Graph {
     /// ```rust
     /// use shortest_path_finder::graph::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let graph = DirectedGraph::new(
     ///     vec![DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string())],

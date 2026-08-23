@@ -14,7 +14,7 @@
 use divan::{Bencher, bench};
 use shortest_path_finder::{
     graph::{Graph, UndirectedGraph},
-    nodes::default_node::DefaultNode,
+    nodes::DefaultNode,
 };
 
 fn main() {

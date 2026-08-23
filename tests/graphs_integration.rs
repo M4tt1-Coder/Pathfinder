@@ -9,7 +9,7 @@ use shortest_path_finder::{
         directed::DirectedGraphInsertionError,
         {Graph, GraphNode},
     },
-    nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode},
+    nodes::{DefaultNode, TwoDimensionalNode},
 };
 
 fn node(id: &str) -> DefaultNode {

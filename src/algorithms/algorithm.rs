@@ -24,7 +24,7 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::SearchResult;
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let path = vec![
 //!     DefaultNode::new("A".to_string()),
@@ -164,7 +164,7 @@ pub trait Algorithm {
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
     /// use shortest_path_finder::graph::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::default();
     /// let a = DefaultNode::new("A".to_string());
@@ -219,7 +219,7 @@ pub trait SearchResult: Display + Debug {
     /// use shortest_path_finder::algorithms::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
     /// use shortest_path_finder::graph::GraphNode;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let path = vec![
     ///     DefaultNode::new("A".to_string()),
@@ -246,7 +246,7 @@ pub trait SearchResult: Display + Debug {
     /// use shortest_path_finder::algorithms::SearchResult;
     /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
     /// use shortest_path_finder::graph::GraphNode;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let path = vec![
     ///     DefaultNode::new("A".to_string()),

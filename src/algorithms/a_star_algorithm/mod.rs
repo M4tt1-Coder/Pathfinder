@@ -13,7 +13,7 @@
 //! ```rust
 //! use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
 //! use shortest_path_finder::algorithms::SearchResult;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();

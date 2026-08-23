@@ -34,8 +34,8 @@
 //! categories (for example exit codes or telemetry).
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind,
+//! dijkstra_error::DijkstraError};
 //!
 //! let err = AlgorithmError::from(DijkstraError::NoPathFound {
 //!     start: "A".to_string(),
@@ -65,7 +65,7 @@
 //! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
 //! use shortest_path_finder::graph::DirectedGraph;
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());

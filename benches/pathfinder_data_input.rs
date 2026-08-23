@@ -18,7 +18,7 @@ use shortest_path_finder::{
     data_input::file::{FileInputGraphResult, retrieve_graph_data_from_file},
     error::ParseError,
     graph::{DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
-    nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode},
+    nodes::{DefaultNode, TwoDimensionalNode},
 };
 
 fn main() {

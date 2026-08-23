@@ -18,7 +18,7 @@
 //! ```rust
 //! use shortest_path_finder::graph::DirectedGraph;
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -33,7 +33,7 @@ use std::{collections::HashMap, error::Error, fmt::Display};
 
 use crate::{
     graph::{Graph, GraphNode},
-    nodes::default_node::DefaultNode,
+    nodes::DefaultNode,
 };
 
 /// Directed weighted graph using [`DefaultNode`] nodes and adjacency lists.
@@ -54,7 +54,7 @@ use crate::{
 /// ```
 /// use shortest_path_finder::graph::DirectedGraph;
 /// use shortest_path_finder::graph::Graph;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::new(vec![
 ///     DefaultNode::new("A".to_string()),

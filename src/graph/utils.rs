@@ -4,9 +4,7 @@
 //! and algorithms. The functions here are intentionally generic so they can be
 //! reused across graph variants.
 
-use crate::nodes::trait_decl::{
-    coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
-};
+use crate::nodes::trait_decl::{CoordinateDatatype, CoordinatesNode};
 
 /// Calculates edge weight using Euclidean distance between endpoints.
 ///

@@ -37,18 +37,15 @@
 //! ```
 
 use shortest_path_finder::{
-    algorithms::{
-        Algorithm, SearchResult,
-        dijkstra::{DijkstraAlgorithm, DijkstraError},
-    },
+    algorithms::{Algorithm, SearchResult, dijkstra::DijkstraAlgorithm},
     error::algorithm_error::{
-        AlgorithmErrorKind,
+        AlgorithmErrorKind, DijkstraError,
         dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
     graph::{
         DirectedGraph, UndirectedGraph, {Graph, GraphNode},
     },
-    nodes::default_node::DefaultNode,
+    nodes::DefaultNode,
 };
 
 fn node(id: &str) -> DefaultNode {

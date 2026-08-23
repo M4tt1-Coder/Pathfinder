@@ -37,8 +37,8 @@
 //! use std::str::FromStr;
 //! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::{
-//!     trait_decl::coordinates_node::CoordinatesNode,
-//!     two_dimensional_node::TwoDimensionalNode,
+//!     trait_decl::CoordinatesNode,
+//!     TwoDimensionalNode,
 //! };
 //!
 //! let node = TwoDimensionalNode::<i32>::from_str("Hub:3,5").unwrap();
@@ -65,9 +65,7 @@ use std::{
 use crate::{
     error::ParseError,
     graph::GraphNode,
-    nodes::trait_decl::{
-        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
-    },
+    nodes::trait_decl::{CoordinateDatatype, CoordinatesNode},
 };
 
 /// Coordinate-aware node type used by two-dimensional graph models.
@@ -88,8 +86,8 @@ use crate::{
 /// ```rust
 /// use shortest_path_finder::graph::GraphNode;
 /// use shortest_path_finder::nodes::{
-///     trait_decl::coordinates_node::CoordinatesNode,
-///     two_dimensional_node::TwoDimensionalNode,
+///     trait_decl::CoordinatesNode,
+///     TwoDimensionalNode,
 /// };
 ///
 /// let node = TwoDimensionalNode::new(2, -1, "Depot".to_string()).unwrap();
@@ -136,14 +134,14 @@ impl<C: CoordinateDatatype> TwoDimensionalNode<C> {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(2, 7, "N1".to_string());
     /// assert!(node.is_some());
     /// ```
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(2, 7, "".to_string());
     /// assert!(node.is_none());
@@ -238,7 +236,7 @@ where
     /// ```rust
     /// use std::str::FromStr;
     /// use shortest_path_finder::graph::GraphNode;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::<i32>::from_str("P:10,12").unwrap();
     /// assert_eq!(node.get_id(), "P");
