@@ -8,33 +8,33 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 ## Repository snapshot
 
-| | |
-|---|---|
-| **Language** | Rust (`edition = "2024"`, MSRV 1.85+) |
-| **Crate** | `shortest_path_finder` — library + `pathfinder` binary |
-| **Purpose** | Parse weighted graphs and run shortest-path algorithms |
-| **Algorithms** | Dijkstra, A* (coordinate-based) |
-| **Graph types** | Directed, undirected, 2D coordinate |
+|                 |                                                        |
+| --------------- | ------------------------------------------------------ |
+| **Language**    | Rust (`edition = "2024"`, MSRV 1.85+)                  |
+| **Crate**       | `shortest_path_finder` — library + `pathfinder` binary |
+| **Purpose**     | Parse weighted graphs and run shortest-path algorithms |
+| **Algorithms**  | Dijkstra, A* (coordinate-based)                        |
+| **Graph types** | Directed, undirected, 2D coordinate                    |
 
 ---
 
 ## High-value file map
 
-| Area | Path |
-|---|---|
-| CLI entrypoint | `src/main.rs` |
-| Argument parsing / defaults | `src/cmd_line/app_config.rs` |
-| Graph file parsing | `src/data_input/file_input.rs` |
-| Graph traits & implementations | `src/graphs/*` |
-| Algorithm trait & selection | `src/algorithms/algorithm.rs` |
-| Dijkstra | `src/algorithms/dijkstra.rs` |
-| A* | `src/algorithms/a_star_algorithm/` |
-| Error types | `src/error/*` |
-| Node models | `src/nodes/*` |
-| Benchmarks | `benches/` (not CI-gated) |
-| CI workflows | `.github/workflows/rust.yml`, `.github/workflows/rust-ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml` |
-| User docs | `README.md` |
-| AI diary | `diary/` — see [`diary/README.md`](diary/README.md) |
+| Area                           | Path                                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| CLI entrypoint                 | `src/main.rs`                                                                                                                  |
+| Argument parsing / defaults    | `src/cmd_line/app_config.rs`                                                                                                   |
+| Graph file parsing             | `src/data_input/file_input.rs`                                                                                                 |
+| Graph traits & implementations | `src/graphs/*`                                                                                                                 |
+| Algorithm trait & selection    | `src/algorithms/algorithm.rs`                                                                                                  |
+| Dijkstra                       | `src/algorithms/dijkstra.rs`                                                                                                   |
+| A*                             | `src/algorithms/a_star_algorithm/`                                                                                             |
+| Error types                    | `src/error/*`                                                                                                                  |
+| Node models                    | `src/nodes/*`                                                                                                                  |
+| Benchmarks                     | `benches/` (not CI-gated)                                                                                                      |
+| CI workflows                   | `.github/workflows/rust.yml`, `.github/workflows/rust-ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml` |
+| User docs                      | `README.md`                                                                                                                    |
+| AI diary                       | `diary/` — see [`diary/README.md`](diary/README.md)                                                                            |
 
 ---
 
@@ -47,13 +47,13 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 ### Module-local change guide
 
-| Change type | Primary files |
-|---|---|
-| CLI / config | `src/main.rs`, `src/cmd_line/app_config.rs` |
-| Input / parsing | `src/data_input/file_input.rs` |
-| Algorithms | `src/algorithms/*` + only required graph trait/impl pieces |
-| Graph structure | `src/graphs/*`, `src/nodes/*` |
-| Errors | `src/error/*` |
+| Change type     | Primary files                                              |
+| --------------- | ---------------------------------------------------------- |
+| CLI / config    | `src/main.rs`, `src/cmd_line/app_config.rs`                |
+| Input / parsing | `src/data_input/file_input.rs`                             |
+| Algorithms      | `src/algorithms/*` + only required graph trait/impl pieces |
+| Graph structure | `src/graphs/*`, `src/nodes/*`                              |
+| Errors          | `src/error/*`                                              |
 
 ---
 

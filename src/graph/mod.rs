@@ -520,10 +520,12 @@ pub mod undirected;
 
 // ~ private modules ~
 
+mod graph_weight_type;
 mod utils;
 
 // ~ re-exports ~
 
 pub use directed::DirectedGraph;
+pub use graph_weight_type::GraphWeightType;
 pub use two_dimensional::TwoDimensionalCoordinateGraph;
 pub use undirected::UndirectedGraph;

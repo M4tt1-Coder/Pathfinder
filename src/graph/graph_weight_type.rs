@@ -3,9 +3,9 @@
 //! # Overview
 //!
 //! This module contributes two things:
-//! - [`WeightType`], an enum used by parsing code when weight types differ by
+//! - [`GraphWeightType`], an enum used by parsing code when weight types differ by
 //!   graph format.
-//! - Implementations of [`crate::graphs::graph::GraphWeight`] for `u16`, `f32`,
+//! - Implementations of [`crate::graph::GraphWeight`] for `u16`, `f32`,
 //!   and `i32`.
 //!
 //! # Design Notes
@@ -18,10 +18,10 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graph::GraphWeight;
-//! use shortest_path_finder::weight_types::impl_weights::WeightType;
+//! use shortest_path_finder::graph::GraphWeightType;
 //!
-//! let weight = WeightType::U16(7);
-//! assert!(matches!(weight, WeightType::U16(7)));
+//! let weight = GraphWeightType::U16(7);
+//! assert!(matches!(weight, GraphWeightType::U16(7)));
 //!
 //! assert_eq!(u16::zero(), 0);
 //! assert!(<u16 as GraphWeight>::max_value() > 1_000);
@@ -52,15 +52,15 @@ use crate::graph::GraphWeight;
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::weight_types::impl_weights::WeightType;
+/// use shortest_path_finder::graph::GraphWeightType;
 ///
-/// let w = WeightType::U16(12);
-/// assert!(matches!(w, WeightType::U16(12)));
+/// let w = GraphWeightType::U16(12);
+/// assert!(matches!(w, GraphWeightType::U16(12)));
 ///
-/// let inferred = WeightType::NotNecessary;
-/// assert!(matches!(inferred, WeightType::NotNecessary));
+/// let inferred = GraphWeightType::NotNecessary;
+/// assert!(matches!(inferred, GraphWeightType::NotNecessary));
 /// ```
-pub enum WeightType {
+pub enum GraphWeightType {
     /// Represents an unsigned 16-bit integer weight.
     U16(u16),
     /// Represents a 32-bit floating point weight.

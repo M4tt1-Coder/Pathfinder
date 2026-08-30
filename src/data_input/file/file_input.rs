@@ -107,10 +107,10 @@ use crate::{
         parse_error::{InvalidWeightError, ParseError},
     },
     graph::{
-        DirectedGraph, Graph, GraphInsertionError, TwoDimensionalCoordinateGraph, UndirectedGraph,
+        DirectedGraph, Graph, GraphInsertionError, GraphWeightType, TwoDimensionalCoordinateGraph,
+        UndirectedGraph,
     },
     nodes::{DefaultNode, NodeType, TwoDimensionalNode},
-    weight_types::impl_weights::WeightType,
 };
 
 // TODO: Add feature that users can choose different coordinate types for the
@@ -544,7 +544,7 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
 fn convert_line_to_graph_data(
     line: &str,
     detected_graph_type: &FoundGraphType,
-) -> Result<(NodeType, NodeType, WeightType), ParseError> {
+) -> Result<(NodeType, NodeType, GraphWeightType), ParseError> {
     match detected_graph_type {
         FoundGraphType::UN | FoundGraphType::D => {
             // One-dimensional formats differ only by separator; downstream extraction is shared.
@@ -578,7 +578,7 @@ fn convert_line_to_graph_data(
             Ok((
                 NodeType::DefaultNode(first_node),
                 NodeType::DefaultNode(second_node),
-                WeightType::U16(weight),
+                GraphWeightType::U16(weight),
             ))
         }
         FoundGraphType::TD => {
@@ -597,7 +597,7 @@ fn convert_line_to_graph_data(
             Ok((
                 NodeType::TwoDimensionalNode(first_node),
                 NodeType::TwoDimensionalNode(second_node),
-                WeightType::NotNecessary,
+                GraphWeightType::NotNecessary,
             ))
         }
     }
@@ -775,7 +775,7 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
             }
         };
         let weight = match weight {
-            WeightType::U16(value) => value,
+            GraphWeightType::U16(value) => value,
             _ => {
                 return Err(ParseError::InvalidDataInput(
                     "Directed graph parsing produced an unexpected weight type!".to_string(),
@@ -876,7 +876,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
             }
         };
         let weight = match weight {
-            WeightType::U16(value) => value,
+            GraphWeightType::U16(value) => value,
             _ => {
                 return Err(ParseError::InvalidDataInput(
                     "Undirected graph parsing produced an unexpected weight type!".to_string(),

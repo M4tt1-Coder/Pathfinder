@@ -80,6 +80,7 @@ use std::{
 use log::warn;
 
 use crate::{
+    algorithms::NumericDatatype,
     algorithms::{
         a_star_algorithm::utils::{determine_path_cost, prepare_g_cost_map},
         algorithm::{Algorithm, SearchResult},
@@ -87,7 +88,6 @@ use crate::{
     error::algorithm_error::AStarError,
     graph::Graph,
     nodes::trait_decl::{CoordinateDatatype, CoordinatesNode},
-    weight_types::numeric_datatype::NumericDatatype,
 };
 
 /// A* pathfinding engine for coordinate-aware graph nodes.

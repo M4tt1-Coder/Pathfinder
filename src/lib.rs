@@ -84,7 +84,5 @@ pub mod data_input;
 pub mod error;
 pub mod graph;
 pub mod nodes;
-pub mod numeric_datatypes;
-pub mod weight_types;
 
 pub use error::AppError;

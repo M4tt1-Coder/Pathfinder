@@ -31,10 +31,12 @@
 //! ```
 
 mod algorithm;
+mod numeric_datatype;
 
 // ~ flatten module paths ~
 
 pub use algorithm::*;
+pub use numeric_datatype::NumericDatatype;
 
 // ~ public modules ~
 

@@ -23,11 +23,10 @@
 use std::collections::HashMap;
 
 use crate::{
-    algorithms::a_star_algorithm::a_star::AStarQueueElement,
+    algorithms::{NumericDatatype, a_star_algorithm::a_star::AStarQueueElement},
     error::algorithm_error::a_star_error::PathReconstructionError,
     graph::{Graph, GraphNode},
     nodes::trait_decl::CoordinatesNode,
-    weight_types::numeric_datatype::NumericDatatype,
 };
 
 /// Prepares the initial `g(n)` map for A* processing.
