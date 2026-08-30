@@ -19,6 +19,18 @@ repos:
         language: system
         pass_filenames: false
 
+      - id: rust-build
+        name: cargo build
+        entry: cargo build --all-features
+        language: system
+        pass_filenames: false
+
+      - id: rust-bench
+        name: cargo bench
+        entry: cargo bench --no-run --all-features
+        language: system
+        pass_filenames: false
+
       # Optional: catch dependency/security issues
       - id: rust-audit
         name: cargo audit
