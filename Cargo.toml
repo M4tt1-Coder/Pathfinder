@@ -1,8 +1,8 @@
 [package]
 name = "shortest_path_finder"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.98.0"
 authors = ["Matthis Geißler <matthisgeissler@gmail.com>"]
 license = "MIT"
 description = "A Rust library for shortest path finding algorithms, including Dijkstra's, A*, and Bellman-Ford. Supports both directed and undirected graphs, with customizable heuristics and edge weights. Ideal for game development, network routing, and graph analysis."

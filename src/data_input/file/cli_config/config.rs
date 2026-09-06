@@ -484,10 +484,10 @@ Notes:\n\
 
         // Keep backward compatibility for existing callers that pass
         // `--algo cmd-line` or `--algo file` as origin markers.
-        if let Some(algo_token) = raw_algorithm {
-            if let Some(origin) = AppConfig::legacy_origin_from_algorithm(algo_token) {
-                return Ok((origin, true));
-            }
+        if let Some(algo_token) = raw_algorithm
+            && let Some(origin) = AppConfig::legacy_origin_from_algorithm(algo_token)
+        {
+            return Ok((origin, true));
         }
 
         Ok((InputOrigin::File, false))
