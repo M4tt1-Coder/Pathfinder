@@ -9,9 +9,9 @@
 //!
 //! # Intended Scope
 //!
-//! These helpers are intentionally kept internal to the A* implementation.
-//! They exist to support path reconstruction and cost initialization without
-//! forming part of the crate's public API surface.
+//! These helpers are public for testability, but they are intended for internal use.
+//! They support path reconstruction and cost initialization and are not considered
+//! part of the crate's stable high-level API surface.
 //!
 //! # Notes
 //!
