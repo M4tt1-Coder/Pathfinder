@@ -5,7 +5,7 @@
 //! This target benchmarks creation and parsing behavior for:
 //! - `InputOrigin` conversion,
 //! - `AppConfig` setup across argument sets,
-//! - `ConfigParseError` construction.
+//! - `CLIParseError` construction.
 //!
 //! # Run
 //!
@@ -15,8 +15,8 @@
 
 use divan::{Bencher, bench};
 use shortest_path_finder::{
-    cmd_line::app_config::{AppConfig, InputOrigin},
-    error::config_error::ConfigParseError,
+    data_input::file::cli_config::{AppConfig, InputOrigin},
+    error::CLIParseError,
 };
 
 fn main() {
@@ -52,9 +52,9 @@ fn create_app_config_instance(args: &Vec<&str>) {
         .expect("expected config");
 }
 
-// ----- Benchmarks 'ConfigParseError' enum -----
+// ----- Benchmarks 'CLIParseError' enum -----
 
 #[bench]
 fn create_setup_process_error_instance() {
-    let _err = ConfigParseError::MissingRequiredFlag { flag: "--start" };
+    let _err = CLIParseError::MissingRequiredFlag { flag: "--start" };
 }

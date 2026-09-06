@@ -2,7 +2,7 @@
 //!
 //! # Overview
 //!
-//! [`CoordinatesNode`] extends [`crate::graphs::graph::GraphNode`] with x/y
+//! [`CoordinatesNode`] extends [`crate::graph::GraphNode`] with x/y
 //! coordinate accessors. It is used by coordinate-aware graph models and by
 //! A* implementations that require geometric information.
 //!
@@ -16,10 +16,10 @@
 //!
 //! ```rust
 //! use std::fmt::{Display, Formatter};
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::trait_decl::{
-//!     coordinate_datatype::CoordinateDatatype,
-//!     coordinates_node::CoordinatesNode,
+//!     CoordinateDatatype,
+//!     CoordinatesNode,
 //! };
 //!
 //! #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
@@ -67,7 +67,7 @@
 //! assert_eq!(scaled, 4);
 //! ```
 
-use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
+use crate::{graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
 
 /// Trait for nodes that expose two coordinates in addition to an identifier.
 ///
@@ -79,8 +79,8 @@ use crate::{graphs::graph::GraphNode, nodes::trait_decl::coordinate_datatype::Co
 ///
 /// ```rust
 /// use shortest_path_finder::nodes::{
-///     trait_decl::coordinates_node::CoordinatesNode,
-///     two_dimensional_node::TwoDimensionalNode,
+///     trait_decl::CoordinatesNode,
+///     TwoDimensionalNode,
 /// };
 ///
 /// let node = TwoDimensionalNode::new(5, 8, "P".to_string()).unwrap();

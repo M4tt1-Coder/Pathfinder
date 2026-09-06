@@ -4,9 +4,9 @@
 //! validate defaults, optional flags, and required field handling.
 
 use shortest_path_finder::{
-    algorithms::algorithm::Algorithms,
-    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
-    error::config_error::ConfigParseError,
+    algorithms::Algorithms,
+    data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
+    error::CLIParseError,
 };
 
 fn build_args(parts: &[&str]) -> Vec<String> {
@@ -56,10 +56,7 @@ fn setup_config_requires_start_node() {
 
     let err = AppConfig::setup_config(args).expect_err("expected missing start error");
 
-    assert_eq!(
-        err,
-        ConfigParseError::MissingRequiredFlag { flag: "--start" }
-    );
+    assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--start" });
 }
 
 #[test]
@@ -68,7 +65,7 @@ fn setup_config_requires_end_node() {
 
     let err = AppConfig::setup_config(args).expect_err("expected missing end error");
 
-    assert_eq!(err, ConfigParseError::MissingRequiredFlag { flag: "--end" });
+    assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--end" });
 }
 
 #[test]
@@ -77,7 +74,7 @@ fn setup_config_reports_missing_end_node_when_incomplete() {
 
     let err = AppConfig::setup_config(args).expect_err("expected missing end error");
 
-    assert_eq!(err, ConfigParseError::MissingRequiredFlag { flag: "--end" });
+    assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--end" });
 }
 
 #[test]
@@ -132,7 +129,7 @@ fn setup_config_rejects_invalid_origin_value() {
 
     assert_eq!(
         err,
-        ConfigParseError::InvalidFlagValue {
+        CLIParseError::InvalidFlagValue {
             flag: "--origin".to_string(),
             value: "nowhere".to_string(),
             expected: "file | cmd-line".to_string(),
@@ -156,7 +153,7 @@ fn setup_config_rejects_invalid_algorithm_value() {
 
     assert_eq!(
         err,
-        ConfigParseError::InvalidFlagValue {
+        CLIParseError::InvalidFlagValue {
             flag: "--algo".to_string(),
             value: "Whoops".to_string(),
             expected: "Dijkstra | AStar".to_string(),
@@ -182,7 +179,7 @@ fn setup_config_rejects_conflicting_origin_and_graph_file() {
 
     assert_eq!(
         err,
-        ConfigParseError::ConflictingFlags {
+        CLIParseError::ConflictingFlags {
             flag: "--origin".to_string(),
             other: "--graph-file".to_string(),
             reason: "command-line origin cannot be combined with --graph-file".to_string(),
@@ -216,7 +213,7 @@ fn setup_config_rejects_missing_value_for_flag() {
 
     assert_eq!(
         err,
-        ConfigParseError::MissingValueForFlag {
+        CLIParseError::MissingValueForFlag {
             flag: "--start".to_string(),
             index: 2,
         }
@@ -247,7 +244,7 @@ fn setup_config_rejects_unexpected_end_of_options() {
 
     let err = AppConfig::setup_config(args).expect_err("expected end-of-options error");
 
-    assert_eq!(err, ConfigParseError::UnexpectedEndOfOptions { index: 2 });
+    assert_eq!(err, CLIParseError::UnexpectedEndOfOptions { index: 2 });
 }
 
 #[test]
@@ -258,7 +255,7 @@ fn setup_config_rejects_unknown_flag() {
 
     assert_eq!(
         err,
-        ConfigParseError::UnknownFlag {
+        CLIParseError::UnknownFlag {
             flag: "--whoops".to_string(),
             index: 2,
         }
@@ -273,7 +270,7 @@ fn setup_config_rejects_duplicate_flag() {
 
     assert_eq!(
         err,
-        ConfigParseError::DuplicateFlag {
+        CLIParseError::DuplicateFlag {
             flag: "--start".to_string(),
             first_index: 2,
             duplicate_index: 4,
@@ -289,7 +286,7 @@ fn setup_config_rejects_unexpected_non_flag_token() {
 
     assert_eq!(
         err,
-        ConfigParseError::UnexpectedArgument {
+        CLIParseError::UnexpectedArgument {
             value: "start".to_string(),
             index: 2,
         }

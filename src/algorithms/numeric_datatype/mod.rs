@@ -2,7 +2,7 @@
 //!
 //! # Overview
 //!
-//! [`NumericDatatype`] builds on [`crate::graphs::graph::GraphWeight`] and adds
+//! [`NumericDatatype`] builds on [`crate::graph::GraphWeight`] and adds
 //! arithmetic functionality needed by heuristic-based algorithms such as A*.
 //!
 //! # Responsibilities
@@ -16,7 +16,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::weight_types::numeric_datatype::NumericDatatype;
+//! use shortest_path_finder::algorithms::NumericDatatype;
 //!
 //! fn scale_weight<W: NumericDatatype>(weight: W, factor: W) -> W {
 //!     weight * factor
@@ -28,7 +28,7 @@
 
 use std::ops::{Div, Mul, Sub};
 
-use crate::graphs::graph::GraphWeight;
+use crate::graph::GraphWeight;
 
 /// Numeric contract for algorithm weight/coordinate datatypes.
 ///
@@ -67,3 +67,9 @@ pub trait NumericDatatype:
     /// Implementations may apply a lossy conversion depending on target type.
     fn from_f32(value: f32) -> Self;
 }
+
+// ========== Modulization ==========
+
+// ~ private modules ~
+
+mod impl_numeric_datatypes;

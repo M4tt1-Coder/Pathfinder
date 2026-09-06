@@ -2,20 +2,14 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+This project does not currently maintain a version-specific security-support
+matrix. Security reports are evaluated against the latest release and the
+default branch. Older releases may not receive backported fixes.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Please report vulnerabilities privately through the repository's
+[GitHub Security Advisory form](https://github.com/M4tt1-Coder/Pathfinder/security/advisories/new).
+Do not open a public issue for an unpatched vulnerability. Maintainers will
+acknowledge reports when able, investigate the affected code, and coordinate
+disclosure after a fix or mitigation is available.

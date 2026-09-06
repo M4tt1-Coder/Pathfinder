@@ -6,11 +6,9 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 use shortest_path_finder::{
-    error::parse_error::ParseError,
-    graphs::graph::GraphNode,
-    nodes::{
-        trait_decl::coordinates_node::CoordinatesNode, two_dimensional_node::TwoDimensionalNode,
-    },
+    error::ParseError,
+    graph::GraphNode,
+    nodes::{TwoDimensionalNode, trait_decl::CoordinatesNode},
 };
 
 #[test]

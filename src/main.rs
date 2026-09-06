@@ -55,14 +55,10 @@ use std::{env, process};
 
 use log::error;
 use shortest_path_finder::{
-    AppError,
-    algorithms::{
-        a_star_algorithm::a_star::AStar,
-        algorithm::{Algorithm, Algorithms},
-        dijkstra::DijkstraAlgorithm,
-    },
-    cmd_line::app_config::{AppConfig, AppConfigOutcome, InputOrigin},
-    data_input::file_input::{
+    AStar, AppError, Dijkstra,
+    algorithms::{Algorithm, Algorithms},
+    data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
+    data_input::file::{
         FileInputGraphResult::{DirectedGraph, TwoDimensionalGraph, UndirectedGraph},
         retrieve_graph_data_from_file,
     },
@@ -75,8 +71,7 @@ use shortest_path_finder::{
 // algorithm. The user can then call this method after calling the 'shortest_path' method to see the
 // visualization of the algorithm's execution.
 
-// TODO: (Refactor) Refactor code -> apply best practices -> for each file indiviually, improve the
-// visibility of the code + modulization
+// TODO: (Refactor) Refactor code -> apply best practices
 
 // TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
@@ -146,7 +141,7 @@ fn run() -> Result<(), AppError> {
             match generated_graph_res {
                 DirectedGraph(graph) => {
                     let algo = match app_config.algorithm {
-                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        Algorithms::Dijkstra => Dijkstra::new(graph),
                         _ => {
                             return Err(AppError::Runtime {
                                 message: format!(
@@ -165,7 +160,7 @@ fn run() -> Result<(), AppError> {
                 }
                 UndirectedGraph(graph) => {
                     let algo = match app_config.algorithm {
-                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        Algorithms::Dijkstra => Dijkstra::new(graph),
                         _ => {
                             return Err(AppError::Runtime {
                                 message: format!(

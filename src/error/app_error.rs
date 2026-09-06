@@ -11,7 +11,7 @@
 //!
 //! ```text
 //! AppError
-//! ├── Config(ConfigParseError)   — CLI flag parsing and validation
+//! ├── Config(CLIParseError)   — CLI flag parsing and validation
 //! ├── Input(DataInputError)      — file I/O and graph parse failures
 //! ├── Algorithm(AlgorithmError)  — shortest-path execution failures
 //! ├── UnsupportedInputOrigin     — parsed origin not implemented in the runtime
@@ -30,10 +30,9 @@
 //! Converting a configuration error:
 //!
 //! ```rust
-//! use shortest_path_finder::error::app_error::AppError;
-//! use shortest_path_finder::error::config_error::ConfigParseError;
+//! use shortest_path_finder::error::{AppError, CLIParseError};
 //!
-//! let err = AppError::from(ConfigParseError::MissingRequiredFlag { flag: "--start" });
+//! let err = AppError::from(CLIParseError::MissingRequiredFlag { flag: "--start" });
 //! assert_eq!(err.exit_code(), 1);
 //! assert!(err.to_string().contains("--start"));
 //! ```
@@ -41,10 +40,9 @@
 //! Converting a file-input error:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
-//! use shortest_path_finder::error::app_error::AppError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::data_input::file::FileInputError;
+//! use shortest_path_finder::error::{AppError, DataInputError};
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
 //!     file_path: "graph.txt".to_string(),
@@ -58,9 +56,9 @@
 //! Mapping an algorithm failure to a non-default exit code:
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraError;
-//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
-//! use shortest_path_finder::error::app_error::AppError;
+//! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind,
+//! dijkstra_error::DijkstraError};
+//! use shortest_path_finder::AppError;
 //!
 //! let err = AppError::from(AlgorithmError::from(DijkstraError::NoPathFound {
 //!     start: "A".to_string(),
@@ -72,8 +70,7 @@
 use std::{error::Error, fmt};
 
 use crate::error::{
-    algorithm_error::AlgorithmError, config_error::ConfigParseError,
-    data_input_error::DataInputError,
+    CLIParseError, algorithm_error::AlgorithmError, data_input_error::DataInputError,
 };
 
 /// Unified CLI error for the Pathfinder binary.
@@ -89,7 +86,7 @@ use crate::error::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::error::app_error::AppError;
+/// use shortest_path_finder::AppError;
 ///
 /// let err = AppError::UnsupportedInputOrigin {
 ///     origin: "cmd-line".to_string(),
@@ -99,7 +96,7 @@ use crate::error::{
 #[derive(Debug)]
 pub enum AppError {
     /// Configuration parsing or validation failed.
-    Config(ConfigParseError),
+    Config(CLIParseError),
     /// File input or parse failure while loading graph data.
     Input(DataInputError),
     /// Shortest-path algorithm execution failed.
@@ -126,10 +123,9 @@ impl AppError {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::error::app_error::AppError;
-    /// use shortest_path_finder::error::config_error::ConfigParseError;
+    /// use shortest_path_finder::error::{AppError, CLIParseError};
     ///
-    /// let err = AppError::Config(ConfigParseError::MissingRequiredFlag { flag: "--end" });
+    /// let err = AppError::Config(CLIParseError::MissingRequiredFlag { flag: "--end" });
     /// assert_eq!(err.exit_code(), 1);
     /// ```
     pub fn exit_code(&self) -> i32 {
@@ -171,9 +167,9 @@ impl Error for AppError {
     }
 }
 
-impl From<ConfigParseError> for AppError {
+impl From<CLIParseError> for AppError {
     /// Wraps a CLI configuration error as [`AppError::Config`].
-    fn from(err: ConfigParseError) -> Self {
+    fn from(err: CLIParseError) -> Self {
         Self::Config(err)
     }
 }

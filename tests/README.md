@@ -16,8 +16,9 @@ Run the same checks used by CI:
 
 1. cargo fmt --all -- --check
 2. cargo clippy --all-targets --all-features -- -D warnings
-3. cargo test --workspace --all-targets --locked
-4. cargo test --workspace --doc --locked
+3. cargo build --workspace --all-targets --locked
+4. cargo test --workspace --all-targets --locked
+5. cargo test --workspace --doc --locked
 
 ## Test design principles used
 

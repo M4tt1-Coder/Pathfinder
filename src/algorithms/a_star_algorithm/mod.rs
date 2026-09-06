@@ -2,17 +2,18 @@
 //!
 //! # Overview
 //!
-//! This namespace contains:
-//! - [`a_star`]: public A* implementation and related types.
-//! - [`utils`]: public helper utilities (intended for internal use and tests)
-//!   used by A* path reconstruction and cost bookkeeping.
+//! This namespace re-exports the public A* algorithm implementation and types
+//! used for coordinate-based shortest-path searches. The module provides:
+//! - [`AStar`]: the A* algorithm implementation.
+//! - [`AStarSearchResult`]: the result wrapper for A* searches.
+//! - Helper utilities for path reconstruction and cost bookkeeping (private).
 //!
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-//! use shortest_path_finder::algorithms::algorithm::SearchResult;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//! use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+//! use shortest_path_finder::algorithms::SearchResult;
+//! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(1, 1, "B".to_string()).unwrap();
@@ -20,5 +21,14 @@
 //! assert_eq!(result.get_path().len(), 2);
 //! ```
 
-pub mod a_star;
-pub mod utils;
+mod a_star;
+
+// ~ flatten module paths ~
+
+pub use a_star::*;
+
+// ~ public modules ~
+
+// ~ private modules ~
+
+mod utils;

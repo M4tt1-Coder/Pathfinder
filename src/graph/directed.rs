@@ -6,7 +6,7 @@
 //! - [`DirectedGraph`] stores [`DefaultNode`] values and adjacency data.
 //! - [`DirectedGraphInsertionError`] reports insertion failures.
 //!
-//! It implements the shared [`crate::graphs::graph::Graph`] trait and
+//! It implements the shared [`crate::graph::Graph`] trait and
 //! is used by shortest-path algorithms such as Dijkstra.
 //!
 //! # File Abbreviation
@@ -16,9 +16,9 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::DirectedGraph;
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -32,8 +32,8 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use crate::{
-    graphs::graph::{Graph, GraphNode},
-    nodes::default_node::DefaultNode,
+    graph::{Graph, GraphNode},
+    nodes::DefaultNode,
 };
 
 /// Directed weighted graph using [`DefaultNode`] nodes and adjacency lists.
@@ -52,9 +52,9 @@ use crate::{
 ///
 /// # Example
 /// ```
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
-/// use shortest_path_finder::graphs::graph::Graph;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::DirectedGraph;
+/// use shortest_path_finder::graph::Graph;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::new(vec![
 ///     DefaultNode::new("A".to_string()),
@@ -222,11 +222,10 @@ impl DirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
-    /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// ```
     pub fn new(nodes: Vec<DefaultNode>) -> Self {
@@ -260,8 +259,8 @@ impl Default for DirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::default();
     /// assert!(graph.get_all_nodes().is_empty());
@@ -298,7 +297,7 @@ impl Default for DirectedGraph {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::directed::DirectedGraphInsertionError;
+/// use shortest_path_finder::graph::directed::DirectedGraphInsertionError;
 ///
 /// let err = DirectedGraphInsertionError::SourceNodeDoesNotExist {
 ///     node_id: "A".to_string(),

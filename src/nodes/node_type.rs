@@ -16,9 +16,9 @@
 //!
 //! ```rust
 //! use shortest_path_finder::nodes::{
-//!     default_node::DefaultNode,
-//!     node_types::NodeType,
-//!     two_dimensional_node::TwoDimensionalNode,
+//!     DefaultNode,
+//!     NodeType,
+//!     TwoDimensionalNode,
 //! };
 //!
 //! let generic = NodeType::DefaultNode(DefaultNode::new("A".to_string()));

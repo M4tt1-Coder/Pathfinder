@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! This module provides concrete implementations of
-//! [`crate::weight_types::numeric_datatype::NumericDatatype`] for selected
+//! [`crate::algorithms::NumericDatatype`] for selected
 //! primitive types used by graph algorithms and heuristics.
 //!
 //! Currently implemented:
@@ -23,7 +23,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::weight_types::numeric_datatype::NumericDatatype;
+//! use shortest_path_finder::algorithms::NumericDatatype;
 //!
 //! let value = -4_i32;
 //! assert_eq!(value.abs(), 4);
@@ -32,7 +32,7 @@
 //! assert!(heuristic > 0.0);
 //! ```
 
-use crate::weight_types::numeric_datatype::NumericDatatype;
+use crate::algorithms::NumericDatatype;
 
 /// Constant factor used by heuristic scaling implementations.
 ///

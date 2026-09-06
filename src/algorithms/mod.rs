@@ -4,18 +4,18 @@
 //!
 //! This module groups all shortest-path algorithm related code used by this
 //! crate:
-//! - [`algorithm`]: shared traits and algorithm-selection enum.
-//! - [`dijkstra`]: concrete Dijkstra implementation.
+//! - [`Algorithm`]: shared trait for algorithm implementations.
+//! - [`Algorithms`]: enumeration for selecting between available algorithms.
+//! - [`dijkstra_algorithm`]: concrete Dijkstra implementation.
 //! - [`a_star_algorithm`]: coordinate-based A* implementation.
 //!
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+//! use shortest_path_finder::{Dijkstra, DirectedGraph};
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -24,11 +24,22 @@
 //! graph.insert_node(b.clone());
 //! assert!(graph.insert_edge(&a, &b, Some(4)).is_none());
 //!
-//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let dijkstra = Dijkstra::new(graph);
 //! let result = dijkstra.shortest_path("A", "B").unwrap();
 //! assert_eq!(result.get_total_distance(), 4);
 //! ```
 
+mod algorithm;
+mod numeric_datatype;
+
+// ~ flatten module paths ~
+
+pub use algorithm::*;
+pub use numeric_datatype::NumericDatatype;
+
+// ~ public modules ~
+
 pub mod a_star_algorithm;
-pub mod algorithm;
-pub mod dijkstra;
+pub mod dijkstra_algorithm;
+
+// ~ private modules ~

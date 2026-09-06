@@ -18,11 +18,10 @@
 //! # Example
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+//! use shortest_path_finder::{Dijkstra, DirectedGraph};
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -31,26 +30,20 @@
 //! graph.insert_node(b.clone());
 //! graph.insert_edge(&a, &b, Some(2));
 //!
-//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let dijkstra = Dijkstra::new(graph);
 //! let result = dijkstra.shortest_path("A", "B").unwrap();
 //! assert_eq!(result.get_total_distance(), 2);
 //! ```
 
 use shortest_path_finder::{
-    algorithms::{
-        algorithm::{Algorithm, SearchResult},
-        dijkstra::{DijkstraAlgorithm, DijkstraError},
-    },
+    algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
-        AlgorithmErrorKind, DijkstraPathReconstructionError, EdgeWeightViolation,
-        MissingNodeContext,
+        AlgorithmErrorKind, DijkstraError,
+        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
-    graphs::{
-        directed::DirectedGraph,
-        graph::{Graph, GraphNode},
-        undirected::UndirectedGraph,
-    },
-    nodes::default_node::DefaultNode,
+    graph::{Graph, GraphNode},
+    nodes::DefaultNode,
+    {Dijkstra, DirectedGraph, UndirectedGraph},
 };
 
 fn node(id: &str) -> DefaultNode {
@@ -74,7 +67,7 @@ fn dijkstra_finds_shortest_path_in_directed_graph() {
     assert!(graph.insert_edge(&node_b, &node_c, Some(1)).is_none());
     assert!(graph.insert_edge(&node_c, &node_d, Some(1)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let result = dijkstra.shortest_path("A", "D").expect("path should exist");
 
     let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
@@ -98,7 +91,7 @@ fn dijkstra_finds_shortest_path_in_undirected_graph() {
     assert!(graph.insert_edge(&node_b, &node_c, Some(2)).is_none());
     assert!(graph.insert_edge(&node_a, &node_c, Some(10)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let result = dijkstra.shortest_path("A", "C").expect("path should exist");
 
     let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
@@ -116,7 +109,7 @@ fn dijkstra_returns_error_when_start_node_is_missing() {
     let node_c = node("C");
     assert!(graph.insert_edge(&node_b, &node_c, Some(4)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let err = dijkstra
         .shortest_path("A", "C")
         .expect_err("start node is not part of the graph");
@@ -139,7 +132,7 @@ fn dijkstra_returns_error_when_no_path_exists() {
     let node_b = node("B");
     assert!(graph.insert_edge(&node_a, &node_b, Some(1)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let err = dijkstra
         .shortest_path("A", "C")
         .expect_err("there is no route from A to C");
@@ -162,7 +155,7 @@ fn dijkstra_returns_trivial_path_when_start_equals_end() {
     let node_b = node("B");
     assert!(graph.insert_edge(&node_a, &node_b, Some(2)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let result = dijkstra
         .shortest_path("A", "A")
         .expect("start equals end should return a trivial path");
@@ -190,7 +183,7 @@ fn dijkstra_returns_error_on_distance_overflow() {
     );
     assert!(graph.insert_edge(&node_b, &node_c, Some(2)).is_none());
 
-    let dijkstra = DijkstraAlgorithm::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     let err = dijkstra
         .shortest_path("A", "C")
         .expect_err("overflow should surface as a Dijkstra error");
@@ -231,7 +224,7 @@ fn dijkstra_error_kind_mapping_is_stable() {
         edge_weight: "1".to_string(),
     };
     let reconstruction = DijkstraError::PathReconstruction {
-        source: DijkstraPathReconstructionError::MissingPredecessor {
+        source: PathReconstructionError::MissingPredecessor {
             node_id: "X".to_string(),
         },
     };

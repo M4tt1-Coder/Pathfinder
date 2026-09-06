@@ -43,20 +43,22 @@
 //! - The first line is consumed for type detection and is not inserted as an edge.
 //! - Two-dimensional file input is parsed and inserted into
 //!   [`TwoDimensionalCoordinateGraph`] by the internal graph-generation pipeline.
-//! - Invalid weight tokens now preserve structured cause information via
-//!   [`ParseError::InvalidWeight`] and [`InvalidWeightError`], which makes it
-//!   easier to distinguish non-numeric input from out-of-range values.
+//! - A line that fails the edge grammar is reported as a syntax error before
+//!   weight conversion. Syntactically valid but unconvertible weights preserve
+//!   structured cause information via [`ParseError::InvalidWeight`] and
+//!   [`InvalidWeightError`], which distinguishes non-numeric, negative, and
+//!   out-of-range values.
 //! - Two-dimensional parsing currently uses
-//!   [`crate::nodes::two_dimensional_node::TwoDimensionalNode<i32>`] and
+//!   [`crate::nodes::TwoDimensionalNode<i32>`] and
 //!   therefore produces
-//!   [`crate::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph<i32>`].
+//!   [`crate::graph::TwoDimensionalCoordinateGraph<i32>`].
 //!
 //! # Usage Examples
 //!
 //! Runnable doctest with a temporary graph file:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::{
+//! use shortest_path_finder::data_input::file::{
 //!     retrieve_graph_data_from_file, FileInputGraphResult,
 //! };
 //! use std::{
@@ -82,7 +84,7 @@
 //! Repository fixture example:
 //!
 //! ```no_run
-//! use shortest_path_finder::data_input::file_input::retrieve_graph_data_from_file;
+//! use shortest_path_finder::data_input::file::retrieve_graph_data_from_file;
 //!
 //! let parsed = retrieve_graph_data_from_file("test_files/directed_graph.txt");
 //! assert!(parsed.is_ok());
@@ -103,18 +105,12 @@ use strum_macros::EnumString;
 
 use crate::{
     error::{
-        data_input_error::DataInputError,
+        DataInputError,
         parse_error::{InvalidWeightError, ParseError},
     },
-    graphs::{
-        GraphInsertionError, directed::DirectedGraph, graph::Graph,
-        two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
-        undirected::UndirectedGraph,
-    },
-    nodes::{
-        default_node::DefaultNode, node_types::NodeType, two_dimensional_node::TwoDimensionalNode,
-    },
-    weight_types::impl_weights::WeightType,
+    graph::{Graph, GraphInsertionError, GraphWeightType},
+    nodes::{DefaultNode, NodeType, TwoDimensionalNode},
+    {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
 // TODO: Add feature that users can choose different coordinate types for the
@@ -154,22 +150,23 @@ static GRAPH_EDGE_SYNTAX_REGEXES: OnceCell<LineSyntaxRegexes> = OnceCell::new();
 /// # Derive behavior
 ///
 /// The enum derives `EnumString` from `strum`, enabling case-insensitive string parsing for the
-/// configured aliases on each variant.
+/// configured aliases on each variant. File-header detection narrows those aliases to `D`, `UN`,
+/// and `TD`.
 #[derive(EnumString, PartialEq)]
 enum FoundGraphType {
     /// Undirected graph input.
     ///
-    /// Accepts aliases `Undirected` and `UN` (case-insensitive).
+    /// Represents the `UN` file-header form for undirected input.
     #[strum(serialize = "Undirected", serialize = "UN", ascii_case_insensitive)]
     UN,
     /// Directed graph input.
     ///
-    /// Accepts aliases `Directed` and `D` (case-insensitive).
+    /// Represents the `D` file-header form for directed input.
     #[strum(serialize = "Directed", serialize = "D", ascii_case_insensitive)]
     D,
     /// Two-dimensional coordinate graph input.
     ///
-    /// Accepts aliases `TwoDimensional` and `TD` (case-insensitive).
+    /// Represents the `TD` file-header form for two-dimensional input.
     #[strum(serialize = "TwoDimensional", serialize = "TD", ascii_case_insensitive)]
     TD,
 }
@@ -206,7 +203,7 @@ struct LineSyntaxRegexes {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputGraphResult;
+/// use shortest_path_finder::data_input::file::FileInputGraphResult;
 ///
 /// fn graph_kind(result: &FileInputGraphResult) -> &'static str {
 ///     match result {
@@ -244,8 +241,8 @@ pub enum FileInputGraphResult {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputError;
-/// use shortest_path_finder::error::parse_error::ParseError;
+/// use shortest_path_finder::data_input::file::FileInputError;
+/// use shortest_path_finder::error::ParseError;
 ///
 /// let parse_error = FileInputError::Parse {
 ///     file_path: "graph.txt".to_string(),
@@ -333,7 +330,7 @@ impl Error for FileInputError {
 /// Successful parsing with a temporary file:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file, FileInputGraphResult,
 /// };
 /// use std::{
@@ -358,11 +355,11 @@ impl Error for FileInputError {
 /// I/O failure classification:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };
-/// use shortest_path_finder::error::data_input_error::DataInputError;
+/// use shortest_path_finder::error::DataInputError;
 ///
 /// let err = retrieve_graph_data_from_file(".")
 ///     .expect_err("a directory path cannot be read as graph file text");
@@ -373,7 +370,7 @@ impl Error for FileInputError {
 /// Parse failure classification:
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::{
+/// use shortest_path_finder::data_input::file::{
 ///     retrieve_graph_data_from_file,
 ///     FileInputError,
 /// };
@@ -381,7 +378,7 @@ impl Error for FileInputError {
 ///     fs,
 ///     time::{SystemTime, UNIX_EPOCH},
 /// };
-/// use shortest_path_finder::error::data_input_error::DataInputError;
+/// use shortest_path_finder::error::DataInputError;
 ///
 /// let unique_id = SystemTime::now()
 ///     .duration_since(UNIX_EPOCH)
@@ -548,7 +545,7 @@ fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
 fn convert_line_to_graph_data(
     line: &str,
     detected_graph_type: &FoundGraphType,
-) -> Result<(NodeType, NodeType, WeightType), ParseError> {
+) -> Result<(NodeType, NodeType, GraphWeightType), ParseError> {
     match detected_graph_type {
         FoundGraphType::UN | FoundGraphType::D => {
             // One-dimensional formats differ only by separator; downstream extraction is shared.
@@ -582,7 +579,7 @@ fn convert_line_to_graph_data(
             Ok((
                 NodeType::DefaultNode(first_node),
                 NodeType::DefaultNode(second_node),
-                WeightType::U16(weight),
+                GraphWeightType::U16(weight),
             ))
         }
         FoundGraphType::TD => {
@@ -601,7 +598,7 @@ fn convert_line_to_graph_data(
             Ok((
                 NodeType::TwoDimensionalNode(first_node),
                 NodeType::TwoDimensionalNode(second_node),
-                WeightType::NotNecessary,
+                GraphWeightType::NotNecessary,
             ))
         }
     }
@@ -615,7 +612,7 @@ fn convert_line_to_graph_data(
 ///
 /// # Returns
 ///
-/// The inferred [`FoundGraphType`] if the line is an exact supported graph header.
+/// The inferred [`FoundGraphType`] if the trimmed line is a supported graph header.
 ///
 /// The first line is expected to be a graph-type marker such as `D`, `UN`, or `TD`.
 ///
@@ -625,7 +622,7 @@ fn convert_line_to_graph_data(
 ///
 /// # Errors
 ///
-/// Returns [`ParseError::InvalidHeader`] if the line is not exactly `D`, `UN`, or `TD`.
+/// Returns [`ParseError::InvalidHeader`] if the trimmed line is not `D`, `UN`, or `TD`.
 fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
     let header = first_line.trim();
 
@@ -718,9 +715,8 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
 ///
 /// # Notes
 ///
-/// This function is currently focused on directed graph parsing. Similar functions can be
-/// implemented for undirected and two-dimensional graph parsing to improve modularity and
-/// readability.
+/// This module provides graph-generation helpers for directed, undirected, and
+/// two-dimensional file formats. This helper handles the directed variant.
 fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph, ParseError> {
     let mut graph = DirectedGraph::default();
 
@@ -779,7 +775,7 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
             }
         };
         let weight = match weight {
-            WeightType::U16(value) => value,
+            GraphWeightType::U16(value) => value,
             _ => {
                 return Err(ParseError::InvalidDataInput(
                     "Directed graph parsing produced an unexpected weight type!".to_string(),
@@ -880,7 +876,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
             }
         };
         let weight = match weight {
-            WeightType::U16(value) => value,
+            GraphWeightType::U16(value) => value,
             _ => {
                 return Err(ParseError::InvalidDataInput(
                     "Undirected graph parsing produced an unexpected weight type!".to_string(),

@@ -7,7 +7,7 @@
 //! - Edge weights are computed from node coordinates on insertion.
 //! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
 //!
-//! The graph implements the shared [`crate::graphs::graph::Graph`] trait and
+//! The graph implements the shared [`crate::graph::Graph`] trait and
 //! can be consumed by coordinate-aware algorithms such as A*.
 //!
 //! # Coordinate Type
@@ -18,7 +18,7 @@
 //! - [`TwoDimensionalGraphInsertionError<C>`]
 //!
 //! `C` must implement
-//! [`crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype`].
+//! [`crate::nodes::trait_decl::CoordinateDatatype`].
 //! Library users can therefore build coordinate graphs with types such as
 //! `i32` or `f32`.
 //!
@@ -29,9 +29,9 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::TwoDimensionalCoordinateGraph;
+//! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let b = TwoDimensionalNode::new(2, 3, "B".to_string()).unwrap();
@@ -50,13 +50,13 @@ use std::{collections::HashMap, error::Error, fmt::Display};
 use log::warn;
 
 use crate::{
-    graphs::{
-        graph::{Graph, GraphNode},
-        utils::calculate_weight,
+    graph::{
+        utils::calculate_weight_with_euclid,
+        {Graph, GraphNode},
     },
     nodes::{
-        trait_decl::{coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode},
-        two_dimensional_node::TwoDimensionalNode,
+        TwoDimensionalNode,
+        trait_decl::{CoordinateDatatype, CoordinatesNode},
     },
 };
 
@@ -68,8 +68,8 @@ use crate::{
 ///
 /// # Invariants
 ///
-/// - Duplicate nodes are rejected based on coordinates or ID.
-/// - Duplicate nodes provided at construction time are ignored.
+/// - Duplicate nodes are ignored when their coordinates or ID match an existing
+///   node, including duplicate nodes provided at construction time.
 /// - Duplicate edges are rejected in either endpoint order.
 /// - Self-loop edges are stored once.
 /// - Explicit edge weights are ignored; weights are computed from coordinates.
@@ -118,9 +118,9 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(1, 2, "N1".to_string()).unwrap();
     /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);
@@ -219,9 +219,9 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
                     "Explicit weight {} provided for edge from {} to {}, but coordinate graphs compute weights automatically!",
                     w, from, to
                 );
-                calculate_weight(canonical_from, canonical_to)
+                calculate_weight_with_euclid(canonical_from, canonical_to)
             }
-            None => calculate_weight(canonical_from, canonical_to),
+            None => calculate_weight_with_euclid(canonical_from, canonical_to),
         };
 
         if node_one_index == node_two_index {
@@ -338,7 +338,7 @@ impl<C: CoordinateDatatype> Display for TwoDimensionalCoordinateGraph<C> {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalGraphInsertionError;
+/// use shortest_path_finder::graph::two_dimensional::TwoDimensionalGraphInsertionError;
 ///
 /// let err = TwoDimensionalGraphInsertionError::<i32>::TargetNodeMissing {
 ///     node_id: "B".to_string(),

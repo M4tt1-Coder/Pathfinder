@@ -4,9 +4,7 @@
 //! and algorithms. The functions here are intentionally generic so they can be
 //! reused across graph variants.
 
-use crate::nodes::trait_decl::{
-    coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
-};
+use crate::nodes::trait_decl::{CoordinateDatatype, CoordinatesNode};
 
 /// Calculates edge weight using Euclidean distance between endpoints.
 ///
@@ -22,7 +20,7 @@ use crate::nodes::trait_decl::{
 /// # Returns
 ///
 /// Non-negative floating-point weight used by shortest-path algorithms.
-pub fn calculate_weight<CN: CoordinatesNode>(node_one: &CN, node_two: &CN) -> f32 {
+pub fn calculate_weight_with_euclid<CN: CoordinatesNode>(node_one: &CN, node_two: &CN) -> f32 {
     // Convert coordinates to f32 to perform geometric calculations.
     let dx = node_one.get_x().to_f32() - node_two.get_x().to_f32();
     let dy = node_one.get_y().to_f32() - node_two.get_y().to_f32();

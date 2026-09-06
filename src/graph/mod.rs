@@ -1,41 +1,55 @@
-//! Shared graph abstractions used across the crate.
+//! Graph abstractions and concrete graph data structures.
 //!
-//! This module defines the core traits that all graph implementations and
-//! graph-related algorithms rely on:
-//! - [`Graph`] for graph containers and operations,
-//! - [`GraphNode`] for node identity,
-//! - [`GraphWeight`] for numeric edge weights.
+//! # Overview
 //!
-//! # Key Concepts
+//! The graph layer is organized around a small shared trait surface and a set
+//! of concrete graph types that model the supported input formats:
 //!
-//! - `Graph` is the container and exposes neighbor traversal.
-//! - `GraphNode` provides a stable string ID used by algorithms and I/O.
-//! - `GraphWeight` is the numeric weight type with overflow-aware addition.
+//! - [`Graph`]: shared behavior used by algorithms and integration tests.
+//! - [`directed`]: a weighted directed graph over [`crate::nodes::DefaultNode`].
+//! - [`undirected`]: a weighted undirected graph over [`crate::nodes::DefaultNode`].
+//! - [`two_dimensional`]: a coordinate-based weighted graph built on
+//!   [`crate::nodes::TwoDimensionalNode`].
 //!
-//! # Design Goals
+//! The public [`GraphInsertionError`] wrapper lets callers handle insertion
+//! failures without committing to a concrete graph implementation. It is
+//! especially useful when graph parsing selects an implementation at runtime.
 //!
-//! - Support directed and undirected graphs.
-//! - Support weighted and unweighted graphs.
-//! - Keep algorithms generic while preserving readable node identifiers.
+//! # Common use cases
 //!
-//! Concrete implementations live in sibling modules such as
-//! `graphs::directed`, `graphs::undirected`, and
-//! `graphs::two_dimensional_coordinate_graph`.
+//! - Build a graph directly in memory for algorithm tests.
+//! - Inspect whether a graph is directed or weighted before running a path
+//!   search.
+//! - Match on [`GraphInsertionError`] when a graph mutation fails.
 //!
-//! # Quick Example
+//! # Examples
+//!
+//! Create a directed graph and query its capabilities:
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::DirectedGraph;
+//! use shortest_path_finder::graph::Graph;
 //!
-//! let a = DefaultNode::new("A".to_string());
-//! let b = DefaultNode::new("B".to_string());
-//! let mut graph = DirectedGraph::new(vec![a.clone(), b.clone()]);
-//! graph.insert_edge(&a, &b, Some(5));
-//!
+//! let graph = DirectedGraph::new(vec![]);
 //! assert!(graph.is_directed());
 //! assert!(graph.is_weighted());
+//! ```
+//!
+//! Handle a graph insertion failure in a concrete, type-safe way:
+//!
+//! ```rust
+//! use shortest_path_finder::graph::{directed::DirectedGraphInsertionError, GraphInsertionError};
+//!
+//! let error = GraphInsertionError::Directed(
+//!     DirectedGraphInsertionError::SourceNodeDoesNotExist {
+//!         node_id: "A".to_string(),
+//!     },
+//! );
+//!
+//! assert!(matches!(
+//!     error,
+//!     GraphInsertionError::Directed(DirectedGraphInsertionError::SourceNodeDoesNotExist { .. })
+//! ));
 //! ```
 
 use std::{
@@ -43,6 +57,75 @@ use std::{
     fmt::{Debug, Display},
     ops::Add,
 };
+
+/// High-level error wrapper for graph insertion failures.
+///
+/// This type erases the concrete graph implementation while preserving the
+/// exact insertion failure that occurred. Use it when a parsing or graph
+/// construction boundary can select between multiple graph types at runtime,
+/// but the caller still needs to inspect the specific reason the insertion
+/// failed.
+///
+/// # Why this wrapper exists
+///
+/// Each concrete graph has its own insertion error enum, but callers at higher
+/// layers often only care that graph mutation failed. The wrapper keeps the API
+/// ergonomic without losing the original error details.
+///
+/// # How to use it
+///
+/// - Pattern-match on a variant when you need graph-specific recovery logic.
+/// - Call [`std::string::ToString::to_string`] or use the [`std::fmt::Display`]
+///   implementation for user-facing diagnostics.
+/// - Convert it into higher-level errors such as [`crate::error::ParseError`].
+///
+/// # Variants
+///
+/// - [`GraphInsertionError::Directed`]: errors from [`directed::DirectedGraph`].
+/// - [`GraphInsertionError::Undirected`]: errors from [`undirected::UndirectedGraph`].
+/// - [`GraphInsertionError::TwoDimensional`]: errors from
+///   [`two_dimensional::TwoDimensionalCoordinateGraph`].
+///
+/// # Example
+///
+/// ```rust
+/// use shortest_path_finder::graph::{directed::DirectedGraphInsertionError, GraphInsertionError};
+///
+/// let error = GraphInsertionError::Directed(
+///     DirectedGraphInsertionError::MissingEdgeWeight {
+///         expected_weight: "u16".to_string(),
+///     },
+/// );
+///
+/// assert!(error.to_string().contains("Missing edge weight"));
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GraphInsertionError {
+    /// Error produced by the directed graph implementation.
+    Directed(directed::DirectedGraphInsertionError),
+    /// Error produced by the undirected graph implementation.
+    Undirected(undirected::UndirectedGraphInsertionError),
+    /// Error produced by the two-dimensional coordinate graph implementation.
+    TwoDimensional(two_dimensional::TwoDimensionalGraphInsertionError),
+}
+
+impl std::fmt::Display for GraphInsertionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GraphInsertionError::Directed(err) => {
+                write!(f, "Directed graph insertion error: {}", err)
+            }
+            GraphInsertionError::Undirected(err) => {
+                write!(f, "Undirected graph insertion error: {}", err)
+            }
+            GraphInsertionError::TwoDimensional(err) => {
+                write!(f, "Two-dimensional graph insertion error: {}", err)
+            }
+        }
+    }
+}
+
+impl std::error::Error for GraphInsertionError {}
 
 /// Trait describing the behavior of a graph data structure.
 ///
@@ -65,9 +148,9 @@ use std::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
-/// use shortest_path_finder::graphs::graph::{Graph, GraphNode};
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::DirectedGraph;
+/// use shortest_path_finder::graph::{Graph, GraphNode};
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let a = DefaultNode::new("A".to_string());
 /// let b = DefaultNode::new("B".to_string());
@@ -89,7 +172,7 @@ pub trait Graph {
     /// # Example
     /// ```rust
     /// use std::fmt::{Display, Formatter};
-    /// use shortest_path_finder::graphs::graph::GraphNode;
+    /// use shortest_path_finder::graph::GraphNode;
     ///
     /// #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
     /// struct Node {
@@ -142,11 +225,11 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::{
-    ///     directed::DirectedGraph,
-    ///     graph::{Graph, GraphNode},
+    /// use shortest_path_finder::graph::{
+    ///     DirectedGraph,
+    ///     Graph, GraphNode,
     /// };
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::new(vec![
     ///     DefaultNode::new("A".to_string()),
@@ -176,8 +259,8 @@ pub trait Graph {
     ///
     /// # Example
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
     /// assert!(graph.is_directed());
@@ -195,9 +278,9 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::new(vec![]);
     /// graph.insert_node(DefaultNode::new("A".to_string()));
@@ -233,7 +316,8 @@ pub trait Graph {
     ///
     /// # Parameters
     ///
-    /// - `edge`: Candidate edge.
+    /// - `from`: Candidate source node.
+    /// - `to`: Candidate destination node.
     ///
     /// # Returns
     ///
@@ -265,9 +349,9 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::{Graph, GraphNode};
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::{Graph, GraphNode};
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::new("A".to_string());
     /// let graph = DirectedGraph::new(vec![node]);
@@ -289,9 +373,9 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let graph = DirectedGraph::new(
     ///     vec![DefaultNode::new("A".to_string()), DefaultNode::new("B".to_string())],
@@ -316,8 +400,8 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
+    /// use shortest_path_finder::DirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
     ///
     /// assert_eq!(DirectedGraph::abbreviation(), "D");
     /// ```
@@ -347,7 +431,7 @@ pub trait Graph {
 /// # Example
 /// ```rust
 /// use std::ops::Add;
-/// use shortest_path_finder::graphs::graph::GraphWeight;
+/// use shortest_path_finder::graph::GraphWeight;
 ///
 /// fn total_weight<W: GraphWeight>(weights: &[W]) -> W {
 ///     weights.iter().cloned().fold(W::zero(), |acc, w| acc + w)
@@ -400,7 +484,7 @@ pub trait GraphWeight:
 ///
 /// ```rust
 /// use std::fmt::{Display, Formatter};
-/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::graph::GraphNode;
 ///
 /// #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, Debug)]
 /// struct City {
@@ -426,3 +510,23 @@ pub trait GraphNode: Display + Debug + Eq + std::hash::Hash + Clone + Ord {
     /// Returns the node identifier.
     fn get_id(&self) -> &str;
 }
+
+// ========== Modulization ==========
+
+// ~ public modules ~
+
+pub mod directed;
+pub mod two_dimensional;
+pub mod undirected;
+
+// ~ private modules ~
+
+mod graph_weight_type;
+mod utils;
+
+// ~ re-exports ~
+
+pub use directed::DirectedGraph;
+pub use graph_weight_type::GraphWeightType;
+pub use two_dimensional::TwoDimensionalCoordinateGraph;
+pub use undirected::UndirectedGraph;

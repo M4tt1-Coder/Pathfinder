@@ -4,8 +4,7 @@
 //!
 //! [`DataInputError`] is the unified boundary error for graph-loading failures.
 //! It wraps origin-specific errors (currently file input only) so callers such as
-//! [`crate::error::app_error::AppError`] can handle every input failure through
-//! one enum.
+//! [`crate::error::AppError`] can handle every input failure through one enum.
 //!
 //! # Variant Map
 //!
@@ -23,9 +22,9 @@
 //! Creating a parse failure from a file-input error:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
-//! use shortest_path_finder::error::parse_error::ParseError;
+//! use shortest_path_finder::data_input::file::FileInputError;
+//! use shortest_path_finder::error::DataInputError;
+//! use shortest_path_finder::error::ParseError;
 //!
 //! let file_err = FileInputError::Parse {
 //!     file_path: "graph.txt".to_string(),
@@ -38,8 +37,8 @@
 //! Converting via [`From<FileInputError>`]:
 //!
 //! ```rust
-//! use shortest_path_finder::data_input::file_input::FileInputError;
-//! use shortest_path_finder::error::data_input_error::DataInputError;
+//! use shortest_path_finder::data_input::file::FileInputError;
+//! use shortest_path_finder::error::DataInputError;
 //!
 //! let io_err = FileInputError::Io {
 //!     path: "graph.txt".to_string(),
@@ -51,20 +50,20 @@
 
 use std::error::Error;
 
-use crate::data_input::file_input::FileInputError;
+use crate::data_input::file::FileInputError;
 
 /// Represents errors that can occur during data input operations.
 ///
 /// This enum encapsulates origin-specific input failures. New origins (for
 /// example interactive CLI input) can add variants here without changing the
-/// public [`crate::error::app_error::AppError`] surface.
+/// public [`crate::error::AppError`] surface.
 ///
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::data_input::file_input::FileInputError;
-/// use shortest_path_finder::error::data_input_error::DataInputError;
-/// use shortest_path_finder::error::parse_error::ParseError;
+/// use shortest_path_finder::data_input::file::FileInputError;
+/// use shortest_path_finder::error::DataInputError;
+/// use shortest_path_finder::error::ParseError;
 ///
 /// let err = DataInputError::File(FileInputError::Parse {
 ///     file_path: "graph.txt".to_string(),

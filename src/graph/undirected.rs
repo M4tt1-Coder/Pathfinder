@@ -14,9 +14,9 @@
 //! # Usage
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::graphs::undirected::UndirectedGraph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::UndirectedGraph;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = UndirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -30,8 +30,8 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use crate::{
-    graphs::graph::{Graph, GraphNode},
-    nodes::default_node::DefaultNode,
+    graph::{Graph, GraphNode},
+    nodes::DefaultNode,
 };
 
 /// Undirected weighted graph implementation.
@@ -216,11 +216,10 @@ impl UndirectedGraph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::graphs::undirected::UndirectedGraph;
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::UndirectedGraph;
     ///
     /// let graph = UndirectedGraph::new(vec![]);
-    /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// ```
     pub fn new(nodes: Vec<DefaultNode>) -> Self {
@@ -287,7 +286,7 @@ impl Default for UndirectedGraph {
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::undirected::UndirectedGraphInsertionError;
+/// use shortest_path_finder::graph::undirected::UndirectedGraphInsertionError;
 ///
 /// let err = UndirectedGraphInsertionError::NodeNotFound {
 ///     node_id: "B".to_string(),

@@ -7,8 +7,8 @@
 //! - a typed x-coordinate,
 //! - a typed y-coordinate.
 //!
-//! It implements both [`crate::graphs::graph::GraphNode`] and
-//! [`crate::nodes::trait_decl::coordinates_node::CoordinatesNode`], enabling
+//! It implements both [`crate::graph::GraphNode`] and
+//! [`crate::nodes::trait_decl::CoordinatesNode`], enabling
 //! use in generic graph and pathfinding algorithms.
 //!
 //! # Coordinate Type
@@ -35,10 +35,10 @@
 //!
 //! ```rust
 //! use std::str::FromStr;
-//! use shortest_path_finder::graphs::graph::GraphNode;
+//! use shortest_path_finder::graph::GraphNode;
 //! use shortest_path_finder::nodes::{
-//!     trait_decl::coordinates_node::CoordinatesNode,
-//!     two_dimensional_node::TwoDimensionalNode,
+//!     trait_decl::CoordinatesNode,
+//!     TwoDimensionalNode,
 //! };
 //!
 //! let node = TwoDimensionalNode::<i32>::from_str("Hub:3,5").unwrap();
@@ -63,11 +63,9 @@ use std::{
 };
 
 use crate::{
-    error::parse_error::ParseError,
-    graphs::graph::GraphNode,
-    nodes::trait_decl::{
-        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
-    },
+    error::ParseError,
+    graph::GraphNode,
+    nodes::trait_decl::{CoordinateDatatype, CoordinatesNode},
 };
 
 /// Coordinate-aware node type used by two-dimensional graph models.
@@ -86,10 +84,10 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::graph::GraphNode;
+/// use shortest_path_finder::graph::GraphNode;
 /// use shortest_path_finder::nodes::{
-///     trait_decl::coordinates_node::CoordinatesNode,
-///     two_dimensional_node::TwoDimensionalNode,
+///     trait_decl::CoordinatesNode,
+///     TwoDimensionalNode,
 /// };
 ///
 /// let node = TwoDimensionalNode::new(2, -1, "Depot".to_string()).unwrap();
@@ -136,14 +134,14 @@ impl<C: CoordinateDatatype> TwoDimensionalNode<C> {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(2, 7, "N1".to_string());
     /// assert!(node.is_some());
     /// ```
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(2, 7, "".to_string());
     /// assert!(node.is_none());
@@ -237,8 +235,8 @@ where
     ///
     /// ```rust
     /// use std::str::FromStr;
-    /// use shortest_path_finder::graphs::graph::GraphNode;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::graph::GraphNode;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::<i32>::from_str("P:10,12").unwrap();
     /// assert_eq!(node.get_id(), "P");

@@ -61,18 +61,17 @@
 //!
 //! # Main Types
 //!
-//! - [`DijkstraAlgorithm`]: algorithm engine operating on a concrete graph.
+//! - [`Dijkstra`]: algorithm engine operating on a concrete graph.
 //! - [`DijkstraSearchResult`]: successful path computation output.
 //! - [`DijkstraError`]: execution error payload.
 //!
 //! # Example
 //!
 //! ```rust
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graphs::directed::DirectedGraph;
-//! use shortest_path_finder::graphs::graph::Graph;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+//! use shortest_path_finder::{Dijkstra, DirectedGraph};
+//! use shortest_path_finder::graph::Graph;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = DirectedGraph::default();
 //! let a = DefaultNode::new("A".to_string());
@@ -85,7 +84,7 @@
 //! assert!(graph.insert_edge(&b, &c, Some(2)).is_none());
 //! assert!(graph.insert_edge(&a, &c, Some(10)).is_none());
 //!
-//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let dijkstra = Dijkstra::new(graph);
 //! let result = dijkstra.shortest_path("A", "C").unwrap();
 //!
 //! assert_eq!(result.get_total_distance(), 6);
@@ -98,14 +97,13 @@ use std::{
 };
 
 use crate::{
-    algorithms::algorithm::{Algorithm, SearchResult},
+    algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
-        DijkstraPathReconstructionError, EdgeWeightViolation, MissingNodeContext,
+        DijkstraError,
+        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
     },
-    graphs::graph::{Graph, GraphNode, GraphWeight},
+    graph::{Graph, GraphNode, GraphWeight},
 };
-
-pub use crate::error::algorithm_error::DijkstraError;
 
 /// Internal bookkeeping entry used while distances are being relaxed.
 ///
@@ -144,8 +142,8 @@ impl<N: GraphNode, W: GraphWeight + Ord> ShortestDistance<N, W> {
     /// # Notes
     ///
     /// This helper is used internally while building the distance map for
-    /// [`DijkstraAlgorithm`]. External callers should rely on
-    /// [`DijkstraAlgorithm::shortest_path`] instead of constructing
+    /// [`Dijkstra`]. External callers should rely on
+    /// [`Dijkstra::shortest_path`] instead of constructing
     /// `ShortestDistance` entries directly.
     fn new(previous_node: Option<N>, distance: W) -> Self {
         Self {
@@ -179,16 +177,15 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 ///
 /// # Errors
 ///
-/// See [`DijkstraAlgorithm::shortest_path`] for a detailed list of error cases.
+/// See [`Dijkstra::shortest_path`] for a detailed list of error cases.
 ///
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-/// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-/// use shortest_path_finder::graphs::directed::DirectedGraph;
-/// use shortest_path_finder::graphs::graph::Graph;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+/// use shortest_path_finder::{Dijkstra, DirectedGraph};
+/// use shortest_path_finder::graph::Graph;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let mut graph = DirectedGraph::default();
 /// let a = DefaultNode::new("A".to_string());
@@ -201,22 +198,18 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// assert!(graph.insert_edge(&b, &c, Some(1)).is_none());
 /// assert!(graph.insert_edge(&a, &c, Some(5)).is_none());
 ///
-/// let algorithm = DijkstraAlgorithm::new(graph);
+/// let algorithm = Dijkstra::new(graph);
 /// let result = algorithm.shortest_path("A", "C").unwrap();
 /// assert_eq!(result.get_total_distance(), 2u16);
 /// ```
 #[derive(Debug)]
-pub struct DijkstraAlgorithm<
-    N: GraphNode,
-    W: GraphWeight + Ord,
-    G: Graph<Node = N, Weight = W> + Display,
-> {
+pub struct Dijkstra<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display> {
     /// Graph instance processed by this algorithm implementation.
     graph: G,
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display> Algorithm
-    for DijkstraAlgorithm<N, W, G>
+    for Dijkstra<N, W, G>
 {
     type AlgorithmSearchResult = DijkstraSearchResult<N, W>;
 
@@ -257,11 +250,10 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
-    /// use shortest_path_finder::graphs::graph::Graph;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+    /// use shortest_path_finder::{Dijkstra, DirectedGraph};
+    /// use shortest_path_finder::graph::Graph;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let mut graph = DirectedGraph::default();
     /// let a = DefaultNode::new("A".to_string());
@@ -270,7 +262,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// graph.insert_node(b.clone());
     /// graph.insert_edge(&a, &b, Some(4));
     ///
-    /// let dijkstra = DijkstraAlgorithm::new(graph);
+    /// let dijkstra = Dijkstra::new(graph);
     /// let result = dijkstra.shortest_path("A", "B").unwrap();
     /// assert_eq!(result.get_total_distance(), 4);
     /// ```
@@ -322,7 +314,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             distances
                 .get(end.get_id())
                 .ok_or_else(|| DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                    source: PathReconstructionError::MissingDistanceEntry {
                         node_id: end.get_id().to_string(),
                     },
                 })?;
@@ -343,7 +335,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
         loop {
             if remaining_steps == 0 {
                 return Err(DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::PredecessorLoop {
+                    source: PathReconstructionError::PredecessorLoop {
                         start: start_node_id.to_string(),
                         end: end_node_id.to_string(),
                         current: current_node.get_id().to_string(),
@@ -359,7 +351,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
             let distance = distances.get(current_node.get_id()).ok_or_else(|| {
                 DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingDistanceEntry {
+                    source: PathReconstructionError::MissingDistanceEntry {
                         node_id: current_node.get_id().to_string(),
                     },
                 }
@@ -367,7 +359,7 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
             let prev = distance.previous_node.as_ref().ok_or_else(|| {
                 DijkstraError::PathReconstruction {
-                    source: DijkstraPathReconstructionError::MissingPredecessor {
+                    source: PathReconstructionError::MissingPredecessor {
                         node_id: current_node.get_id().to_string(),
                     },
                 }
@@ -385,9 +377,9 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 }
 
 impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display>
-    DijkstraAlgorithm<N, W, G>
+    Dijkstra<N, W, G>
 {
-    /// Creates a new [`DijkstraAlgorithm`] bound to a graph instance.
+    /// Creates a new [`Dijkstra`] bound to a graph instance.
     ///
     /// # Parameters
     ///
@@ -400,11 +392,10 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graphs::directed::DirectedGraph;
+    /// use shortest_path_finder::{Dijkstra, DirectedGraph};
     ///
     /// let graph = DirectedGraph::new(vec![]);
-    /// let _algorithm = DijkstraAlgorithm::new(graph);
+    /// let _algorithm = Dijkstra::new(graph);
     /// ```
     pub fn new(graph: G) -> Self {
         Self { graph }
@@ -606,7 +597,7 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
     }
 }
 
-/// Search result produced by [`DijkstraAlgorithm`].
+/// Search result produced by [`Dijkstra`].
 ///
 /// # Contents
 ///
@@ -653,8 +644,8 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::algorithms::dijkstra_algorithm::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let path = vec![
     ///     DefaultNode::new("A".to_string()),
@@ -668,8 +659,8 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
     /// ```
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::algorithms::dijkstra_algorithm::DijkstraSearchResult;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let invalid_path: Vec<DefaultNode> = vec![];
     /// let result = DijkstraSearchResult::new(invalid_path, 0u16);

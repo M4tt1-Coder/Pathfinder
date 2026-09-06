@@ -9,7 +9,7 @@
 //! # Design Notes
 //!
 //! - The node stores exactly one field: `id`.
-//! - The type implements [`crate::graphs::graph::GraphNode`] so it can be used
+//! - The type implements [`crate::graph::GraphNode`] so it can be used
 //!   with all generic graph and algorithm traits.
 //! - [`std::str::FromStr`] is intentionally permissive and treats the full input
 //!   as the node ID.
@@ -17,8 +17,8 @@
 //! # Examples
 //!
 //! ```rust
-//! use shortest_path_finder::graphs::graph::GraphNode;
-//! use shortest_path_finder::nodes::default_node::DefaultNode;
+//! use shortest_path_finder::graph::GraphNode;
+//! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let node = DefaultNode::new("Hub".to_string());
 //! assert_eq!(node.get_id(), "Hub");
@@ -29,7 +29,7 @@
 
 use std::{fmt::Display, str::FromStr};
 
-use crate::graphs::graph::GraphNode;
+use crate::graph::GraphNode;
 
 /// Node type identified by a unique string ID.
 ///
@@ -38,14 +38,14 @@ use crate::graphs::graph::GraphNode;
 /// Use this type when:
 /// - coordinate data is not required,
 /// - node identity is naturally represented by labels such as `"A"`,
-/// - and compatibility with [`crate::graphs::directed::DirectedGraph`] or
-///   [`crate::graphs::undirected::UndirectedGraph`] is needed.
+/// - and compatibility with [`crate::graph::DirectedGraph`] or
+///   [`crate::graph::UndirectedGraph`] is needed.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use shortest_path_finder::graphs::graph::GraphNode;
-/// use shortest_path_finder::nodes::default_node::DefaultNode;
+/// use shortest_path_finder::graph::GraphNode;
+/// use shortest_path_finder::nodes::DefaultNode;
 ///
 /// let source = DefaultNode::new("Source".to_string());
 /// assert_eq!(source.get_id(), "Source");
@@ -70,7 +70,7 @@ impl DefaultNode {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::new("N-01".to_string());
     /// assert_eq!(node.id, "N-01");
@@ -111,8 +111,8 @@ impl FromStr for DefaultNode {
     ///
     /// ```rust
     /// use std::str::FromStr;
-    /// use shortest_path_finder::graphs::graph::GraphNode;
-    /// use shortest_path_finder::nodes::default_node::DefaultNode;
+    /// use shortest_path_finder::graph::GraphNode;
+    /// use shortest_path_finder::nodes::DefaultNode;
     ///
     /// let node = DefaultNode::from_str("Station-42").unwrap();
     /// assert_eq!(node.get_id(), "Station-42");

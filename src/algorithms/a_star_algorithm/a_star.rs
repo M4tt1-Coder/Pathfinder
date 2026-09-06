@@ -6,7 +6,7 @@
 //! - [`AStar`]: the algorithm engine,
 //! - [`AStarSearchResult`]: the output type returned by successful searches,
 //! - [`AStarQueueElement`]: queue payload used by the internal priority queue,
-//! - [`AStarExecutionError`]: execution error type.
+//! - [`AStarError`]: execution error type.
 //!
 //! # Algorithm Model
 //!
@@ -35,14 +35,15 @@
 //!
 //! # Complexity Notes
 //!
-//! Queue operations are `O(log V)` and the traversal is typically `O(E log V)`.
-//! This implementation uses linear scans to check open and closed membership,
-//! which can increase runtime on large graphs.
+//! Queue insertion and removal use `O(log V)` heap operations. The implementation
+//! also uses linear scans to check open and closed membership and to remove stale
+//! entries, so its overall runtime can exceed the usual `O(E log V)` bound on
+//! large graphs.
 //!
 //! # Error Handling
 //!
 //! - Runtime validation and bookkeeping failures are surfaced as
-//!   [`AStarExecutionError`].
+//!   [`AStarError`].
 //! - In the CLI, these errors are wrapped in
 //!   [`AlgorithmError`](crate::error::algorithm_error::AlgorithmError) and
 //!   mapped to exit codes via
@@ -51,10 +52,9 @@
 //! # Usage Example
 //!
 //! ```no_run
-//! use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-//! use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-//! use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-//! use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+//! use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
+//! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+//! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let start = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 //! let graph = TwoDimensionalCoordinateGraph::new(vec![start]);
@@ -79,18 +79,15 @@ use std::{
 
 use log::warn;
 
-pub use crate::error::algorithm_error::AStarExecutionError;
-
 use crate::{
+    algorithms::NumericDatatype,
     algorithms::{
         a_star_algorithm::utils::{determine_path_cost, prepare_g_cost_map},
         algorithm::{Algorithm, SearchResult},
     },
-    graphs::graph::Graph,
-    nodes::trait_decl::{
-        coordinate_datatype::CoordinateDatatype, coordinates_node::CoordinatesNode,
-    },
-    weight_types::numeric_datatype::NumericDatatype,
+    error::algorithm_error::AStarError,
+    graph::Graph,
+    nodes::trait_decl::{CoordinateDatatype, CoordinatesNode},
 };
 
 /// A* pathfinding engine for coordinate-aware graph nodes.
@@ -110,14 +107,13 @@ use crate::{
 /// # Error Handling
 ///
 /// Use [`AStar::shortest_path`] to surface validation, heuristic, or
-/// reconstruction failures as [`AStarExecutionError`].
+/// reconstruction failures as [`AStarError`].
 ///
 /// # Example
 ///
 /// ```no_run
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-/// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+/// use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
+/// use shortest_path_finder::nodes::TwoDimensionalNode;
 ///
 /// let n = TwoDimensionalNode::new(1, 2, "S".to_string()).unwrap();
 /// let graph = TwoDimensionalCoordinateGraph::new(vec![n]);
@@ -142,7 +138,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
     type NodeOfUsedGraph = N;
 
-    type ExecutionError = AStarExecutionError;
+    type ExecutionError = AStarError;
 
     /// Computes a shortest path between two node IDs using A*.
     ///
@@ -154,7 +150,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Returns
     ///
     /// - `Ok(AStarSearchResult<...>)` when a route can be produced.
-    /// - `Err(AStarExecutionError)` when graph constraints are violated or
+    /// - `Err(AStarError)` when graph constraints are violated or
     ///   required nodes cannot be found.
     ///
     /// # Errors
@@ -171,10 +167,9 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-    /// use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
+    /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
     /// let graph = TwoDimensionalCoordinateGraph::new(vec![node]);
@@ -333,8 +328,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
         // the last element in the "closed_queue" is the destination node, so we can reconstruct
         // the path from the destination node to the start node by following the predecessors
-        let (path, distance) =
-            determine_path_cost(closed_queue).map_err(AStarExecutionError::from)?;
+        let (path, distance) = determine_path_cost(closed_queue).map_err(AStarError::from)?;
 
         let result = AStarSearchResult::new(distance, path)?;
         Ok(result)
@@ -357,8 +351,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-    /// use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
+    /// use shortest_path_finder::TwoDimensionalCoordinateGraph;
     ///
     /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![]);
     /// let _a_star = AStar::new(graph);
@@ -386,13 +380,13 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Returns
     ///
     /// - `Ok(estimate)` with the heuristic value.
-    /// - `Err(AStarExecutionError)` if the heuristic yields a non-finite value.
+    /// - `Err(AStarError)` if the heuristic yields a non-finite value.
     ///
     /// # Notes
     ///
     /// This helper is private and is called during `shortest_path` queue
     /// expansion to compute the heuristic term.
-    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarExecutionError> {
+    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarError> {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();
         let dx2 = start.get_x().to_f32() - goal.get_x().to_f32();
@@ -402,7 +396,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
         let cross = (dx1 * dy2 - dx2 * dy1).abs();
 
         if !cross.is_finite() {
-            return Err(AStarExecutionError::InvalidHeuristic {
+            return Err(AStarError::InvalidHeuristic {
                 start: start.get_id().to_string(),
                 goal: goal.get_id().to_string(),
                 current: current.get_id().to_string(),
@@ -412,7 +406,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
         let adjusted = cross.adjust_for_heuristic();
         if !adjusted.is_finite() {
-            return Err(AStarExecutionError::InvalidHeuristic {
+            return Err(AStarError::InvalidHeuristic {
                 start: start.get_id().to_string(),
                 goal: goal.get_id().to_string(),
                 current: current.get_id().to_string(),
@@ -447,9 +441,9 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 /// # Examples
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-/// use shortest_path_finder::algorithms::algorithm::SearchResult;
-/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+/// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+/// use shortest_path_finder::algorithms::SearchResult;
+/// use shortest_path_finder::nodes::TwoDimensionalNode;
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 /// let b = TwoDimensionalNode::new(0, 1, "B".to_string()).unwrap();
@@ -477,7 +471,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Validation Rules
     ///
     /// - `path` must contain at least one node.
-    /// - `distance` must be greater than or equal to zero.
+    /// - `distance` must not be negative. Non-finite floating-point values are
+    ///   not rejected explicitly by this constructor.
     ///
     /// # Parameters
     ///
@@ -487,13 +482,13 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Returns
     ///
     /// - `Ok(Self)` when inputs are valid.
-    /// - `Err(AStarExecutionError)` when one or more rules are violated.
+    /// - `Err(AStarError)` when one or more rules are violated.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let path = vec![
     ///     TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap(),
@@ -503,23 +498,23 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// ```
     ///
     /// ```rust
-    /// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarSearchResult;
-    /// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+    /// use shortest_path_finder::algorithms::a_star_algorithm::AStarSearchResult;
+    /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let invalid_path: Vec<TwoDimensionalNode> = vec![];
     /// assert!(AStarSearchResult::new(0, invalid_path).is_err());
     /// ```
-    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, AStarExecutionError> {
+    pub fn new(distance: WD, path: Vec<N>) -> Result<Self, AStarError> {
         // path needs to have at least 1 node
         if path.is_empty() {
-            return Err(AStarExecutionError::InvalidSearchResult {
+            return Err(AStarError::InvalidSearchResult {
                 reason: "path must contain at least one node".to_string(),
             });
         }
 
         // the distance must not be negative
         if distance < WD::zero() {
-            return Err(AStarExecutionError::InvalidSearchResult {
+            return Err(AStarError::InvalidSearchResult {
                 reason: "distance cannot be negative".to_string(),
             });
         }
@@ -586,9 +581,9 @@ impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStarQueueElement;
-/// use shortest_path_finder::graphs::graph::GraphNode;
-/// use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+/// use shortest_path_finder::algorithms::a_star_algorithm::AStarQueueElement;
+/// use shortest_path_finder::graph::GraphNode;
+/// use shortest_path_finder::nodes::TwoDimensionalNode;
 ///
 /// let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 /// let b = TwoDimensionalNode::new(1, 0, "B".to_string()).unwrap();
@@ -624,7 +619,7 @@ pub struct AStarQueueElement<'n, WD: NumericDatatype, N: CoordinatesNode> {
     /// Total estimated cost of the path through this node (`f(n) = g(n) + h(n)`).
     ///
     /// This value is public so that priority queues can access and compare it directly.
-    /// It may be adjusted for weighted graphs by applying a weight factor.
+    /// It is computed as `g_cost + h_cost`.
     pub f_cost: WD,
 }
 

@@ -15,13 +15,10 @@
 
 use divan::bench;
 use shortest_path_finder::{
-    data_input::file_input::{FileInputGraphResult, retrieve_graph_data_from_file},
-    error::parse_error::ParseError,
-    graphs::{
-        directed::DirectedGraph, two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph,
-        undirected::UndirectedGraph,
-    },
-    nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode},
+    data_input::file::{FileInputGraphResult, retrieve_graph_data_from_file},
+    error::ParseError,
+    nodes::{DefaultNode, TwoDimensionalNode},
+    {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
 fn main() {

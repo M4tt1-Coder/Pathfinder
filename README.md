@@ -39,7 +39,7 @@
 - [Library usage (Rust)](#library-usage-rust)
 - [Input format](#input-format)
 - [Challenges and roadmap](#challenges-and-roadmap)
-- [Dev workflow](#dev-workflow)
+- [Development workflow](#development-workflow)
 - [Advanced details](#advanced-details)
 
 ---
@@ -102,10 +102,11 @@ pathfinder [--help] [--version] [--origin <file|cmd-line>] [--graph-file <path_t
 
 The CLI parser rejects unknown flags, duplicate flags, missing flag values, invalid flag values, conflicting flags, and unexpected non-flag tokens with explicit errors.
 
-Graph-file parsing also preserves detailed weight diagnostics for one-dimensional edges. If a weight token is malformed, the library returns `ParseError::InvalidWeight` with an inner `InvalidWeightError` so callers can tell whether the failure came from non-numeric input, overflow, or another numeric parsing problem.
+Graph-file parsing also preserves detailed weight diagnostics for one-dimensional edges. A token that fails the edge-line syntax is reported as a parse-format error; a syntactically valid weight that cannot be converted is reported as `ParseError::InvalidWeight` with an inner `InvalidWeightError`. Callers can therefore distinguish non-numeric input, overflow, negative values, and other numeric parsing failures.
 
 ```rust
-use shortest_path_finder::error::parse_error::{InvalidWeightError, ParseError};
+use shortest_path_finder::error::parse_error::InvalidWeightError;
+use shortest_path_finder::error::ParseError;
 
 fn classify_weight_error(err: &ParseError) -> &'static str {
 	match err {
@@ -187,7 +188,7 @@ In this repo you will find:
 - <span style="color:#2E7D32"><strong>Ready</strong></span>: Dijkstra is fully wired in the executable
 - <span style="color:#2E7D32"><strong>Ready</strong></span>: A\* is wired for two-dimensional (`TD`) graph execution in the CLI path
 - <span style="color:#1565C0"><strong>Mixed types</strong></span>: A\* supports mixed numeric types where coordinates and edge/path weights differ (for example `i32` coordinates with `f32` edge weights)
-- <span style="color:#1565C0"><strong>Library</strong></span>: `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support generic coordinate datatypes in library usage (for example `i32`, `f32`, `u8`); the file-input parser still uses `i32` coordinates for `TD` graph parsing
+- <span style="color:#1565C0"><strong>Library</strong></span>: `TwoDimensionalNode` and `TwoDimensionalCoordinateGraph` support coordinate types that implement `CoordinateDatatype`; the crate provides `i32` and `f32` implementations, while other types require their own implementation. The file-input parser still uses `i32` coordinates for `TD` graph parsing
 - <span style="color:#1565C0"><strong>Performance</strong></span>: Graph implementations maintain index-based adjacency lists to reduce duplication and improve neighbor lookup efficiency
 
 ## Technologies
@@ -204,19 +205,23 @@ Core stack and dependencies:
 Quality and automation:
 
 - Four GitHub Actions workflows:
-	- `rust.yml`: formatting, clippy, build, tests, and doctests
-	- `rust-ci.yml`: baseline verification on pushes and PRs to main
-	- `codeql.yml`: static analysis for security scanning
-	- `release.yml`: automated publishing on merged PRs into main
+  - `rust.yml`: formatting, clippy, build, tests, and doctests
+	- `rust-ci.yml`: baseline verification on pushes to main and all pull requests
+  - `codeql.yml`: static analysis for security scanning
+  - `release.yml`: automated publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
 
 ## Project structure
 
 - src/main.rs: CLI entrypoint and runtime wiring
-- src/cmd_line/app_config.rs: argument parsing and defaults
-- src/data_input/file_input.rs: graph-file parsing and validation
-- src/algorithms/: algorithm traits and implementations
-- src/graphs/: graph trait and concrete graph types
+- src/data_input/mod.rs: public input boundary for file and command-line origins
+- src/data_input/file/mod.rs: file-input namespace re-export
+- src/data_input/file/file_input.rs: graph-file parsing and validation
+- src/data_input/file/cli_config/: CLI argument parsing, validation, and default values
+- src/graph/: graph traits and concrete graph types
+- src/algorithms/: algorithm trait and implementations
+- src/error/: layered errors for parsing, configuration, and algorithm execution
+- src/lib.rs: crate-level docs and public re-exports
 - benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
 ## Library usage (Rust)
@@ -227,11 +232,10 @@ The snippets below are intentionally compact but mirror how I use the library in
 #### Dijkstra on a directed graph
 
 ```rust
-use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-use shortest_path_finder::graphs::directed::DirectedGraph;
-use shortest_path_finder::graphs::graph::Graph;
-use shortest_path_finder::nodes::default_node::DefaultNode;
+use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+use shortest_path_finder::{Dijkstra, DirectedGraph};
+use shortest_path_finder::graph::Graph;
+use shortest_path_finder::nodes::DefaultNode;
 
 let mut graph = DirectedGraph::default();
 let a = DefaultNode::new("A".to_string());
@@ -246,7 +250,7 @@ graph.insert_edge(&a, &b, Some(4));
 graph.insert_edge(&b, &c, Some(2));
 graph.insert_edge(&a, &c, Some(10));
 
-let dijkstra = DijkstraAlgorithm::new(graph);
+let dijkstra = Dijkstra::new(graph);
 let result = dijkstra.shortest_path("A", "C").expect("path should exist");
 
 assert_eq!(result.get_total_distance(), 6);
@@ -258,11 +262,10 @@ Swap `DirectedGraph` for `UndirectedGraph` when you want a non-directional graph
 #### A\* on a coordinate graph
 
 ```rust
-use shortest_path_finder::algorithms::a_star_algorithm::a_star::AStar;
-use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-use shortest_path_finder::graphs::graph::Graph;
-use shortest_path_finder::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph;
-use shortest_path_finder::nodes::two_dimensional_node::TwoDimensionalNode;
+use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
+use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+use shortest_path_finder::graph::Graph;
+use shortest_path_finder::nodes::TwoDimensionalNode;
 
 let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
 let b = TwoDimensionalNode::new(2, 1, "B".to_string()).unwrap();
@@ -281,9 +284,9 @@ println!("distance: {}", result.get_total_distance());
 #### Parse a graph from a file and run Dijkstra
 
 ```rust
-use shortest_path_finder::algorithms::algorithm::{Algorithm, SearchResult};
-use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-use shortest_path_finder::data_input::file_input::{
+use shortest_path_finder::algorithms::{Algorithm, SearchResult};
+use shortest_path_finder::Dijkstra;
+use shortest_path_finder::data_input::file::{
     retrieve_graph_data_from_file, FileInputGraphResult,
 };
 
@@ -293,7 +296,7 @@ let FileInputGraphResult::DirectedGraph(graph) = parsed else {
     panic!("directed graph expected");
 };
 
-let dijkstra = DijkstraAlgorithm::new(graph);
+let dijkstra = Dijkstra::new(graph);
 let result = dijkstra.shortest_path("A", "L").expect("path should exist");
 
 println!("distance: {}", result.get_total_distance());
@@ -420,7 +423,7 @@ the library error module. The CLI wraps algorithm-specific errors into
 Example: mapping a Dijkstra error to a CLI exit code:
 
 ```rust
-use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::DijkstraError;
 use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
 
 let err = AlgorithmError::from(DijkstraError::NoPathFound {
@@ -444,21 +447,20 @@ Example CLI error output:
 
 Errors are layered by boundary:
 
-| Layer     | Type               | Responsibility                                      |
-| --------- | ------------------ | --------------------------------------------------- |
-| Parse     | `ParseError`       | Line-level graph syntax validation                  |
-| Input     | `DataInputError`   | File I/O and graph loading (`FileInputError` today) |
-| Config    | `ConfigParseError` | CLI flag parsing and validation                     |
-| Algorithm | `AlgorithmError`   | Shortest-path execution failures                    |
-| CLI       | `AppError`         | Binary wrapper with `exit_code()` mapping           |
+| Layer     | Type             | Responsibility                                      |
+| --------- | ---------------- | --------------------------------------------------- |
+| Parse     | `ParseError`     | Line-level graph syntax validation                  |
+| Input     | `DataInputError` | File I/O and graph loading (`FileInputError` today) |
+| Config    | `CLIParseError`  | CLI flag parsing and validation                     |
+| Algorithm | `AlgorithmError` | Shortest-path execution failures                    |
+| CLI       | `AppError`       | Binary wrapper with `exit_code()` mapping           |
 
 File-input failures are wrapped at the loading boundary. [`FileInputError::Parse`]
 carries the source file path alongside the underlying [`ParseError`]:
 
 ```rust
-use shortest_path_finder::data_input::file_input::FileInputError;
-use shortest_path_finder::error::data_input_error::DataInputError;
-use shortest_path_finder::error::parse_error::ParseError;
+use shortest_path_finder::data_input::file::FileInputError;
+use shortest_path_finder::error::{DataInputError, ParseError};
 
 let err = DataInputError::from(FileInputError::Parse {
 	file_path: "graph.txt".to_string(),
@@ -472,7 +474,7 @@ codes, or user messaging, wrap failures in `AlgorithmError` and query
 `AlgorithmErrorKind`:
 
 ```rust
-use shortest_path_finder::algorithms::dijkstra::DijkstraError;
+use shortest_path_finder::error::algorithm_error::DijkstraError;
 use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind};
 
 let err = AlgorithmError::from(DijkstraError::MissingStartNode {
@@ -489,10 +491,9 @@ match err.kind() {
 The CLI collapses configuration, input, and algorithm failures into `AppError`:
 
 ```rust
-use shortest_path_finder::error::app_error::AppError;
-use shortest_path_finder::error::config_error::ConfigParseError;
+use shortest_path_finder::error::{AppError, CLIParseError};
 
-let err = AppError::from(ConfigParseError::MissingRequiredFlag { flag: "--start" });
+let err = AppError::from(CLIParseError::MissingRequiredFlag { flag: "--start" });
 assert_eq!(err.exit_code(), 1);
 ```
 
@@ -516,6 +517,7 @@ Release authentication requirement:
 Important release rule:
 
 - Always bump `version` in `Cargo.toml` before merging a release-worthy PR into `main`
+
 </details>
 
 <details>

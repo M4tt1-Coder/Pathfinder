@@ -1,8 +1,8 @@
 [package]
 name = "shortest_path_finder"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88.0"
 authors = ["Matthis Geißler <matthisgeissler@gmail.com>"]
 license = "MIT"
 description = "A Rust library for shortest path finding algorithms, including Dijkstra's, A*, and Bellman-Ford. Supports both directed and undirected graphs, with customizable heuristics and edge weights. Ideal for game development, network routing, and graph analysis."
@@ -15,9 +15,9 @@ exclude = ["target", "tests", "test_files", ".github", ".gitignore", ".cursor", 
 
 [dependencies]
 env_logger = "^0.11.11"
-log = "^0.4.33"
-regex = { version = "^1.13.0", features = [ "logging" ] }
-uuid = { version = "^1.23.5", features = [ 'v4' ] }
+log = "^0.4.34"
+regex = { version = "^1.13.1", features = [ "logging" ] }
+uuid = { version = "^1.26.0", features = [ 'v4' ] }
 strum = "0.28.0"
 strum_macros = "0.28.0"
 once_cell = "1.21.4"
