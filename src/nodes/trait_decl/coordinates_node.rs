@@ -2,7 +2,7 @@
 //!
 //! # Overview
 //!
-//! [`CoordinatesNode`] extends [`crate::graphs::graph::GraphNode`] with x/y
+//! [`CoordinatesNode`] extends [`crate::graph::GraphNode`] with x/y
 //! coordinate accessors. It is used by coordinate-aware graph models and by
 //! A* implementations that require geometric information.
 //!

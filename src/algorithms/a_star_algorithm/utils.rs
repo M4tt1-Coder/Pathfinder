@@ -78,7 +78,7 @@ pub fn prepare_g_cost_map<ND: NumericDatatype, G: Graph<Weight = ND>>(
 ///
 /// The function expects the destination node to be the last entry in
 /// `visited_nodes`. It then follows predecessor references backwards until the
-/// start node is reached.
+/// current entry has no predecessor.
 ///
 /// # Parameters
 ///

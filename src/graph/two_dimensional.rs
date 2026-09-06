@@ -7,7 +7,7 @@
 //! - Edge weights are computed from node coordinates on insertion.
 //! - [`TwoDimensionalGraphInsertionError`] reports insertion issues.
 //!
-//! The graph implements the shared [`crate::graphs::graph::Graph`] trait and
+//! The graph implements the shared [`crate::graph::Graph`] trait and
 //! can be consumed by coordinate-aware algorithms such as A*.
 //!
 //! # Coordinate Type
@@ -18,7 +18,7 @@
 //! - [`TwoDimensionalGraphInsertionError<C>`]
 //!
 //! `C` must implement
-//! [`crate::nodes::trait_decl::coordinate_datatype::CoordinateDatatype`].
+//! [`crate::nodes::trait_decl::CoordinateDatatype`].
 //! Library users can therefore build coordinate graphs with types such as
 //! `i32` or `f32`.
 //!
@@ -30,7 +30,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
+//! use shortest_path_finder::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let a = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -68,8 +68,8 @@ use crate::{
 ///
 /// # Invariants
 ///
-/// - Duplicate nodes are rejected based on coordinates or ID.
-/// - Duplicate nodes provided at construction time are ignored.
+/// - Duplicate nodes are ignored when their coordinates or ID match an existing
+///   node, including duplicate nodes provided at construction time.
 /// - Duplicate edges are rejected in either endpoint order.
 /// - Self-loop edges are stored once.
 /// - Explicit edge weights are ignored; weights are computed from coordinates.
@@ -119,7 +119,7 @@ impl<C: CoordinateDatatype> TwoDimensionalCoordinateGraph<C> {
     ///
     /// ```rust
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::TwoDimensionalCoordinateGraph;
     /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(1, 2, "N1".to_string()).unwrap();

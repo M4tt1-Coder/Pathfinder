@@ -12,10 +12,7 @@
 //! ```
 
 use divan::{Bencher, bench};
-use shortest_path_finder::{
-    graph::{Graph, UndirectedGraph},
-    nodes::DefaultNode,
-};
+use shortest_path_finder::{UndirectedGraph, graph::Graph, nodes::DefaultNode};
 
 fn main() {
     divan::main();

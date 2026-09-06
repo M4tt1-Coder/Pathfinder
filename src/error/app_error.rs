@@ -58,7 +58,7 @@
 //! ```rust
 //! use shortest_path_finder::error::algorithm_error::{AlgorithmError, AlgorithmErrorKind,
 //! dijkstra_error::DijkstraError};
-//! use shortest_path_finder::error::AppError;
+//! use shortest_path_finder::AppError;
 //!
 //! let err = AppError::from(AlgorithmError::from(DijkstraError::NoPathFound {
 //!     start: "A".to_string(),
@@ -86,7 +86,7 @@ use crate::error::{
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::error::AppError;
+/// use shortest_path_finder::AppError;
 ///
 /// let err = AppError::UnsupportedInputOrigin {
 ///     origin: "cmd-line".to_string(),

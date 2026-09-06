@@ -14,12 +14,13 @@
 //! # Module Map
 //!
 //! - [`algorithms`]: algorithm traits and concrete implementations.
-//! - [`graphs`]: graph traits and graph data structures.
+//! - [`graph`]: graph traits and graph data structures.
 //! - [`nodes`]: node models used by graph implementations.
 //! - [`data_input`]: graph-input boundaries, including file parsing and the
 //!   planned command-line input namespace.
 //! - [`error`]: parse-time, CLI configuration, and algorithm execution errors.
-//! - [`weight_types`] and [`numeric_datatypes`]: numeric traits and impls.
+//! - [`graph::GraphWeight`]: edge-weight capabilities.
+//! - [`algorithms::NumericDatatype`]: numeric capabilities used by algorithms.
 //!
 //! # Error Handling
 //!
@@ -62,8 +63,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::{Dijkstra, DirectedGraph};
 //! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::nodes::DefaultNode;
 //!
@@ -74,15 +74,25 @@
 //! graph.insert_node(b.clone());
 //! assert!(graph.insert_edge(&a, &b, Some(7)).is_none());
 //!
-//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let dijkstra = Dijkstra::new(graph);
 //! let result = dijkstra.shortest_path("A", "B").unwrap();
 //! assert_eq!(result.get_total_distance(), 7);
 //! ```
+
+// ~ public modules ~
 
 pub mod algorithms;
 pub mod data_input;
 pub mod error;
 pub mod graph;
 pub mod nodes;
+
+// ~ flatten module paths ~
+
+// export all algorithms at the crate root for easier access
+pub use algorithms::{a_star_algorithm::AStar, dijkstra_algorithm::Dijkstra};
+
+// export all graph types at the crate root for easier access
+pub use graph::{DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph};
 
 pub use error::AppError;

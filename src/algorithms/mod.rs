@@ -6,15 +6,14 @@
 //! crate:
 //! - [`Algorithm`]: shared trait for algorithm implementations.
 //! - [`Algorithms`]: enumeration for selecting between available algorithms.
-//! - [`dijkstra`]: concrete Dijkstra implementation.
+//! - [`dijkstra_algorithm`]: concrete Dijkstra implementation.
 //! - [`a_star_algorithm`]: coordinate-based A* implementation.
 //!
 //! # Usage
 //!
 //! ```rust
 //! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::{Dijkstra, DirectedGraph};
 //! use shortest_path_finder::graph::Graph;
 //! use shortest_path_finder::nodes::DefaultNode;
 //!
@@ -25,7 +24,7 @@
 //! graph.insert_node(b.clone());
 //! assert!(graph.insert_edge(&a, &b, Some(4)).is_none());
 //!
-//! let dijkstra = DijkstraAlgorithm::new(graph);
+//! let dijkstra = Dijkstra::new(graph);
 //! let result = dijkstra.shortest_path("A", "B").unwrap();
 //! assert_eq!(result.get_total_distance(), 4);
 //! ```
@@ -41,6 +40,6 @@ pub use numeric_datatype::NumericDatatype;
 // ~ public modules ~
 
 pub mod a_star_algorithm;
-pub mod dijkstra;
+pub mod dijkstra_algorithm;
 
 // ~ private modules ~

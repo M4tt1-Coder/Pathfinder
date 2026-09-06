@@ -23,11 +23,11 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 | Area                           | Path                                                                                                                           |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | CLI entrypoint                 | `src/main.rs`                                                                                                                  |
-| Argument parsing / defaults    | `src/cmd_line/app_config.rs`                                                                                                   |
-| Graph file parsing             | `src/data_input/file_input.rs`                                                                                                 |
-| Graph traits & implementations | `src/graphs/*`                                                                                                                 |
+| Argument parsing / defaults    | `src/data_input/file/cli_config/config.rs`                                                                                     |
+| Graph file parsing             | `src/data_input/file/file_input.rs`                                                                                            |
+| Graph traits & implementations | `src/graph/*`                                                                                                                  |
 | Algorithm trait & selection    | `src/algorithms/algorithm.rs`                                                                                                  |
-| Dijkstra                       | `src/algorithms/dijkstra.rs`                                                                                                   |
+| Dijkstra                       | `src/algorithms/dijkstra_algorithm.rs`                                                                                         |
 | A*                             | `src/algorithms/a_star_algorithm/`                                                                                             |
 | Error types                    | `src/error/*`                                                                                                                  |
 | Node models                    | `src/nodes/*`                                                                                                                  |
@@ -49,10 +49,10 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 | Change type     | Primary files                                              |
 | --------------- | ---------------------------------------------------------- |
-| CLI / config    | `src/main.rs`, `src/cmd_line/app_config.rs`                |
-| Input / parsing | `src/data_input/file_input.rs`                             |
+| CLI / config    | `src/main.rs`, `src/data_input/file/cli_config/config.rs` |
+| Input / parsing | `src/data_input/file/file_input.rs`                        |
 | Algorithms      | `src/algorithms/*` + only required graph trait/impl pieces |
-| Graph structure | `src/graphs/*`, `src/nodes/*`                              |
+| Graph structure | `src/graph/*`, `src/nodes/*`                               |
 | Errors          | `src/error/*`                                              |
 
 ---

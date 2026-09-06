@@ -7,8 +7,8 @@
 //! - a typed x-coordinate,
 //! - a typed y-coordinate.
 //!
-//! It implements both [`crate::graphs::graph::GraphNode`] and
-//! [`crate::nodes::trait_decl::coordinates_node::CoordinatesNode`], enabling
+//! It implements both [`crate::graph::GraphNode`] and
+//! [`crate::nodes::trait_decl::CoordinatesNode`], enabling
 //! use in generic graph and pathfinding algorithms.
 //!
 //! # Coordinate Type

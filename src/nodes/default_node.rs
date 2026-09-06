@@ -9,7 +9,7 @@
 //! # Design Notes
 //!
 //! - The node stores exactly one field: `id`.
-//! - The type implements [`crate::graphs::graph::GraphNode`] so it can be used
+//! - The type implements [`crate::graph::GraphNode`] so it can be used
 //!   with all generic graph and algorithm traits.
 //! - [`std::str::FromStr`] is intentionally permissive and treats the full input
 //!   as the node ID.
@@ -38,8 +38,8 @@ use crate::graph::GraphNode;
 /// Use this type when:
 /// - coordinate data is not required,
 /// - node identity is naturally represented by labels such as `"A"`,
-/// - and compatibility with [`crate::graphs::directed::DirectedGraph`] or
-///   [`crate::graphs::undirected::UndirectedGraph`] is needed.
+/// - and compatibility with [`crate::graph::DirectedGraph`] or
+///   [`crate::graph::UndirectedGraph`] is needed.
 ///
 /// # Examples
 ///

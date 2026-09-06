@@ -43,13 +43,15 @@
 //! - The first line is consumed for type detection and is not inserted as an edge.
 //! - Two-dimensional file input is parsed and inserted into
 //!   [`TwoDimensionalCoordinateGraph`] by the internal graph-generation pipeline.
-//! - Invalid weight tokens now preserve structured cause information via
-//!   [`ParseError::InvalidWeight`] and [`InvalidWeightError`], which makes it
-//!   easier to distinguish non-numeric input from out-of-range values.
+//! - A line that fails the edge grammar is reported as a syntax error before
+//!   weight conversion. Syntactically valid but unconvertible weights preserve
+//!   structured cause information via [`ParseError::InvalidWeight`] and
+//!   [`InvalidWeightError`], which distinguishes non-numeric, negative, and
+//!   out-of-range values.
 //! - Two-dimensional parsing currently uses
-//!   [`crate::nodes::two_dimensional_node::TwoDimensionalNode<i32>`] and
+//!   [`crate::nodes::TwoDimensionalNode<i32>`] and
 //!   therefore produces
-//!   [`crate::graphs::two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph<i32>`].
+//!   [`crate::graph::TwoDimensionalCoordinateGraph<i32>`].
 //!
 //! # Usage Examples
 //!
@@ -106,11 +108,9 @@ use crate::{
         DataInputError,
         parse_error::{InvalidWeightError, ParseError},
     },
-    graph::{
-        DirectedGraph, Graph, GraphInsertionError, GraphWeightType, TwoDimensionalCoordinateGraph,
-        UndirectedGraph,
-    },
+    graph::{Graph, GraphInsertionError, GraphWeightType},
     nodes::{DefaultNode, NodeType, TwoDimensionalNode},
+    {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
 // TODO: Add feature that users can choose different coordinate types for the
@@ -150,22 +150,23 @@ static GRAPH_EDGE_SYNTAX_REGEXES: OnceCell<LineSyntaxRegexes> = OnceCell::new();
 /// # Derive behavior
 ///
 /// The enum derives `EnumString` from `strum`, enabling case-insensitive string parsing for the
-/// configured aliases on each variant.
+/// configured aliases on each variant. File-header detection narrows those aliases to `D`, `UN`,
+/// and `TD`.
 #[derive(EnumString, PartialEq)]
 enum FoundGraphType {
     /// Undirected graph input.
     ///
-    /// Accepts aliases `Undirected` and `UN` (case-insensitive).
+    /// Represents the `UN` file-header form for undirected input.
     #[strum(serialize = "Undirected", serialize = "UN", ascii_case_insensitive)]
     UN,
     /// Directed graph input.
     ///
-    /// Accepts aliases `Directed` and `D` (case-insensitive).
+    /// Represents the `D` file-header form for directed input.
     #[strum(serialize = "Directed", serialize = "D", ascii_case_insensitive)]
     D,
     /// Two-dimensional coordinate graph input.
     ///
-    /// Accepts aliases `TwoDimensional` and `TD` (case-insensitive).
+    /// Represents the `TD` file-header form for two-dimensional input.
     #[strum(serialize = "TwoDimensional", serialize = "TD", ascii_case_insensitive)]
     TD,
 }
@@ -611,7 +612,7 @@ fn convert_line_to_graph_data(
 ///
 /// # Returns
 ///
-/// The inferred [`FoundGraphType`] if the line is an exact supported graph header.
+/// The inferred [`FoundGraphType`] if the trimmed line is a supported graph header.
 ///
 /// The first line is expected to be a graph-type marker such as `D`, `UN`, or `TD`.
 ///
@@ -621,7 +622,7 @@ fn convert_line_to_graph_data(
 ///
 /// # Errors
 ///
-/// Returns [`ParseError::InvalidHeader`] if the line is not exactly `D`, `UN`, or `TD`.
+/// Returns [`ParseError::InvalidHeader`] if the trimmed line is not `D`, `UN`, or `TD`.
 fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
     let header = first_line.trim();
 
@@ -714,9 +715,8 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
 ///
 /// # Notes
 ///
-/// This function is currently focused on directed graph parsing. Similar functions can be
-/// implemented for undirected and two-dimensional graph parsing to improve modularity and
-/// readability.
+/// This module provides graph-generation helpers for directed, undirected, and
+/// two-dimensional file formats. This helper handles the directed variant.
 fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph, ParseError> {
     let mut graph = DirectedGraph::default();
 

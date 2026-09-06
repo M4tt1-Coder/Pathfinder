@@ -15,7 +15,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::graph::Graph;
-//! use shortest_path_finder::graph::UndirectedGraph;
+//! use shortest_path_finder::UndirectedGraph;
 //! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let mut graph = UndirectedGraph::default();
@@ -217,10 +217,9 @@ impl UndirectedGraph {
     ///
     /// ```rust
     /// use shortest_path_finder::graph::Graph;
-    /// use shortest_path_finder::graph::UndirectedGraph;
+    /// use shortest_path_finder::UndirectedGraph;
     ///
     /// let graph = UndirectedGraph::new(vec![]);
-    /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// assert_eq!(graph.get_all_nodes().len(), 0);
     /// ```
     pub fn new(nodes: Vec<DefaultNode>) -> Self {

@@ -5,11 +5,11 @@
 //! The graph layer is organized around a small shared trait surface and a set
 //! of concrete graph types that model the supported input formats:
 //!
-//! - [`graph`]: shared traits used by algorithms and integration tests.
-//! - [`directed`]: a weighted directed graph over [`crate::nodes::default_node::DefaultNode`].
-//! - [`undirected`]: a weighted undirected graph over [`crate::nodes::default_node::DefaultNode`].
-//! - [`two_dimensional_coordinate_graph`]: a coordinate-based weighted graph
-//!   built on [`crate::nodes::two_dimensional_node::TwoDimensionalNode`].
+//! - [`Graph`]: shared behavior used by algorithms and integration tests.
+//! - [`directed`]: a weighted directed graph over [`crate::nodes::DefaultNode`].
+//! - [`undirected`]: a weighted undirected graph over [`crate::nodes::DefaultNode`].
+//! - [`two_dimensional`]: a coordinate-based weighted graph built on
+//!   [`crate::nodes::TwoDimensionalNode`].
 //!
 //! The public [`GraphInsertionError`] wrapper lets callers handle insertion
 //! failures without committing to a concrete graph implementation. It is
@@ -27,7 +27,7 @@
 //! Create a directed graph and query its capabilities:
 //!
 //! ```rust
-//! use shortest_path_finder::graph::DirectedGraph;
+//! use shortest_path_finder::DirectedGraph;
 //! use shortest_path_finder::graph::Graph;
 //!
 //! let graph = DirectedGraph::new(vec![]);
@@ -84,7 +84,7 @@ use std::{
 /// - [`GraphInsertionError::Directed`]: errors from [`directed::DirectedGraph`].
 /// - [`GraphInsertionError::Undirected`]: errors from [`undirected::UndirectedGraph`].
 /// - [`GraphInsertionError::TwoDimensional`]: errors from
-///   [`two_dimensional_coordinate_graph::TwoDimensionalCoordinateGraph`].
+///   [`two_dimensional::TwoDimensionalCoordinateGraph`].
 ///
 /// # Example
 ///
@@ -148,7 +148,7 @@ impl std::error::Error for GraphInsertionError {}
 /// # Example
 ///
 /// ```rust
-/// use shortest_path_finder::graph::DirectedGraph;
+/// use shortest_path_finder::DirectedGraph;
 /// use shortest_path_finder::graph::{Graph, GraphNode};
 /// use shortest_path_finder::nodes::DefaultNode;
 ///
@@ -259,7 +259,7 @@ pub trait Graph {
     ///
     /// # Example
     /// ```rust
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
     ///
     /// let graph = DirectedGraph::new(vec![]);
@@ -278,7 +278,7 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
     /// use shortest_path_finder::nodes::DefaultNode;
     ///
@@ -316,7 +316,8 @@ pub trait Graph {
     ///
     /// # Parameters
     ///
-    /// - `edge`: Candidate edge.
+    /// - `from`: Candidate source node.
+    /// - `to`: Candidate destination node.
     ///
     /// # Returns
     ///
@@ -348,7 +349,7 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::DirectedGraph;
     /// use shortest_path_finder::graph::{Graph, GraphNode};
     /// use shortest_path_finder::nodes::DefaultNode;
     ///
@@ -372,7 +373,7 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
     /// use shortest_path_finder::nodes::DefaultNode;
     ///
@@ -399,7 +400,7 @@ pub trait Graph {
     /// # Example
     ///
     /// ```rust
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::DirectedGraph;
     /// use shortest_path_finder::graph::Graph;
     ///
     /// assert_eq!(DirectedGraph::abbreviation(), "D");

@@ -9,10 +9,10 @@
 ## High-value file map
 
 - `src/main.rs`: CLI entrypoint; parses args into `AppConfig`, loads graph from file, runs algorithm.
-- `src/cmd_line/app_config.rs`: argument parsing and defaults (`--graph-file`, `--start`, `--end`, `--algo`, `--origin`).
-- `src/data_input/file_input.rs`: graph file parsing/validation (`A-B:7` or `A->B:7` formats).
-- `src/graphs/*`: graph traits and directed/undirected graph implementations.
-- `src/algorithms/dijkstra.rs`: shortest path implementation.
+- `src/data_input/file/cli_config/config.rs`: argument parsing and defaults (`--graph-file`, `--start`, `--end`, `--algo`, `--origin`).
+- `src/data_input/file/file_input.rs`: graph file parsing/validation (`A-B:7` or `A->B:7` formats).
+- `src/graph/*`: graph traits and directed/undirected graph implementations.
+- `src/algorithms/dijkstra_algorithm.rs`: shortest path implementation.
 - `.github/workflows/rust.yml`: CI checks formatting, clippy, build, tests, and doctests.
 - `.github/workflows/rust-ci.yml`: baseline CI verification on pushes and PRs.
 - `.github/workflows/codeql.yml`: security scanning workflow.
@@ -24,8 +24,8 @@
    - `cargo build --verbose`
    - `cargo test --verbose`
 2. Keep changes minimal and module-local:
-   - CLI/config changes: touch `src/main.rs` + `src/cmd_line/app_config.rs`.
-   - Parsing/input changes: touch `src/data_input/file_input.rs`.
+   - CLI/config changes: touch `src/main.rs` + `src/data_input/file/cli_config/config.rs`.
+   - Parsing/input changes: touch `src/data_input/file/file_input.rs`.
    - Algorithm changes: touch `src/algorithms/*` and only required graph trait/impl pieces.
 3. Validate with the same CI commands before finishing.
 
@@ -42,7 +42,7 @@
 
 ## Tests/quality expectations
 
-- Existing CI checks only build and test via Cargo.
+- CI runs rustfmt, Clippy, workspace builds, unit/integration tests, and doctests via Cargo.
 - There are benchmark targets under `benches/`, but they are not part of standard CI gating.
 - No dedicated lint workflow is configured in GitHub Actions.
 - Always run all test suites before committing and before finishing a task:
@@ -88,7 +88,6 @@
 
 ## Commit History requirement
 
-- After each user prompt that results in repository modifications, create one or more commits containing the changes made for that prompt.
-- Always separate distinct modifications into different commits to keep the history clean and reviewable.
-- Keep commits granular and topic-focused; do not batch unrelated changes into one commit.
-- Every commit must have a concise, descriptive title and a body description that briefly summarizes the commit contents.
+- Create commits only when the user asks, unless the repository workflow explicitly requires autonomous commits.
+- When committing, separate distinct modifications into focused commits.
+- Give every commit a concise, descriptive title and a body that briefly summarizes its contents.

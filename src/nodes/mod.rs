@@ -3,9 +3,9 @@
 //! # Overview
 //!
 //! This module groups all node shapes used throughout the crate:
-//! - [`default_node`]: simple ID-based node type.
-//! - [`two_dimensional_node`]: coordinate-aware node type.
-//! - [`node_types`]: enum wrapper for parser output.
+//! - [`DefaultNode`]: simple ID-based node type.
+//! - [`TwoDimensionalNode`]: coordinate-aware node type.
+//! - [`NodeType`]: enum wrapper for parser output.
 //! - [`trait_decl`]: shared node trait declarations.
 //!
 //! # Usage

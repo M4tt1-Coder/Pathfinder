@@ -44,7 +44,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::data_input::file::FileInputError;
-//! use shortest_path_finder::error::AppError;
+//! use shortest_path_finder::AppError;
 //! use shortest_path_finder::error::DataInputError;
 //! use shortest_path_finder::error::ParseError;
 //!

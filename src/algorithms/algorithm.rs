@@ -23,7 +23,7 @@
 //!
 //! ```rust
 //! use shortest_path_finder::algorithms::SearchResult;
-//! use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+//! use shortest_path_finder::algorithms::dijkstra_algorithm::DijkstraSearchResult;
 //! use shortest_path_finder::nodes::DefaultNode;
 //!
 //! let path = vec![
@@ -161,8 +161,7 @@ pub trait Algorithm {
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraAlgorithm;
-    /// use shortest_path_finder::graph::DirectedGraph;
+    /// use shortest_path_finder::{Dijkstra, DirectedGraph};
     /// use shortest_path_finder::graph::Graph;
     /// use shortest_path_finder::nodes::DefaultNode;
     ///
@@ -173,7 +172,7 @@ pub trait Algorithm {
     /// graph.insert_node(b.clone());
     /// assert!(graph.insert_edge(&a, &b, Some(3u16)).is_none());
     ///
-    /// let algorithm = DijkstraAlgorithm::new(graph);
+    /// let algorithm = Dijkstra::new(graph);
     /// let result = algorithm.shortest_path("A", "B").unwrap();
     ///
     /// assert_eq!(result.get_total_distance(), 3u16);
@@ -217,7 +216,7 @@ pub trait SearchResult: Display + Debug {
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::SearchResult;
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::algorithms::dijkstra_algorithm::DijkstraSearchResult;
     /// use shortest_path_finder::graph::GraphNode;
     /// use shortest_path_finder::nodes::DefaultNode;
     ///
@@ -244,7 +243,7 @@ pub trait SearchResult: Display + Debug {
     ///
     /// ```rust
     /// use shortest_path_finder::algorithms::SearchResult;
-    /// use shortest_path_finder::algorithms::dijkstra::DijkstraSearchResult;
+    /// use shortest_path_finder::algorithms::dijkstra_algorithm::DijkstraSearchResult;
     /// use shortest_path_finder::graph::GraphNode;
     /// use shortest_path_finder::nodes::DefaultNode;
     ///

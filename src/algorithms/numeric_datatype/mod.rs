@@ -2,7 +2,7 @@
 //!
 //! # Overview
 //!
-//! [`NumericDatatype`] builds on [`crate::graphs::graph::GraphWeight`] and adds
+//! [`NumericDatatype`] builds on [`crate::graph::GraphWeight`] and adds
 //! arithmetic functionality needed by heuristic-based algorithms such as A*.
 //!
 //! # Responsibilities

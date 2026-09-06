@@ -55,8 +55,8 @@ use std::{env, process};
 
 use log::error;
 use shortest_path_finder::{
-    AppError,
-    algorithms::{Algorithm, Algorithms, a_star_algorithm::AStar, dijkstra::DijkstraAlgorithm},
+    AStar, AppError, Dijkstra,
+    algorithms::{Algorithm, Algorithms},
     data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
     data_input::file::{
         FileInputGraphResult::{DirectedGraph, TwoDimensionalGraph, UndirectedGraph},
@@ -150,7 +150,7 @@ fn run() -> Result<(), AppError> {
             match generated_graph_res {
                 DirectedGraph(graph) => {
                     let algo = match app_config.algorithm {
-                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        Algorithms::Dijkstra => Dijkstra::new(graph),
                         _ => {
                             return Err(AppError::Runtime {
                                 message: format!(
@@ -169,7 +169,7 @@ fn run() -> Result<(), AppError> {
                 }
                 UndirectedGraph(graph) => {
                     let algo = match app_config.algorithm {
-                        Algorithms::Dijkstra => DijkstraAlgorithm::new(graph),
+                        Algorithms::Dijkstra => Dijkstra::new(graph),
                         _ => {
                             return Err(AppError::Runtime {
                                 message: format!(

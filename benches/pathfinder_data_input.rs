@@ -17,8 +17,8 @@ use divan::bench;
 use shortest_path_finder::{
     data_input::file::{FileInputGraphResult, retrieve_graph_data_from_file},
     error::ParseError,
-    graph::{DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
     nodes::{DefaultNode, TwoDimensionalNode},
+    {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
 fn main() {

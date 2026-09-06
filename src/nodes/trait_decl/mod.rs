@@ -3,8 +3,8 @@
 //! # Overview
 //!
 //! This namespace currently exposes:
-//! - [`coordinates_node`], a trait for graph nodes that carry x/y coordinates,
-//! - [`coordinate_datatype`], a trait defining coordinate scalar capabilities.
+//! - [`CoordinatesNode`], a trait for graph nodes that carry x/y coordinates,
+//! - [`CoordinateDatatype`], a trait defining coordinate scalar capabilities.
 //!
 //! # Usage
 //!

@@ -4,12 +4,9 @@
 //! traversal behavior for directed and undirected graphs.
 
 use shortest_path_finder::{
-    graph::{
-        DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph,
-        directed::DirectedGraphInsertionError,
-        {Graph, GraphNode},
-    },
+    graph::{Graph, GraphNode, directed::DirectedGraphInsertionError},
     nodes::{DefaultNode, TwoDimensionalNode},
+    {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
 fn node(id: &str) -> DefaultNode {

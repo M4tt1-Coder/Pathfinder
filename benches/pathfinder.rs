@@ -35,12 +35,10 @@ use std::{
 
 use divan::{Bencher, bench};
 use shortest_path_finder::{
-    algorithms::{
-        Algorithm, NumericDatatype, SearchResult, a_star_algorithm::AStar,
-        dijkstra::DijkstraAlgorithm,
-    },
+    algorithms::{Algorithm, NumericDatatype, SearchResult},
     graph::{Graph, GraphNode, GraphWeight},
     nodes::TwoDimensionalNode,
+    {AStar, Dijkstra},
 };
 
 fn main() {
@@ -434,7 +432,7 @@ fn run_single_search(
 ) -> (usize, f32) {
     match algorithm {
         ComparedAlgorithm::Dijkstra => {
-            let result = DijkstraAlgorithm::new(graph.clone())
+            let result = Dijkstra::new(graph.clone())
                 .shortest_path(start_node_id, end_node_id)
                 .expect("Dijkstra benchmark query failed unexpectedly.");
             (
@@ -491,7 +489,7 @@ fn create_algorithm_instance_for_shared_coordinate_graph(
         .with_inputs(|| build_grid_graph(40, true))
         .bench_refs(|graph| match algorithm {
             ComparedAlgorithm::Dijkstra => {
-                black_box(DijkstraAlgorithm::new(graph.clone()));
+                black_box(Dijkstra::new(graph.clone()));
             }
             ComparedAlgorithm::AStar => {
                 black_box(AStar::new(graph.clone()));

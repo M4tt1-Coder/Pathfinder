@@ -118,8 +118,9 @@ use crate::graph::GraphInsertionError;
 pub enum ParseError {
     /// The graph header is invalid or unrecognized.
     ///
-    /// Expected values are 'D' for directed, 'UN' for undirected, and 'TD' for two-dimensional
-    /// graphs. The provided header string is included in the error for diagnostic purposes.
+    /// Expected values are `D` for directed, `UN` for undirected, and `TD` for two-dimensional
+    /// graphs, matched case-insensitively after trimming. The provided header string is included
+    /// in the error for diagnostic purposes.
     InvalidHeader(String),
     /// The input string does not contain exactly one colon.
     ///
@@ -134,7 +135,7 @@ pub enum ParseError {
     /// This occurs if either coordinate is not a valid value for the selected
     /// coordinate datatype of the node being parsed.
     InvalidInteger,
-    /// The edge weight could not be parsed to a valid [`crate::graphs::graph::GraphWeight`] value.
+    /// The edge weight could not be parsed to a valid [`crate::graph::GraphWeight`] value.
     ///
     /// This variant preserves the structured weight-parsing cause in
     /// [`InvalidWeightError`]. That makes it possible to distinguish:

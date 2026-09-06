@@ -35,9 +35,10 @@
 //!
 //! # Complexity Notes
 //!
-//! Queue operations are `O(log V)` and the traversal is typically `O(E log V)`.
-//! This implementation uses linear scans to check open and closed membership,
-//! which can increase runtime on large graphs.
+//! Queue insertion and removal use `O(log V)` heap operations. The implementation
+//! also uses linear scans to check open and closed membership and to remove stale
+//! entries, so its overall runtime can exceed the usual `O(E log V)` bound on
+//! large graphs.
 //!
 //! # Error Handling
 //!
@@ -51,9 +52,8 @@
 //! # Usage Example
 //!
 //! ```no_run
-//! use shortest_path_finder::algorithms::a_star_algorithm::AStar;
+//! use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
 //! use shortest_path_finder::algorithms::{Algorithm, SearchResult};
-//! use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
 //! use shortest_path_finder::nodes::TwoDimensionalNode;
 //!
 //! let start = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -112,8 +112,7 @@ use crate::{
 /// # Example
 ///
 /// ```no_run
-/// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
-/// use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
+/// use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
 /// use shortest_path_finder::nodes::TwoDimensionalNode;
 ///
 /// let n = TwoDimensionalNode::new(1, 2, "S".to_string()).unwrap();
@@ -168,9 +167,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     /// # Example
     ///
     /// ```no_run
-    /// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
+    /// use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
     /// use shortest_path_finder::algorithms::{Algorithm, SearchResult};
-    /// use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
     /// use shortest_path_finder::nodes::TwoDimensionalNode;
     ///
     /// let node = TwoDimensionalNode::new(0, 0, "A".to_string()).unwrap();
@@ -354,7 +352,7 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// ```no_run
     /// use shortest_path_finder::algorithms::a_star_algorithm::AStar;
-    /// use shortest_path_finder::graph::TwoDimensionalCoordinateGraph;
+    /// use shortest_path_finder::TwoDimensionalCoordinateGraph;
     ///
     /// let graph = TwoDimensionalCoordinateGraph::<i32>::new(vec![]);
     /// let _a_star = AStar::new(graph);
@@ -473,7 +471,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     /// # Validation Rules
     ///
     /// - `path` must contain at least one node.
-    /// - `distance` must be greater than or equal to zero.
+    /// - `distance` must not be negative. Non-finite floating-point values are
+    ///   not rejected explicitly by this constructor.
     ///
     /// # Parameters
     ///
@@ -620,7 +619,7 @@ pub struct AStarQueueElement<'n, WD: NumericDatatype, N: CoordinatesNode> {
     /// Total estimated cost of the path through this node (`f(n) = g(n) + h(n)`).
     ///
     /// This value is public so that priority queues can access and compare it directly.
-    /// It may be adjusted for weighted graphs by applying a weight factor.
+    /// It is computed as `g_cost + h_cost`.
     pub f_cost: WD,
 }
 

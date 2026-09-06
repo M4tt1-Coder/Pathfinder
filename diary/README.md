@@ -26,7 +26,9 @@ diary/
 ```
 
 Each branch gets a subfolder named after the branch. Inside, diary entries are
-numbered markdown files (`NNN-short-title.md`).
+numbered markdown files (`NNN-short-title.md`). Diary entries are required for
+AI-assisted prompts that modify repository artifacts, whether or not a commit
+is created.
 
 ## Entry Template
 
@@ -54,10 +56,11 @@ separate entry with its own timestamp:
 
 ## Commit Convention
 
-Every prompt that creates or modifies code artifacts results in one or more
-commits containing the changes and a diary entry:
+When the user requests a commit for a prompt that creates or modifies
+repository artifacts, the commit should include the corresponding diary entry:
 
-- One prompt -> one or more commits for the resulting repository changes.
+- Create commits only when the user asks, unless the repository workflow
+  explicitly requires autonomous commits.
 - If a prompt includes multiple distinct modifications, split them into
   separate commits; avoid bundling unrelated changes.
 - Include the diary entry in one of the commits for that prompt (preferably
