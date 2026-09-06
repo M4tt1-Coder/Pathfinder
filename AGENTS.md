@@ -10,7 +10,7 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 |                 |                                                        |
 | --------------- | ------------------------------------------------------ |
-| **Language**    | Rust (`edition = "2024"`, MSRV 1.98.0+)                |
+| **Language**    | Rust (`edition = "2024"`, MSRV 1.88.0+)                |
 | **Crate**       | `shortest_path_finder` — library + `pathfinder` binary |
 | **Purpose**     | Parse weighted graphs and run shortest-path algorithms |
 | **Algorithms**  | Dijkstra, A* (coordinate-based)                        |
@@ -49,7 +49,7 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 | Change type     | Primary files                                              |
 | --------------- | ---------------------------------------------------------- |
-| CLI / config    | `src/main.rs`, `src/data_input/file/cli_config/config.rs` |
+| CLI / config    | `src/main.rs`, `src/data_input/file/cli_config/config.rs`  |
 | Input / parsing | `src/data_input/file/file_input.rs`                        |
 | Algorithms      | `src/algorithms/*` + only required graph trait/impl pieces |
 | Graph structure | `src/graph/*`, `src/nodes/*`                               |
