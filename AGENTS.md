@@ -10,7 +10,7 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 |                 |                                                        |
 | --------------- | ------------------------------------------------------ |
-| **Language**    | Rust (`edition = "2024"`, MSRV 1.85+)                  |
+| **Language**    | Rust (`edition = "2024"`, MSRV 1.98.0+)                |
 | **Crate**       | `shortest_path_finder` — library + `pathfinder` binary |
 | **Purpose**     | Parse weighted graphs and run shortest-path algorithms |
 | **Algorithms**  | Dijkstra, A* (coordinate-based)                        |
