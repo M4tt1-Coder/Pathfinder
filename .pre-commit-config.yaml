@@ -25,6 +25,12 @@ repos:
         language: system
         pass_filenames: false
 
+      - id: rust-examples
+        name: cargo check --examples
+        entry: cargo check --examples --locked
+        language: system
+        pass_filenames: false
+
       - id: rust-bench
         name: cargo bench
         entry: cargo bench --no-run --all-features

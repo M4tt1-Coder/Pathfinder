@@ -210,6 +210,8 @@ Quality and automation:
   - `codeql.yml`: static analysis for security scanning
   - `release.yml`: automated publishing on merged PRs into main
 - Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
+- Example programs are compiled explicitly with `cargo check --examples` in both
+	local pre-commit hooks and pull-request CI.
 
 ## Project structure
 
@@ -222,12 +224,25 @@ Quality and automation:
 - src/algorithms/: algorithm trait and implementations
 - src/error/: layered errors for parsing, configuration, and algorithm execution
 - src/lib.rs: crate-level docs and public re-exports
+- examples/: runnable programs for each supported graph and algorithm pairing
 - benches/: benchmark targets, including direct Dijkstra vs A\* comparisons
 
 ## Library usage (Rust)
 
 If you use the crate directly, the flow is simple: build a graph, pick an algorithm, and read the `SearchResult`.
 The snippets below are intentionally compact but mirror how I use the library in real code.
+
+### Runnable examples
+
+The repository includes small binaries that can be run directly with Cargo:
+
+| Example | Graph | Algorithm | Command |
+| --- | --- | --- | --- |
+| `dijkstra_directed` | Directed | Dijkstra | `cargo run --example dijkstra_directed` |
+| `dijkstra_undirected` | Undirected | Dijkstra | `cargo run --example dijkstra_undirected` |
+| `a_star_coordinate` | Two-dimensional coordinate | A* | `cargo run --example a_star_coordinate` |
+
+Each example constructs its graph in memory, runs a shortest-path search, and prints the path and total distance.
 
 #### Dijkstra on a directed graph
 
@@ -373,6 +388,10 @@ cargo clippy --all-targets --all-features -- -D warnings
 
 ```sh
 cargo build --workspace --all-targets --locked --verbose
+```
+
+```sh
+cargo check --examples --locked --verbose
 ```
 
 ```sh

@@ -14,7 +14,7 @@ env:
 
 jobs:
   verify:
-    name: fmt / clippy / build / test / doctest
+    name: fmt / clippy / build / examples / test / doctest
     runs-on: ubuntu-latest
 
     steps:
@@ -37,6 +37,9 @@ jobs:
 
     - name: Build workspace
       run: cargo build --workspace --all-targets --locked --verbose
+
+    - name: Compile examples
+      run: cargo check --examples --locked --verbose
 
     - name: Run unit and integration tests
       run: cargo test --workspace --all-targets --locked --verbose

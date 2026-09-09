@@ -69,6 +69,12 @@
 - If behavior, CLI usage, configuration, testing workflow, project structure, or documented examples have changed, update `README.md` in the same change.
 - Treat this check as mandatory before finalizing work, even when changes are small.
 
+## Example synchronization requirement
+
+- Keep every program in `examples/*.rs` up to date with the current library APIs, algorithms, graph types, and user-facing behavior throughout development.
+- When an implementation or public API changes, update the affected examples in the same change; do not leave examples stale until the end of the task.
+- Ensure all examples compile with `cargo check --examples --locked` before finishing.
+
 ## Errors encountered during onboarding and workarounds used
 
 - While running `cargo test --verbose` in this environment, tool output exceeded inline display limits and was redirected to a temp log file (`/tmp/copilot-tool-output-...txt`).

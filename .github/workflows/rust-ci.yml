@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   check:
-    name: fmt / clippy / test
+    name: fmt / clippy / examples / test
     runs-on: ubuntu-latest
 
     steps:
@@ -33,6 +33,9 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features --locked
+
+      - name: Compile examples
+        run: cargo check --examples --all-features --locked
 
       - name: Run documentation tests
         run: cargo test --workspace --doc --all-features --locked

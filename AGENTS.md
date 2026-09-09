@@ -111,6 +111,14 @@ Before finalizing any change, check whether `README.md` needs updating:
 
 Update `README.md` in the same change when behavior or documented usage changes.
 
+### Example synchronization
+
+Keep every program in `examples/*.rs` up to date with the current library APIs,
+algorithms, graph types, and user-facing behavior throughout development. When
+an implementation or public API changes, update the affected examples in the
+same change; do not leave examples stale until the end of the task. Ensure all
+examples compile with `cargo check --examples --locked` before finishing.
+
 ---
 
 ## AI diary (required for AI-assisted work)
