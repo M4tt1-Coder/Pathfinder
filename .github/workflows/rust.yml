@@ -39,10 +39,10 @@ jobs:
         run: cargo build --workspace --all-targets --locked --verbose
 
       - name: Compile examples
-        run: cargo check --examples --locked --verbose
+        run: cargo check --examples --all-features --locked --verbose
 
       - name: Run unit and integration tests
         run: cargo test --workspace --all-targets --locked --verbose
 
       - name: Run documentation tests
-        run: cargo test --workspace --doc --locked --verbose
+        run: cargo test --workspace --doc --all-features --locked --verbose
