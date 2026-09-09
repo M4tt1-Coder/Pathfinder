@@ -5,9 +5,9 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "development"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "development"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,31 +18,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Install stable toolchain
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt, clippy
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
-    - name: Cache cargo registry + index + build
-      uses: Swatinem/rust-cache@v2
+      - name: Cache cargo registry + index + build
+        uses: Swatinem/rust-cache@v2
 
-    - name: Check formatting
-      run: cargo fmt --all -- --check
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
-    - name: Clippy (deny warnings)
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-    - name: Build workspace
-      run: cargo build --workspace --all-targets --locked --verbose
+      - name: Build workspace
+        run: cargo build --workspace --all-targets --locked --verbose
 
-    - name: Compile examples
-      run: cargo check --examples --locked --verbose
+      - name: Compile examples
+        run: cargo check --examples --locked --verbose
 
-    - name: Run unit and integration tests
-      run: cargo test --workspace --all-targets --locked --verbose
+      - name: Run unit and integration tests
+        run: cargo test --workspace --all-targets --locked --verbose
 
-    - name: Run documentation tests
-      run: cargo test --workspace --doc --locked --verbose
+      - name: Run documentation tests
+        run: cargo test --workspace --doc --locked --verbose
