@@ -69,7 +69,11 @@ impl Graph for UndirectedGraph {
         self.node_index_by_id.contains_key(node.get_id())
     }
 
-    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+    fn does_edge_already_exist(
+        &self,
+        from: &Self::Node,
+        to: &Self::Node,
+    ) -> bool {
         if let (Some(from_index), Some(to_index)) = (
             self.node_index_for_id(from.get_id()),
             self.node_index_for_id(to.get_id()),
@@ -94,11 +98,11 @@ impl Graph for UndirectedGraph {
             return Box::new(std::iter::empty());
         };
 
-        Box::new(
-            self.adjacency[source_index]
-                .iter()
-                .map(move |(neighbor_index, weight)| (&self.nodes[*neighbor_index], *weight)),
-        )
+        Box::new(self.adjacency[source_index].iter().map(
+            move |(neighbor_index, weight)| {
+                (&self.nodes[*neighbor_index], *weight)
+            },
+        ))
     }
 
     fn is_directed(&self) -> bool {
@@ -136,7 +140,7 @@ impl Graph for UndirectedGraph {
                 return Some(UndirectedGraphInsertionError::NodeNotFound {
                     node_id: from.get_id().to_string(),
                 });
-            }
+            },
         };
 
         let b_index = match self.node_index_for_id(to.get_id()) {
@@ -145,7 +149,7 @@ impl Graph for UndirectedGraph {
                 return Some(UndirectedGraphInsertionError::NodeNotFound {
                     node_id: to.get_id().to_string(),
                 });
-            }
+            },
         };
 
         let weight = match weight {
@@ -155,7 +159,7 @@ impl Graph for UndirectedGraph {
                     from_id: from.get_id().to_string(),
                     to_id: to.get_id().to_string(),
                 });
-            }
+            },
         };
 
         if a_index == b_index {
@@ -335,27 +339,30 @@ pub enum UndirectedGraphInsertionError {
 impl Display for UndirectedGraphInsertionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UndirectedGraphInsertionError::EdgeAlreadyExists { from_id, to_id } => {
+            UndirectedGraphInsertionError::EdgeAlreadyExists {
+                from_id,
+                to_id,
+            } => {
                 write!(
                     f,
                     "The edge between '{}' and '{}' already exists in the graph!",
                     from_id, to_id
                 )
-            }
+            },
             UndirectedGraphInsertionError::NodeNotFound { node_id } => {
                 write!(
                     f,
                     "The node with ID '{}' was not found in the graph!",
                     node_id
                 )
-            }
+            },
             UndirectedGraphInsertionError::MissingWeight { from_id, to_id } => {
                 write!(
                     f,
                     "The edge from '{}' to '{}' is missing a weight!",
                     from_id, to_id
                 )
-            }
+            },
         }
     }
 }

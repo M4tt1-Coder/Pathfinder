@@ -64,8 +64,8 @@ use std::{error::Error as StdError, fmt};
 use crate::{
     algorithms::Algorithms,
     data_input::file::cli_config::parser::{
-        APP_NAME, CliParseOutcome, DEFAULT_GRAPH_FILE, ParsedCliValues, VALID_ALGORITHMS,
-        VALID_ORIGINS, expected_values, parse_cli_values,
+        APP_NAME, CliParseOutcome, DEFAULT_GRAPH_FILE, ParsedCliValues,
+        VALID_ALGORITHMS, VALID_ORIGINS, expected_values, parse_cli_values,
     },
     error::CLIParseError,
 };
@@ -254,7 +254,8 @@ impl AppConfigOutcome {
     pub fn into_config(self) -> Option<AppConfig> {
         match self {
             AppConfigOutcome::Config(config) => Some(config),
-            AppConfigOutcome::HelpRequested | AppConfigOutcome::VersionRequested => None,
+            AppConfigOutcome::HelpRequested
+            | AppConfigOutcome::VersionRequested => None,
         }
     }
 }
@@ -364,22 +365,32 @@ impl AppConfig {
     /// let err = AppConfig::setup_config(args).expect_err("unknown flag should fail");
     /// assert!(matches!(err, CLIParseError::UnknownFlag { .. }));
     /// ```
-    pub fn setup_config(args: Vec<String>) -> Result<AppConfigOutcome, CLIParseError> {
+    pub fn setup_config(
+        args: Vec<String>,
+    ) -> Result<AppConfigOutcome, CLIParseError> {
         let parsed = match parse_cli_values(&args)? {
             CliParseOutcome::Values(values) => values,
-            CliParseOutcome::HelpRequested => return Ok(AppConfigOutcome::HelpRequested),
-            CliParseOutcome::VersionRequested => return Ok(AppConfigOutcome::VersionRequested),
+            CliParseOutcome::HelpRequested => {
+                return Ok(AppConfigOutcome::HelpRequested);
+            },
+            CliParseOutcome::VersionRequested => {
+                return Ok(AppConfigOutcome::VersionRequested);
+            },
         };
 
         let file_path = parsed
             .graph_file_value()
             .unwrap_or_else(|| DEFAULT_GRAPH_FILE.to_string());
         let algorithm_token = parsed.algorithm_value();
-        let (data_input, used_legacy_origin) =
-            AppConfig::retrieve_data_input(&parsed, algorithm_token.as_deref())?;
+        let (data_input, used_legacy_origin) = AppConfig::retrieve_data_input(
+            &parsed,
+            algorithm_token.as_deref(),
+        )?;
         AppConfig::validate_flag_combinations(&parsed, &data_input)?;
-        let algorithm =
-            AppConfig::retrieve_algorithm(algorithm_token.as_deref(), used_legacy_origin)?;
+        let algorithm = AppConfig::retrieve_algorithm(
+            algorithm_token.as_deref(),
+            used_legacy_origin,
+        )?;
 
         let start_node_id = parsed
             .start_value()
@@ -453,10 +464,12 @@ Notes:\n\
         }
 
         let token = raw_algorithm.expect("algorithm token should be present");
-        Algorithms::try_from(token).map_err(|err| CLIParseError::InvalidFlagValue {
-            flag: "--algo".to_string(),
-            value: err.value,
-            expected: expected_values(&VALID_ALGORITHMS),
+        Algorithms::try_from(token).map_err(|err| {
+            CLIParseError::InvalidFlagValue {
+                flag: "--algo".to_string(),
+                value: err.value,
+                expected: expected_values(&VALID_ALGORITHMS),
+            }
         })
     }
 
@@ -472,20 +485,22 @@ Notes:\n\
     ) -> Result<(InputOrigin, bool), CLIParseError> {
         // `--origin` takes precedence over legacy origin markers.
         if let Some(origin) = parsed.origin_value() {
-            let origin = InputOrigin::try_from(origin.as_str()).map_err(|err| {
-                CLIParseError::InvalidFlagValue {
-                    flag: "--origin".to_string(),
-                    value: err.value,
-                    expected: expected_values(&VALID_ORIGINS),
-                }
-            })?;
+            let origin =
+                InputOrigin::try_from(origin.as_str()).map_err(|err| {
+                    CLIParseError::InvalidFlagValue {
+                        flag: "--origin".to_string(),
+                        value: err.value,
+                        expected: expected_values(&VALID_ORIGINS),
+                    }
+                })?;
             return Ok((origin, false));
         }
 
         // Keep backward compatibility for existing callers that pass
         // `--algo cmd-line` or `--algo file` as origin markers.
         if let Some(algo_token) = raw_algorithm
-            && let Some(origin) = AppConfig::legacy_origin_from_algorithm(algo_token)
+            && let Some(origin) =
+                AppConfig::legacy_origin_from_algorithm(algo_token)
         {
             return Ok((origin, true));
         }
@@ -494,7 +509,9 @@ Notes:\n\
     }
 
     /// Maps legacy `--algo` origin markers to [`InputOrigin`].
-    fn legacy_origin_from_algorithm(raw_algorithm: &str) -> Option<InputOrigin> {
+    fn legacy_origin_from_algorithm(
+        raw_algorithm: &str,
+    ) -> Option<InputOrigin> {
         match raw_algorithm {
             "file" => Some(InputOrigin::File),
             "cmd-line" => Some(InputOrigin::CommandLine),
@@ -508,11 +525,15 @@ Notes:\n\
         data_input: &InputOrigin,
     ) -> Result<(), CLIParseError> {
         // Command-line input conflicts with explicit file-path selection.
-        if matches!(data_input, InputOrigin::CommandLine) && parsed.has_graph_file() {
+        if matches!(data_input, InputOrigin::CommandLine)
+            && parsed.has_graph_file()
+        {
             return Err(CLIParseError::ConflictingFlags {
                 flag: "--origin".to_string(),
                 other: "--graph-file".to_string(),
-                reason: "command-line origin cannot be combined with --graph-file".to_string(),
+                reason:
+                    "command-line origin cannot be combined with --graph-file"
+                        .to_string(),
             });
         }
 

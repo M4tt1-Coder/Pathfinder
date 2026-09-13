@@ -62,10 +62,14 @@ impl fmt::Display for PathReconstructionError {
         match self {
             PathReconstructionError::EmptyClosedSet => {
                 write!(f, "closed set is empty")
-            }
+            },
             PathReconstructionError::MissingClosedEntry { node_id } => {
-                write!(f, "predecessor node '{}' missing from closed set", node_id)
-            }
+                write!(
+                    f,
+                    "predecessor node '{}' missing from closed set",
+                    node_id
+                )
+            },
         }
     }
 }
@@ -152,14 +156,28 @@ impl AStarError {
     pub fn kind(&self) -> AlgorithmErrorKind {
         match self {
             AStarError::UnweightedGraph => AlgorithmErrorKind::InvalidGraph,
-            AStarError::MissingStartNode { .. } => AlgorithmErrorKind::MissingNode,
-            AStarError::MissingEndNode { .. } => AlgorithmErrorKind::MissingNode,
-            AStarError::InvalidEdgeWeight { .. } => AlgorithmErrorKind::InvalidWeight,
-            AStarError::InvalidHeuristic { .. } => AlgorithmErrorKind::InvalidHeuristic,
-            AStarError::MissingGCost { .. } => AlgorithmErrorKind::InvariantViolation,
+            AStarError::MissingStartNode { .. } => {
+                AlgorithmErrorKind::MissingNode
+            },
+            AStarError::MissingEndNode { .. } => {
+                AlgorithmErrorKind::MissingNode
+            },
+            AStarError::InvalidEdgeWeight { .. } => {
+                AlgorithmErrorKind::InvalidWeight
+            },
+            AStarError::InvalidHeuristic { .. } => {
+                AlgorithmErrorKind::InvalidHeuristic
+            },
+            AStarError::MissingGCost { .. } => {
+                AlgorithmErrorKind::InvariantViolation
+            },
             AStarError::NoPathFound { .. } => AlgorithmErrorKind::NoPath,
-            AStarError::InvalidSearchResult { .. } => AlgorithmErrorKind::InvalidResult,
-            AStarError::PathReconstruction { .. } => AlgorithmErrorKind::InvariantViolation,
+            AStarError::InvalidSearchResult { .. } => {
+                AlgorithmErrorKind::InvalidResult
+            },
+            AStarError::PathReconstruction { .. } => {
+                AlgorithmErrorKind::InvariantViolation
+            },
         }
     }
 }
@@ -169,13 +187,21 @@ impl fmt::Display for AStarError {
         match self {
             AStarError::UnweightedGraph => {
                 write!(f, "Algorithm error (AStar): graph must be weighted")
-            }
+            },
             AStarError::MissingStartNode { id } => {
-                write!(f, "Algorithm error (AStar): start node '{}' not found", id)
-            }
+                write!(
+                    f,
+                    "Algorithm error (AStar): start node '{}' not found",
+                    id
+                )
+            },
             AStarError::MissingEndNode { id } => {
-                write!(f, "Algorithm error (AStar): end node '{}' not found", id)
-            }
+                write!(
+                    f,
+                    "Algorithm error (AStar): end node '{}' not found",
+                    id
+                )
+            },
             AStarError::InvalidEdgeWeight {
                 from,
                 to,

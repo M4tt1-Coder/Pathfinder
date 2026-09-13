@@ -67,7 +67,10 @@
 //! assert_eq!(scaled, 4);
 //! ```
 
-use crate::{graph::GraphNode, nodes::trait_decl::coordinate_datatype::CoordinateDatatype};
+use crate::{
+    graph::GraphNode,
+    nodes::trait_decl::coordinate_datatype::CoordinateDatatype,
+};
 
 /// Trait for nodes that expose two coordinates in addition to an identifier.
 ///

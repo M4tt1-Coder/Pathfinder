@@ -167,7 +167,11 @@ enum FoundGraphType {
     /// Two-dimensional coordinate graph input.
     ///
     /// Represents the `TD` file-header form for two-dimensional input.
-    #[strum(serialize = "TwoDimensional", serialize = "TD", ascii_case_insensitive)]
+    #[strum(
+        serialize = "TwoDimensional",
+        serialize = "TD",
+        ascii_case_insensitive
+    )]
     TD,
 }
 
@@ -279,14 +283,14 @@ impl fmt::Display for FileInputError {
         match self {
             FileInputError::Io { path, source } => {
                 write!(f, "Failed to read graph file '{}': {}", path, source)
-            }
+            },
             FileInputError::Parse { file_path, source } => {
                 write!(
                     f,
                     "Failed to parse graph from file '{}': {}",
                     file_path, source
                 )
-            }
+            },
         }
     }
 }
@@ -402,14 +406,17 @@ pub fn retrieve_graph_data_from_file(
     let rel_path = Path::new(file_path);
 
     // Read full file text eagerly and preserve path context on I/O errors.
-    let file_content = fs::read_to_string(rel_path).map_err(|source| FileInputError::Io {
-        path: file_path.to_string(),
-        source,
-    })?;
+    let file_content =
+        fs::read_to_string(rel_path).map_err(|source| FileInputError::Io {
+            path: file_path.to_string(),
+            source,
+        })?;
 
-    let res = generate_graph_from_file(file_content).map_err(|err| FileInputError::Parse {
-        file_path: file_path.to_string(),
-        source: err,
+    let res = generate_graph_from_file(file_content).map_err(|err| {
+        FileInputError::Parse {
+            file_path: file_path.to_string(),
+            source: err,
+        }
     })?;
 
     Ok(res)
@@ -439,9 +446,10 @@ fn compile_line_syntax_regexes() -> Result<LineSyntaxRegexes, ParseError> {
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
     let undirected = Regex::new(r"^[A-Za-z0-9]+-[A-Za-z0-9]+:[0-9]+$")
         .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
-    let two_dimensional =
-        Regex::new(r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+=>[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$")
-            .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
+    let two_dimensional = Regex::new(
+        r"^[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+=>[A-Za-z0-9]+:-?[0-9]+,-?[0-9]+$",
+    )
+    .map_err(|err| ParseError::RegexCompilationFailed(err.to_string()))?;
 
     Ok(LineSyntaxRegexes {
         directed,
@@ -486,11 +494,15 @@ fn validate_line_syntax(
 /// users get both "what failed" and "what shape was expected" in one message.
 fn expected_syntax_message(graph_type: &FoundGraphType) -> &'static str {
     match graph_type {
-        FoundGraphType::D => "Expected directed syntax '<from>-><to>:<weight>' (example: A->B:5).",
-        FoundGraphType::UN => "Expected undirected syntax '<from>-<to>:<weight>' (example: A-B:5).",
+        FoundGraphType::D => {
+            "Expected directed syntax '<from>-><to>:<weight>' (example: A->B:5)."
+        },
+        FoundGraphType::UN => {
+            "Expected undirected syntax '<from>-<to>:<weight>' (example: A-B:5)."
+        },
         FoundGraphType::TD => {
             "Expected two-dimensional syntax '<from>:x,y=><to>:x,y' (example: A:0,0=>B:4,2)."
-        }
+        },
     }
 }
 
@@ -557,7 +569,8 @@ fn convert_line_to_graph_data(
 
             // Split into `<from>` and `<to>:<weight>`.
             // Validation runs before this conversion, so the separator split is deterministic.
-            let first_split_results: Vec<&str> = line.trim().split(separator).collect();
+            let first_split_results: Vec<&str> =
+                line.trim().split(separator).collect();
             if first_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);
             }
@@ -570,29 +583,40 @@ fn convert_line_to_graph_data(
             }
 
             // Build strongly typed node and weight values used by graph insertions.
-            let first_node = DefaultNode::new(first_split_results[0].to_string());
-            let second_node = DefaultNode::new(second_split_results[0].to_string());
+            let first_node =
+                DefaultNode::new(first_split_results[0].to_string());
+            let second_node =
+                DefaultNode::new(second_split_results[0].to_string());
             let weight: u16 = match second_split_results[1].parse() {
                 Ok(w) => w,
-                Err(err) => return Err(ParseError::InvalidWeight(InvalidWeightError::from(err))),
+                Err(err) => {
+                    return Err(ParseError::InvalidWeight(
+                        InvalidWeightError::from(err),
+                    ));
+                },
             };
             Ok((
                 NodeType::DefaultNode(first_node),
                 NodeType::DefaultNode(second_node),
                 GraphWeightType::U16(weight),
             ))
-        }
+        },
         FoundGraphType::TD => {
             // Split TD lines into exactly two serialized coordinate nodes.
             // `=>` avoids ambiguity with negative coordinate values.
-            let initial_split_results: Vec<&str> = line.trim().split("=>").collect();
+            let initial_split_results: Vec<&str> =
+                line.trim().split("=>").collect();
             if initial_split_results.len() != 2 {
                 return Err(ParseError::InvalidLineSyntax);
             }
 
             // Each side must parse as `id:x,y` and can surface detailed ParseError variants.
-            let first_node = TwoDimensionalNode::<i32>::from_str(initial_split_results[0].trim())?;
-            let second_node = TwoDimensionalNode::<i32>::from_str(initial_split_results[1].trim())?;
+            let first_node = TwoDimensionalNode::<i32>::from_str(
+                initial_split_results[0].trim(),
+            )?;
+            let second_node = TwoDimensionalNode::<i32>::from_str(
+                initial_split_results[1].trim(),
+            )?;
 
             // TD edges derive their own geometric weight later, so no explicit file weight token.
             Ok((
@@ -600,7 +624,7 @@ fn convert_line_to_graph_data(
                 NodeType::TwoDimensionalNode(second_node),
                 GraphWeightType::NotNecessary,
             ))
-        }
+        },
     }
 }
 
@@ -623,14 +647,18 @@ fn convert_line_to_graph_data(
 /// # Errors
 ///
 /// Returns [`ParseError::InvalidHeader`] if the trimmed line is not `D`, `UN`, or `TD`.
-fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, ParseError> {
+fn determine_graph_from_first_line(
+    first_line: &str,
+) -> Result<FoundGraphType, ParseError> {
     let header = first_line.trim();
 
     if header.eq_ignore_ascii_case(&DirectedGraph::abbreviation()) {
         Ok(FoundGraphType::D)
     } else if header.eq_ignore_ascii_case(&UndirectedGraph::abbreviation()) {
         Ok(FoundGraphType::UN)
-    } else if header.eq_ignore_ascii_case(&TwoDimensionalCoordinateGraph::<i32>::abbreviation()) {
+    } else if header.eq_ignore_ascii_case(
+        &TwoDimensionalCoordinateGraph::<i32>::abbreviation(),
+    ) {
         Ok(FoundGraphType::TD)
     } else {
         Err(ParseError::InvalidHeader(header.to_string()))
@@ -663,7 +691,9 @@ fn determine_graph_from_first_line(first_line: &str) -> Result<FoundGraphType, P
 /// # Important
 ///
 /// Two-dimensional graph parsing is supported in this function.
-fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, ParseError> {
+fn generate_graph_from_file(
+    lines: String,
+) -> Result<FileInputGraphResult, ParseError> {
     let mut lines_iter = lines.trim().lines();
 
     // The first line is a mandatory graph-type header (`D`, `UN`, or `TD`).
@@ -673,7 +703,7 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             return Err(ParseError::InvalidDataInput(
                 "The specified file is empty!".to_string(),
             ));
-        }
+        },
     };
 
     // Parse the remaining lines with the graph-specific builder selected by the header.
@@ -684,12 +714,13 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             let directed_graph = generate_directed_graph_from_file(lines_iter)?;
 
             Ok(FileInputGraphResult::DirectedGraph(directed_graph))
-        }
+        },
         FoundGraphType::UN => {
-            let undirected_graph = generate_undirected_graph_from_file(lines_iter)?;
+            let undirected_graph =
+                generate_undirected_graph_from_file(lines_iter)?;
 
             Ok(FileInputGraphResult::UndirectedGraph(undirected_graph))
-        }
+        },
         FoundGraphType::TD => {
             let two_dimensional_coordinate_graph =
                 generate_two_dimensional_graph_from_file(lines_iter)?;
@@ -697,7 +728,7 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
             Ok(FileInputGraphResult::TwoDimensionalGraph(
                 two_dimensional_coordinate_graph,
             ))
-        }
+        },
     }
 }
 
@@ -717,7 +748,9 @@ fn generate_graph_from_file(lines: String) -> Result<FileInputGraphResult, Parse
 ///
 /// This module provides graph-generation helpers for directed, undirected, and
 /// two-dimensional file formats. This helper handles the directed variant.
-fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph, ParseError> {
+fn generate_directed_graph_from_file(
+    lines_iter: Lines,
+) -> Result<DirectedGraph, ParseError> {
     let mut graph = DirectedGraph::default();
 
     let graph_type = FoundGraphType::D;
@@ -750,29 +783,32 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
             )));
         }
 
-        let (from, to, weight) = convert_line_to_graph_data(line, &graph_type).map_err(|err| {
-            ParseError::InvalidDataInput(format!(
-                "Failed to parse line {} ('{}'): {}",
-                line_number, raw_line, err
-            ))
-        })?;
+        let (from, to, weight) = convert_line_to_graph_data(line, &graph_type)
+            .map_err(|err| {
+                ParseError::InvalidDataInput(format!(
+                    "Failed to parse line {} ('{}'): {}",
+                    line_number, raw_line, err
+                ))
+            })?;
 
         // Conversion returns generic enums; narrow them to directed-compatible payloads.
         let from = match from {
             NodeType::DefaultNode(node) => node,
             _ => {
                 return Err(ParseError::InvalidDataInput(
-                    "Directed graph parsing produced an unexpected node type!".to_string(),
+                    "Directed graph parsing produced an unexpected node type!"
+                        .to_string(),
                 ));
-            }
+            },
         };
         let to = match to {
             NodeType::DefaultNode(node) => node,
             _ => {
                 return Err(ParseError::InvalidDataInput(
-                    "Directed graph parsing produced an unexpected node type!".to_string(),
+                    "Directed graph parsing produced an unexpected node type!"
+                        .to_string(),
                 ));
-            }
+            },
         };
         let weight = match weight {
             GraphWeightType::U16(value) => value,
@@ -780,7 +816,7 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
                 return Err(ParseError::InvalidDataInput(
                     "Directed graph parsing produced an unexpected weight type!".to_string(),
                 ));
-            }
+            },
         };
 
         graph.insert_node(from.clone());
@@ -818,7 +854,9 @@ fn generate_directed_graph_from_file(lines_iter: Lines) -> Result<DirectedGraph,
 /// - Converts each line into two default nodes and one `u16` weight.
 /// - Inserts missing nodes before inserting the edge.
 /// - Silently skips duplicate edges.
-fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGraph, ParseError> {
+fn generate_undirected_graph_from_file(
+    lines_iter: Lines,
+) -> Result<UndirectedGraph, ParseError> {
     let mut graph = UndirectedGraph::default();
 
     let graph_type = FoundGraphType::UN;
@@ -851,12 +889,13 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
             )));
         }
 
-        let (from, to, weight) = convert_line_to_graph_data(line, &graph_type).map_err(|err| {
-            ParseError::InvalidDataInput(format!(
-                "Failed to parse line {} ('{}'): {}",
-                line_number, raw_line, err
-            ))
-        })?;
+        let (from, to, weight) = convert_line_to_graph_data(line, &graph_type)
+            .map_err(|err| {
+                ParseError::InvalidDataInput(format!(
+                    "Failed to parse line {} ('{}'): {}",
+                    line_number, raw_line, err
+                ))
+            })?;
 
         // Enforce that converter output matches undirected graph expectations.
         let from = match from {
@@ -865,7 +904,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
                 return Err(ParseError::InvalidDataInput(
                     "Undirected graph parsing produced an unexpected node type!".to_string(),
                 ));
-            }
+            },
         };
         let to = match to {
             NodeType::DefaultNode(node) => node,
@@ -873,7 +912,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
                 return Err(ParseError::InvalidDataInput(
                     "Undirected graph parsing produced an unexpected node type!".to_string(),
                 ));
-            }
+            },
         };
         let weight = match weight {
             GraphWeightType::U16(value) => value,
@@ -881,7 +920,7 @@ fn generate_undirected_graph_from_file(lines_iter: Lines) -> Result<UndirectedGr
                 return Err(ParseError::InvalidDataInput(
                     "Undirected graph parsing produced an unexpected weight type!".to_string(),
                 ));
-            }
+            },
         };
 
         graph.insert_node(from.clone());
@@ -954,12 +993,13 @@ fn generate_two_dimensional_graph_from_file(
             )));
         }
 
-        let (node_a, node_b, _) = convert_line_to_graph_data(line, &graph_type).map_err(|err| {
-            ParseError::InvalidDataInput(format!(
-                "Failed to parse line {} ('{}'): {}",
-                line_number, raw_line, err
-            ))
-        })?;
+        let (node_a, node_b, _) = convert_line_to_graph_data(line, &graph_type)
+            .map_err(|err| {
+                ParseError::InvalidDataInput(format!(
+                    "Failed to parse line {} ('{}'): {}",
+                    line_number, raw_line, err
+                ))
+            })?;
 
         // TD conversion must return TD node variants only.
         let node_a = match node_a {
@@ -968,7 +1008,7 @@ fn generate_two_dimensional_graph_from_file(
                 return Err(ParseError::InvalidDataInput(
                     "Two-dimensional graph parsing produced an unexpected node type!".to_string(),
                 ));
-            }
+            },
         };
         let node_b = match node_b {
             NodeType::TwoDimensionalNode(node) => node,
@@ -976,7 +1016,7 @@ fn generate_two_dimensional_graph_from_file(
                 return Err(ParseError::InvalidDataInput(
                     "Two-dimensional graph parsing produced an unexpected node type!".to_string(),
                 ));
-            }
+            },
         };
 
         graph.insert_node(node_a.clone());

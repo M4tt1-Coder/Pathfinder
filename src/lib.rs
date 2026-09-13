@@ -93,6 +93,8 @@ pub mod nodes;
 pub use algorithms::{a_star_algorithm::AStar, dijkstra_algorithm::Dijkstra};
 
 // export all graph types at the crate root for easier access
-pub use graph::{DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph};
+pub use graph::{
+    DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph,
+};
 
 pub use error::AppError;

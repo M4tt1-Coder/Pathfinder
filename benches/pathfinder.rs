@@ -266,7 +266,7 @@ impl Graph for BenchmarkCoordinateGraph {
                     "Node '{}' is missing in benchmark graph.",
                     from.get_id()
                 )));
-            }
+            },
         };
         let to_idx = match self.node_index_by_id(to.get_id()) {
             Some(index) => index,
@@ -275,7 +275,7 @@ impl Graph for BenchmarkCoordinateGraph {
                     "Node '{}' is missing in benchmark graph.",
                     to.get_id()
                 )));
-            }
+            },
         };
 
         let weight = match weight {
@@ -284,7 +284,7 @@ impl Graph for BenchmarkCoordinateGraph {
                 return Some(BenchmarkGraphInsertionError::new(
                     "Benchmark edges require an explicit weight.".to_string(),
                 ));
-            }
+            },
         };
 
         self.adjacency
@@ -299,14 +299,18 @@ impl Graph for BenchmarkCoordinateGraph {
         None
     }
 
-    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+    fn does_edge_already_exist(
+        &self,
+        from: &Self::Node,
+        to: &Self::Node,
+    ) -> bool {
         let Some(entries) = self.adjacency.get(from.get_id()) else {
             return false;
         };
 
-        entries
-            .iter()
-            .any(|(target_idx, _)| self.nodes[*target_idx].get_id() == to.get_id())
+        entries.iter().any(|(target_idx, _)| {
+            self.nodes[*target_idx].get_id() == to.get_id()
+        })
     }
 
     fn does_node_already_exist(&self, node: &Self::Node) -> bool {
@@ -334,7 +338,8 @@ impl Graph for BenchmarkCoordinateGraph {
 
 impl Display for BenchmarkCoordinateGraph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let edge_count: usize = self.adjacency.values().map(|entries| entries.len()).sum();
+        let edge_count: usize =
+            self.adjacency.values().map(|entries| entries.len()).sum();
         let undirected_edges = edge_count / 2;
         write!(
             f,
@@ -396,8 +401,9 @@ fn build_grid_graph(
 
     for y in 0..grid_side {
         for x in 0..grid_side {
-            let node = TwoDimensionalNode::new(x as i32, y as i32, node_id(x, y))
-                .expect("Benchmark node IDs must be non-empty.");
+            let node =
+                TwoDimensionalNode::new(x as i32, y as i32, node_id(x, y))
+                    .expect("Benchmark node IDs must be non-empty.");
             graph.insert_node(node);
         }
     }
@@ -405,13 +411,37 @@ fn build_grid_graph(
     for y in 0..grid_side {
         for x in 0..grid_side {
             if x + 1 < grid_side {
-                insert_grid_edge(&mut graph, x, y, x + 1, y, STRAIGHT_EDGE_WEIGHT);
+                insert_grid_edge(
+                    &mut graph,
+                    x,
+                    y,
+                    x + 1,
+                    y,
+                    STRAIGHT_EDGE_WEIGHT,
+                );
             }
             if y + 1 < grid_side {
-                insert_grid_edge(&mut graph, x, y, x, y + 1, STRAIGHT_EDGE_WEIGHT);
+                insert_grid_edge(
+                    &mut graph,
+                    x,
+                    y,
+                    x,
+                    y + 1,
+                    STRAIGHT_EDGE_WEIGHT,
+                );
             }
-            if include_diagonal_shortcuts && x + 1 < grid_side && y + 1 < grid_side {
-                insert_grid_edge(&mut graph, x, y, x + 1, y + 1, DIAGONAL_EDGE_WEIGHT);
+            if include_diagonal_shortcuts
+                && x + 1 < grid_side
+                && y + 1 < grid_side
+            {
+                insert_grid_edge(
+                    &mut graph,
+                    x,
+                    y,
+                    x + 1,
+                    y + 1,
+                    DIAGONAL_EDGE_WEIGHT,
+                );
             }
         }
     }
@@ -439,7 +469,7 @@ fn run_single_search(
                 result.get_path().len(),
                 result.get_total_distance().to_f32(),
             )
-        }
+        },
         ComparedAlgorithm::AStar => {
             let result = AStar::new(graph.clone())
                 .shortest_path(start_node_id, end_node_id)
@@ -448,7 +478,7 @@ fn run_single_search(
                 result.get_path().len(),
                 result.get_total_distance().to_f32(),
             )
-        }
+        },
     }
 }
 
@@ -469,7 +499,12 @@ fn benchmark_algorithm_comparison(
     bencher
         .with_inputs(|| build_grid_graph(grid_side, include_diagonal_shortcuts))
         .bench_refs(|graph| {
-            let output = run_single_search(algorithm, graph, START_NODE_ID, &goal_node_id);
+            let output = run_single_search(
+                algorithm,
+                graph,
+                START_NODE_ID,
+                &goal_node_id,
+            );
             black_box(output);
         });
 }
@@ -490,24 +525,33 @@ fn create_algorithm_instance_for_shared_coordinate_graph(
         .bench_refs(|graph| match algorithm {
             ComparedAlgorithm::Dijkstra => {
                 black_box(Dijkstra::new(graph.clone()));
-            }
+            },
             ComparedAlgorithm::AStar => {
                 black_box(AStar::new(graph.clone()));
-            }
+            },
         });
 }
 
 #[bench(args = [ComparedAlgorithm::Dijkstra, ComparedAlgorithm::AStar])]
-fn compare_algorithms_on_sparse_grid(bencher: Bencher, algorithm: ComparedAlgorithm) {
+fn compare_algorithms_on_sparse_grid(
+    bencher: Bencher,
+    algorithm: ComparedAlgorithm,
+) {
     benchmark_algorithm_comparison(bencher, algorithm, 40, false);
 }
 
 #[bench(args = [ComparedAlgorithm::Dijkstra, ComparedAlgorithm::AStar])]
-fn compare_algorithms_on_diagonal_grid(bencher: Bencher, algorithm: ComparedAlgorithm) {
+fn compare_algorithms_on_diagonal_grid(
+    bencher: Bencher,
+    algorithm: ComparedAlgorithm,
+) {
     benchmark_algorithm_comparison(bencher, algorithm, 40, true);
 }
 
 #[bench(args = [ComparedAlgorithm::Dijkstra, ComparedAlgorithm::AStar])]
-fn compare_algorithms_on_large_diagonal_grid(bencher: Bencher, algorithm: ComparedAlgorithm) {
+fn compare_algorithms_on_large_diagonal_grid(
+    bencher: Bencher,
+    algorithm: ComparedAlgorithm,
+) {
     benchmark_algorithm_comparison(bencher, algorithm, 64, true);
 }

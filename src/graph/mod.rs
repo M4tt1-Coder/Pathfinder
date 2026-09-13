@@ -114,13 +114,13 @@ impl std::fmt::Display for GraphInsertionError {
         match self {
             GraphInsertionError::Directed(err) => {
                 write!(f, "Directed graph insertion error: {}", err)
-            }
+            },
             GraphInsertionError::Undirected(err) => {
                 write!(f, "Undirected graph insertion error: {}", err)
-            }
+            },
             GraphInsertionError::TwoDimensional(err) => {
                 write!(f, "Two-dimensional graph insertion error: {}", err)
-            }
+            },
         }
     }
 }
@@ -322,7 +322,11 @@ pub trait Graph {
     /// # Returns
     ///
     /// `true` if an equivalent edge is already present.
-    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool;
+    fn does_edge_already_exist(
+        &self,
+        from: &Self::Node,
+        to: &Self::Node,
+    ) -> bool;
 
     /// Checks whether a semantically equivalent node already exists.
     ///
@@ -441,7 +445,13 @@ pub trait Graph {
 /// assert_eq!(total_weight(&weights), 6u16);
 /// ```
 pub trait GraphWeight:
-    Copy + PartialOrd + Add<Output = Self> + Display + Debug + PartialOrd + PartialEq
+    Copy
+    + PartialOrd
+    + Add<Output = Self>
+    + Display
+    + Debug
+    + PartialOrd
+    + PartialEq
 {
     /// Returns the maximum possible value for the weight type.
     ///
@@ -506,7 +516,9 @@ pub trait GraphWeight:
 /// let berlin = City { id: "BER".to_string() };
 /// assert_eq!(berlin.get_id(), "BER");
 /// ```
-pub trait GraphNode: Display + Debug + Eq + std::hash::Hash + Clone + Ord {
+pub trait GraphNode:
+    Display + Debug + Eq + std::hash::Hash + Clone + Ord
+{
     /// Returns the node identifier.
     fn get_id(&self) -> &str;
 }

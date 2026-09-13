@@ -156,11 +156,11 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
             return Box::new(std::iter::empty());
         };
 
-        Box::new(
-            self.adjacency[source_index]
-                .iter()
-                .map(move |(neighbor_index, weight)| (&self.nodes[*neighbor_index], *weight)),
-        )
+        Box::new(self.adjacency[source_index].iter().map(
+            move |(neighbor_index, weight)| {
+                (&self.nodes[*neighbor_index], *weight)
+            },
+        ))
     }
 
     fn is_directed(&self) -> bool {
@@ -186,27 +186,33 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
         if self.does_edge_already_exist(from, to) {
-            return Some(TwoDimensionalGraphInsertionError::EdgeAlreadyExists {
-                cause_nodes: Some([from.clone(), to.clone()]),
-            });
+            return Some(
+                TwoDimensionalGraphInsertionError::EdgeAlreadyExists {
+                    cause_nodes: Some([from.clone(), to.clone()]),
+                },
+            );
         }
 
         let node_one_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
-                return Some(TwoDimensionalGraphInsertionError::SourceNodeMissing {
-                    node_id: from.get_id().to_string(),
-                });
-            }
+                return Some(
+                    TwoDimensionalGraphInsertionError::SourceNodeMissing {
+                        node_id: from.get_id().to_string(),
+                    },
+                );
+            },
         };
 
         let node_two_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
-                return Some(TwoDimensionalGraphInsertionError::TargetNodeMissing {
-                    node_id: to.get_id().to_string(),
-                });
-            }
+                return Some(
+                    TwoDimensionalGraphInsertionError::TargetNodeMissing {
+                        node_id: to.get_id().to_string(),
+                    },
+                );
+            },
         };
 
         // Use canonical nodes from the graph to ensure weight is consistent with stored coordinates.
@@ -220,7 +226,7 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
                     w, from, to
                 );
                 calculate_weight_with_euclid(canonical_from, canonical_to)
-            }
+            },
             None => calculate_weight_with_euclid(canonical_from, canonical_to),
         };
 
@@ -249,7 +255,11 @@ impl<C: CoordinateDatatype> Graph for TwoDimensionalCoordinateGraph<C> {
             .and_then(|&index| self.nodes.get(index))
     }
 
-    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+    fn does_edge_already_exist(
+        &self,
+        from: &Self::Node,
+        to: &Self::Node,
+    ) -> bool {
         if let Some(from_index) = self.node_index_for_id(from.get_id())
             && let Some(to_index) = self.node_index_for_id(to.get_id())
         {
@@ -376,7 +386,9 @@ pub enum TwoDimensionalGraphInsertionError<C: CoordinateDatatype = i32> {
 impl<C: CoordinateDatatype> Display for TwoDimensionalGraphInsertionError<C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TwoDimensionalGraphInsertionError::EdgeAlreadyExists { cause_nodes } => {
+            TwoDimensionalGraphInsertionError::EdgeAlreadyExists {
+                cause_nodes,
+            } => {
                 write!(
                     f,
                     "The edge between '{}' and '{}' already exists in the graph!",
@@ -389,21 +401,25 @@ impl<C: CoordinateDatatype> Display for TwoDimensionalGraphInsertionError<C> {
                         .map(|nodes| nodes[1].get_id())
                         .unwrap_or("unknown")
                 )
-            }
-            TwoDimensionalGraphInsertionError::SourceNodeMissing { node_id } => {
+            },
+            TwoDimensionalGraphInsertionError::SourceNodeMissing {
+                node_id,
+            } => {
                 write!(
                     f,
                     "The source node '{}' does not exist in the graph!",
                     node_id
                 )
-            }
-            TwoDimensionalGraphInsertionError::TargetNodeMissing { node_id } => {
+            },
+            TwoDimensionalGraphInsertionError::TargetNodeMissing {
+                node_id,
+            } => {
                 write!(
                     f,
                     "The target node '{}' does not exist in the graph!",
                     node_id
                 )
-            }
+            },
         }
     }
 }

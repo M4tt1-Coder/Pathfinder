@@ -39,7 +39,9 @@ use shortest_path_finder::{
     algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
         AlgorithmErrorKind, DijkstraError,
-        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
+        dijkstra_error::{
+            EdgeWeightViolation, MissingNodeContext, PathReconstructionError,
+        },
     },
     graph::{Graph, GraphNode},
     nodes::DefaultNode,
@@ -70,7 +72,8 @@ fn dijkstra_finds_shortest_path_in_directed_graph() {
     let dijkstra = Dijkstra::new(graph);
     let result = dijkstra.shortest_path("A", "D").expect("path should exist");
 
-    let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
+    let path_ids: Vec<&str> =
+        result.get_path().iter().map(|n| n.get_id()).collect();
 
     assert_eq!(path_ids, vec!["A", "B", "C", "D"]);
     assert_eq!(result.get_total_distance(), 3);
@@ -94,7 +97,8 @@ fn dijkstra_finds_shortest_path_in_undirected_graph() {
     let dijkstra = Dijkstra::new(graph);
     let result = dijkstra.shortest_path("A", "C").expect("path should exist");
 
-    let path_ids: Vec<&str> = result.get_path().iter().map(|n| n.get_id()).collect();
+    let path_ids: Vec<&str> =
+        result.get_path().iter().map(|n| n.get_id()).collect();
 
     assert_eq!(path_ids, vec!["A", "B", "C"]);
     assert_eq!(result.get_total_distance(), 4);
@@ -192,7 +196,7 @@ fn dijkstra_returns_error_on_distance_overflow() {
         DijkstraError::DistanceOverflow { from, to, .. } => {
             assert_eq!(from, "B");
             assert_eq!(to, "C");
-        }
+        },
         other => panic!("unexpected error: {:?}", other),
     }
 }

@@ -120,8 +120,11 @@ use crate::{
 /// let _algorithm = AStar::new(graph);
 /// ```
 #[derive(Debug)]
-pub struct AStar<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display>
-{
+pub struct AStar<
+    WD: NumericDatatype,
+    N: CoordinatesNode,
+    G: Graph<Node = N, Weight = WD> + Display,
+> {
     /// Graph instance used as the search domain.
     ///
     /// This field is public to keep interoperability with existing integration
@@ -131,8 +134,11 @@ pub struct AStar<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Wei
 
 // ----- Implementation of the 'A_Star' struct -----
 
-impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display> Algorithm
-    for AStar<WD, N, G>
+impl<
+    WD: NumericDatatype,
+    N: CoordinatesNode,
+    G: Graph<Node = N, Weight = WD> + Display,
+> Algorithm for AStar<WD, N, G>
 {
     type AlgorithmSearchResult = AStarSearchResult<WD, N>;
 
@@ -188,21 +194,24 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
             return Err(Self::ExecutionError::UnweightedGraph);
         }
 
-        let start_node = self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
-            Self::ExecutionError::MissingStartNode {
-                id: start_node_id.to_string(),
-            }
-        })?;
+        let start_node =
+            self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
+                Self::ExecutionError::MissingStartNode {
+                    id: start_node_id.to_string(),
+                }
+            })?;
 
-        let end_node = self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
-            Self::ExecutionError::MissingEndNode {
-                id: end_node_id.to_string(),
-            }
-        })?;
+        let end_node =
+            self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
+                Self::ExecutionError::MissingEndNode {
+                    id: end_node_id.to_string(),
+                }
+            })?;
 
         // "open" queue with nodes that haven't been visited yet
         // add the start node to the queue
-        let mut open_queue: BinaryHeap<AStarQueueElement<WD, N>> = BinaryHeap::new();
+        let mut open_queue: BinaryHeap<AStarQueueElement<WD, N>> =
+            BinaryHeap::new();
 
         let start_h_cost = self.heuristic(start_node, end_node, start_node)?;
         open_queue.push(AStarQueueElement::new(
@@ -215,7 +224,8 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
         // "closed" queue -> nodes that have been visited
         let mut closed_queue: Vec<AStarQueueElement<WD, N>> = Vec::new();
 
-        let mut g_costs: HashMap<String, WD> = prepare_g_cost_map(&self.graph, start_node.get_id());
+        let mut g_costs: HashMap<String, WD> =
+            prepare_g_cost_map(&self.graph, start_node.get_id());
 
         // while open is not empty -> continue
         while let Some(AStarQueueElement {
@@ -230,11 +240,21 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
             if node == end_node {
                 // move the node to the "closed_queue", don't change any data of the node, because
                 // we need the predecessor for the path reconstruction
-                closed_queue.push(AStarQueueElement::new(node, g_cost, h_cost, predecessor));
+                closed_queue.push(AStarQueueElement::new(
+                    node,
+                    g_cost,
+                    h_cost,
+                    predecessor,
+                ));
                 break;
             }
             // add the node to the "closed_queue"
-            closed_queue.push(AStarQueueElement::new(node, g_cost, h_cost, predecessor));
+            closed_queue.push(AStarQueueElement::new(
+                node,
+                g_cost,
+                h_cost,
+                predecessor,
+            ));
             // get all neighbours and check if ... -> add all neighbours to "open_queue" + add
             // current node to the "closed_queue"
             for (neighbour, weight) in self.graph.neighbors(node) {
@@ -273,21 +293,29 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     .iter()
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
-                let g_cost_neighbour = g_costs.get(neighbour.get_id()).ok_or_else(|| {
-                    Self::ExecutionError::MissingGCost {
+                let g_cost_neighbour = g_costs
+                    .get(neighbour.get_id())
+                    .ok_or_else(|| Self::ExecutionError::MissingGCost {
                         node_id: neighbour.get_id().to_string(),
-                    }
-                })?;
+                    })?;
 
-                if neighbour_is_in_open_queue && tentative_g_cost < *g_cost_neighbour {
+                if neighbour_is_in_open_queue
+                    && tentative_g_cost < *g_cost_neighbour
+                {
                     // Remove stale entry so the improved version can be inserted below.
-                    open_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
+                    open_queue.retain(|e| {
+                        e.get_node().get_id() != neighbour.get_id()
+                    });
                 }
 
                 // If a cheaper route is found for a closed node, move it back to open.
-                if neighbour_is_in_closed_queue && tentative_g_cost < *g_cost_neighbour {
+                if neighbour_is_in_closed_queue
+                    && tentative_g_cost < *g_cost_neighbour
+                {
                     // Re-open nodes from closed set when a strictly better route is found.
-                    closed_queue.retain(|e| e.get_node().get_id() != neighbour.get_id());
+                    closed_queue.retain(|e| {
+                        e.get_node().get_id() != neighbour.get_id()
+                    });
                 }
 
                 // if the neighbour is not in the "open_queue" and not in the "closed_queue" ->
@@ -300,12 +328,17 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
                     .iter()
                     .any(|e| e.get_node().get_id() == neighbour.get_id());
 
-                if !neighbour_is_in_open_queue && !neighbour_is_in_closed_queue {
+                if !neighbour_is_in_open_queue && !neighbour_is_in_closed_queue
+                {
                     // Persist best-known g-cost for future comparisons.
-                    g_costs.insert(neighbour.get_id().to_string(), tentative_g_cost);
+                    g_costs.insert(
+                        neighbour.get_id().to_string(),
+                        tentative_g_cost,
+                    );
 
                     // Insert queue element with updated predecessor and heuristic score.
-                    let heuristic = self.heuristic(start_node, end_node, neighbour)?;
+                    let heuristic =
+                        self.heuristic(start_node, end_node, neighbour)?;
                     open_queue.push(AStarQueueElement::new(
                         neighbour,
                         tentative_g_cost,
@@ -328,15 +361,19 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
 
         // the last element in the "closed_queue" is the destination node, so we can reconstruct
         // the path from the destination node to the start node by following the predecessors
-        let (path, distance) = determine_path_cost(closed_queue).map_err(AStarError::from)?;
+        let (path, distance) =
+            determine_path_cost(closed_queue).map_err(AStarError::from)?;
 
         let result = AStarSearchResult::new(distance, path)?;
         Ok(result)
     }
 }
 
-impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + Display>
-    AStar<WD, N, G>
+impl<
+    WD: NumericDatatype,
+    N: CoordinatesNode,
+    G: Graph<Node = N, Weight = WD> + Display,
+> AStar<WD, N, G>
 {
     /// Creates a new [`AStar`] instance bound to `graph`.
     ///
@@ -386,7 +423,12 @@ impl<WD: NumericDatatype, N: CoordinatesNode, G: Graph<Node = N, Weight = WD> + 
     ///
     /// This helper is private and is called during `shortest_path` queue
     /// expansion to compute the heuristic term.
-    fn heuristic(&self, start: &N, goal: &N, current: &N) -> Result<WD, AStarError> {
+    fn heuristic(
+        &self,
+        start: &N,
+        goal: &N,
+        current: &N,
+    ) -> Result<WD, AStarError> {
         let dx1 = current.get_x().to_f32() - goal.get_x().to_f32();
         let dy1 = current.get_y().to_f32() - goal.get_y().to_f32();
         let dx2 = start.get_x().to_f32() - goal.get_x().to_f32();
@@ -523,7 +565,9 @@ impl<WD: NumericDatatype, N: CoordinatesNode> AStarSearchResult<WD, N> {
     }
 }
 
-impl<WD: NumericDatatype, N: CoordinatesNode> Display for AStarSearchResult<WD, N> {
+impl<WD: NumericDatatype, N: CoordinatesNode> Display
+    for AStarSearchResult<WD, N>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut formatted_path = self.path[0].get_id().to_string();
         for node in &self.path[1..] {
@@ -533,7 +577,9 @@ impl<WD: NumericDatatype, N: CoordinatesNode> Display for AStarSearchResult<WD, 
     }
 }
 
-impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult for AStarSearchResult<WD, N> {
+impl<WD: NumericDatatype, N: CoordinatesNode> SearchResult
+    for AStarSearchResult<WD, N>
+{
     type Node = N;
 
     type Distance = WD;
@@ -634,7 +680,12 @@ impl<'n, WD: NumericDatatype, N: CoordinatesNode> AStarQueueElement<'n, WD, N> {
     ///
     /// # Returns
     /// Queue element where `f_cost = g_cost + h_cost`.
-    pub fn new(node: &'n N, g_cost: WD, h_cost: WD, predecessor: Option<&'n N>) -> Self {
+    pub fn new(
+        node: &'n N,
+        g_cost: WD,
+        h_cost: WD,
+        predecessor: Option<&'n N>,
+    ) -> Self {
         // Calculate the total estimated cost for this node.
         let f_cost = g_cost + h_cost;
         AStarQueueElement {
@@ -691,28 +742,39 @@ impl<'n, WD: NumericDatatype, N: CoordinatesNode> AStarQueueElement<'n, WD, N> {
     }
 }
 
-impl<'n, WD: NumericDatatype, N: CoordinatesNode> Ord for AStarQueueElement<'n, WD, N> {
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> Ord
+    for AStarQueueElement<'n, WD, N>
+{
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match self.f_cost.partial_cmp(&other.f_cost) {
             Some(ordering) => ordering.reverse(), // Reverse for min-heap behavior
             None => {
-                warn!("Comparison of f_cost resulted in NaN. Treating as equal for ordering.");
+                warn!(
+                    "Comparison of f_cost resulted in NaN. Treating as equal for ordering."
+                );
                 std::cmp::Ordering::Equal
-            } // Treat NaN as equal (or handle as needed)
+            }, // Treat NaN as equal (or handle as needed)
         }
     }
 }
 
-impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialOrd for AStarQueueElement<'n, WD, N> {
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialOrd
+    for AStarQueueElement<'n, WD, N>
+{
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialEq for AStarQueueElement<'n, WD, N> {
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> PartialEq
+    for AStarQueueElement<'n, WD, N>
+{
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node && self.f_cost == other.f_cost
     }
 }
 
-impl<'n, WD: NumericDatatype, N: CoordinatesNode> Eq for AStarQueueElement<'n, WD, N> {}
+impl<'n, WD: NumericDatatype, N: CoordinatesNode> Eq
+    for AStarQueueElement<'n, WD, N>
+{
+}

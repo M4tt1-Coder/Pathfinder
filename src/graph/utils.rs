@@ -20,7 +20,10 @@ use crate::nodes::trait_decl::{CoordinateDatatype, CoordinatesNode};
 /// # Returns
 ///
 /// Non-negative floating-point weight used by shortest-path algorithms.
-pub fn calculate_weight_with_euclid<CN: CoordinatesNode>(node_one: &CN, node_two: &CN) -> f32 {
+pub fn calculate_weight_with_euclid<CN: CoordinatesNode>(
+    node_one: &CN,
+    node_two: &CN,
+) -> f32 {
     // Convert coordinates to f32 to perform geometric calculations.
     let dx = node_one.get_x().to_f32() - node_two.get_x().to_f32();
     let dy = node_one.get_y().to_f32() - node_two.get_y().to_f32();

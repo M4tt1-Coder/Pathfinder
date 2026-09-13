@@ -70,7 +70,8 @@
 use std::{error::Error, fmt};
 
 use crate::error::{
-    CLIParseError, algorithm_error::AlgorithmError, data_input_error::DataInputError,
+    CLIParseError, algorithm_error::AlgorithmError,
+    data_input_error::DataInputError,
 };
 
 /// Unified CLI error for the Pathfinder binary.

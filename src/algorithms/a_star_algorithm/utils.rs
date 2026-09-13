@@ -23,7 +23,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    algorithms::{NumericDatatype, a_star_algorithm::a_star::AStarQueueElement},
+    algorithms::{
+        NumericDatatype, a_star_algorithm::a_star::AStarQueueElement,
+    },
     error::algorithm_error::a_star_error::PathReconstructionError,
     graph::{Graph, GraphNode},
     nodes::trait_decl::CoordinatesNode,
@@ -120,13 +122,16 @@ pub fn determine_path_cost<WD: NumericDatatype, N: CoordinatesNode>(
 
             // Resolve predecessor metadata from the closed queue so the next
             // predecessor hop can be followed.
-            current_node = match visited_nodes.iter().find(|e| e.get_node() == predecessor) {
+            current_node = match visited_nodes
+                .iter()
+                .find(|e| e.get_node() == predecessor)
+            {
                 Some(element) => element,
                 None => {
                     return Err(PathReconstructionError::MissingClosedEntry {
                         node_id: predecessor.get_id().to_string(),
                     });
-                }
+                },
             }
         }
 

@@ -35,7 +35,9 @@
 //! assert!(matches!(td, NodeType::TwoDimensionalNode(_)));
 //! ```
 
-use crate::nodes::{default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode};
+use crate::nodes::{
+    default_node::DefaultNode, two_dimensional_node::TwoDimensionalNode,
+};
 
 /// Enum representing all node variants currently supported by parser output.
 ///

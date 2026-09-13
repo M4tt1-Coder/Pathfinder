@@ -95,11 +95,11 @@ impl Graph for DirectedGraph {
             return Box::new(std::iter::empty());
         };
 
-        Box::new(
-            self.adjacency[source_index]
-                .iter()
-                .map(move |(neighbor_index, weight)| (&self.nodes[*neighbor_index], *weight)),
-        )
+        Box::new(self.adjacency[source_index].iter().map(
+            move |(neighbor_index, weight)| {
+                (&self.nodes[*neighbor_index], *weight)
+            },
+        ))
     }
 
     fn insert_node(&mut self, new_node: Self::Node) {
@@ -130,18 +130,22 @@ impl Graph for DirectedGraph {
         let from_index = match self.node_index_for_id(from.get_id()) {
             Some(index) => index,
             None => {
-                return Some(DirectedGraphInsertionError::SourceNodeDoesNotExist {
-                    node_id: from.get_id().to_string(),
-                });
-            }
+                return Some(
+                    DirectedGraphInsertionError::SourceNodeDoesNotExist {
+                        node_id: from.get_id().to_string(),
+                    },
+                );
+            },
         };
         let to_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
-                return Some(DirectedGraphInsertionError::DestinationNodeDoesNotExist {
-                    node_id: to.get_id().to_string(),
-                });
-            }
+                return Some(
+                    DirectedGraphInsertionError::DestinationNodeDoesNotExist {
+                        node_id: to.get_id().to_string(),
+                    },
+                );
+            },
         };
 
         let weight = match weight {
@@ -150,7 +154,7 @@ impl Graph for DirectedGraph {
                 return Some(DirectedGraphInsertionError::MissingEdgeWeight {
                     expected_weight: "u16".to_string(),
                 });
-            }
+            },
         };
 
         self.adjacency[from_index].push((to_index, weight));
@@ -158,7 +162,11 @@ impl Graph for DirectedGraph {
         None
     }
 
-    fn does_edge_already_exist(&self, from: &Self::Node, to: &Self::Node) -> bool {
+    fn does_edge_already_exist(
+        &self,
+        from: &Self::Node,
+        to: &Self::Node,
+    ) -> bool {
         if let (Some(from_index), Some(to_index)) = (
             self.node_index_for_id(from.get_id()),
             self.node_index_for_id(to.get_id()),
@@ -348,20 +356,28 @@ impl Display for DirectedGraphInsertionError {
         match self {
             DirectedGraphInsertionError::EdgeAlreadyExists { from, to } => {
                 write!(f, "Edge from '{}' to '{}' already exists!", from, to)
-            }
+            },
             DirectedGraphInsertionError::SourceNodeDoesNotExist { node_id } => {
-                write!(f, "Source node '{}' does not exist in the graph!", node_id)
-            }
-            DirectedGraphInsertionError::DestinationNodeDoesNotExist { node_id } => {
+                write!(
+                    f,
+                    "Source node '{}' does not exist in the graph!",
+                    node_id
+                )
+            },
+            DirectedGraphInsertionError::DestinationNodeDoesNotExist {
+                node_id,
+            } => {
                 write!(
                     f,
                     "Destination node '{}' does not exist in the graph!",
                     node_id
                 )
-            }
-            DirectedGraphInsertionError::MissingEdgeWeight { expected_weight } => {
+            },
+            DirectedGraphInsertionError::MissingEdgeWeight {
+                expected_weight,
+            } => {
                 write!(f, "Missing edge weight: {}", expected_weight)
-            }
+            },
         }
     }
 }

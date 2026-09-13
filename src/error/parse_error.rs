@@ -207,30 +207,30 @@ impl Display for ParseError {
             ),
             ParseError::InvalidCoordinates => {
                 write!(f, "Coordinates must be two comma-separated values")
-            }
+            },
             ParseError::InvalidInteger => {
                 write!(f, "Coordinates must be valid numeric values")
-            }
+            },
             ParseError::InvalidWeight(cause) => {
                 write!(f, "Invalid weight value: {}", cause)
-            }
+            },
             ParseError::EmptyId => write!(f, "Node id must not be empty"),
             ParseError::NodeConstructionFailed => {
                 write!(f, "Failed to construct TwoDimensionalNode")
-            }
+            },
             ParseError::InvalidGraphType => {
                 write!(f, "Invalid graph type for line conversion")
-            }
+            },
             ParseError::InvalidLineSyntax => {
                 write!(f, "Invalid syntax for graph input line")
-            }
+            },
             ParseError::RegexCompilationFailed(message) => {
                 write!(f, "Failed to initialize parser regex: {}", message)
-            }
+            },
             ParseError::InvalidDataInput(message) => write!(f, "{}", message),
             ParseError::GraphInsertionFailed(err) => {
                 write!(f, "Graph insertion failed: {}", err)
-            }
+            },
         }
     }
 }
@@ -298,24 +298,24 @@ impl Display for InvalidWeightError {
                     "Weight value is not numeric. Expected: {}",
                     expected_type
                 )
-            }
+            },
             InvalidWeightError::OutOfRange(expected_range) => {
                 write!(
                     f,
                     "Weight value is out of range. Expected: {}",
                     expected_range
                 )
-            }
+            },
             InvalidWeightError::CannotBeNegative(expected_type) => {
                 write!(
                     f,
                     "Weight value cannot be negative. Expected: {}",
                     expected_type
                 )
-            }
+            },
             InvalidWeightError::UnknownReason(message) => {
                 write!(f, "Invalid weight value: {}", message)
-            }
+            },
         }
     }
 }
@@ -328,21 +328,26 @@ impl From<ParseIntError> for InvalidWeightError {
             IntErrorKind::Zero => InvalidWeightError::NonNumeric(String::from(
                 "non-zero integer expected, but got 'ZERO' (zero value)",
             )),
-            IntErrorKind::Empty => InvalidWeightError::NonNumeric(String::from(
-                "non-empty integer expected, but got empty string ''",
-            )),
-            IntErrorKind::InvalidDigit => InvalidWeightError::NonNumeric(String::from(
-                "non-numeric integer expected, but got invalid digit(s) (e.g., letters or symbols)",
-            )),
+            IntErrorKind::Empty => {
+                InvalidWeightError::NonNumeric(String::from(
+                    "non-empty integer expected, but got empty string ''",
+                ))
+            },
+            IntErrorKind::InvalidDigit => {
+                InvalidWeightError::NonNumeric(String::from(
+                    "non-numeric integer expected, but got invalid digit(s) (e.g., letters or symbols)",
+                ))
+            },
             IntErrorKind::PosOverflow => {
                 InvalidWeightError::OutOfRange(int_out_of_range_error_message())
-            }
+            },
             IntErrorKind::NegOverflow => {
                 InvalidWeightError::OutOfRange(int_out_of_range_error_message())
-            }
-            _ => {
-                InvalidWeightError::UnknownReason(format!("Unknown integer parsing error: {}", err))
-            }
+            },
+            _ => InvalidWeightError::UnknownReason(format!(
+                "Unknown integer parsing error: {}",
+                err
+            )),
         }
     }
 }

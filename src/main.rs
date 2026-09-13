@@ -59,7 +59,9 @@ use shortest_path_finder::{
     algorithms::{Algorithm, Algorithms},
     data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
     data_input::file::{
-        FileInputGraphResult::{DirectedGraph, TwoDimensionalGraph, UndirectedGraph},
+        FileInputGraphResult::{
+            DirectedGraph, TwoDimensionalGraph, UndirectedGraph,
+        },
         retrieve_graph_data_from_file,
     },
     error::algorithm_error::AlgorithmError,
@@ -125,17 +127,18 @@ fn run() -> Result<(), AppError> {
         AppConfigOutcome::HelpRequested => {
             println!("{}", AppConfig::help_text());
             return Ok(());
-        }
+        },
         AppConfigOutcome::VersionRequested => {
             println!("{}", AppConfig::version_text());
             return Ok(());
-        }
+        },
     };
 
     // create the graph and execute the algorithm on it
     match app_config.data_input {
         InputOrigin::File => {
-            let generated_graph_res = retrieve_graph_data_from_file(&app_config.file_path)?;
+            let generated_graph_res =
+                retrieve_graph_data_from_file(&app_config.file_path)?;
 
             // match all possible graph types
             match generated_graph_res {
@@ -149,15 +152,18 @@ fn run() -> Result<(), AppError> {
                                     app_config.algorithm
                                 ),
                             });
-                        }
+                        },
                     };
                     let result = algo
-                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .shortest_path(
+                            &app_config.start_node_id,
+                            &app_config.end_node_id,
+                        )
                         .map_err(AlgorithmError::from)?;
                     // display the result
                     println!("{}", result);
                     Ok(())
-                }
+                },
                 UndirectedGraph(graph) => {
                     let algo = match app_config.algorithm {
                         Algorithms::Dijkstra => Dijkstra::new(graph),
@@ -168,15 +174,18 @@ fn run() -> Result<(), AppError> {
                                     app_config.algorithm
                                 ),
                             });
-                        }
+                        },
                     };
                     let result = algo
-                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .shortest_path(
+                            &app_config.start_node_id,
+                            &app_config.end_node_id,
+                        )
                         .map_err(AlgorithmError::from)?;
                     // display the result
                     println!("{}", result);
                     Ok(())
-                }
+                },
                 TwoDimensionalGraph(graph) => {
                     let algo = match app_config.algorithm {
                         Algorithms::AStar => AStar::new(graph),
@@ -187,17 +196,20 @@ fn run() -> Result<(), AppError> {
                                     app_config.algorithm
                                 ),
                             });
-                        }
+                        },
                     };
                     let result = algo
-                        .shortest_path(&app_config.start_node_id, &app_config.end_node_id)
+                        .shortest_path(
+                            &app_config.start_node_id,
+                            &app_config.end_node_id,
+                        )
                         .map_err(AlgorithmError::from)?;
                     // display the result
                     println!("{}", result);
                     Ok(())
-                }
+                },
             }
-        }
+        },
         InputOrigin::CommandLine => Err(AppError::UnsupportedInputOrigin {
             origin: app_config.data_input.as_str().to_string(),
         }),

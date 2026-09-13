@@ -30,7 +30,8 @@ fn get_input_origin_from_string(bencher: Bencher) {
     bencher
         .with_inputs(|| "file".to_string())
         .bench_refs(|input| {
-            let _origin = InputOrigin::try_from(input.as_str()).expect("valid origin");
+            let _origin =
+                InputOrigin::try_from(input.as_str()).expect("valid origin");
         });
 }
 

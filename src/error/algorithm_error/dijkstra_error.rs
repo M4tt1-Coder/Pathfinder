@@ -134,7 +134,7 @@ impl fmt::Display for PathReconstructionError {
         match self {
             PathReconstructionError::MissingDistanceEntry { node_id } => {
                 write!(f, "missing distance entry for node '{}'", node_id)
-            }
+            },
             PathReconstructionError::MissingPredecessor { node_id } => write!(
                 f,
                 "missing predecessor while reconstructing node '{}'",
@@ -251,16 +251,28 @@ impl DijkstraError {
     pub fn kind(&self) -> AlgorithmErrorKind {
         match self {
             DijkstraError::UnweightedGraph => AlgorithmErrorKind::InvalidGraph,
-            DijkstraError::MissingStartNode { .. } => AlgorithmErrorKind::MissingNode,
-            DijkstraError::MissingEndNode { .. } => AlgorithmErrorKind::MissingNode,
+            DijkstraError::MissingStartNode { .. } => {
+                AlgorithmErrorKind::MissingNode
+            },
+            DijkstraError::MissingEndNode { .. } => {
+                AlgorithmErrorKind::MissingNode
+            },
             DijkstraError::MissingNodeDuringProcessing { .. } => {
                 AlgorithmErrorKind::InvariantViolation
-            }
-            DijkstraError::InvalidEdgeWeight { .. } => AlgorithmErrorKind::InvalidWeight,
-            DijkstraError::DistanceOverflow { .. } => AlgorithmErrorKind::InvalidWeight,
+            },
+            DijkstraError::InvalidEdgeWeight { .. } => {
+                AlgorithmErrorKind::InvalidWeight
+            },
+            DijkstraError::DistanceOverflow { .. } => {
+                AlgorithmErrorKind::InvalidWeight
+            },
             DijkstraError::NoPathFound { .. } => AlgorithmErrorKind::NoPath,
-            DijkstraError::InvalidSearchResult { .. } => AlgorithmErrorKind::InvalidResult,
-            DijkstraError::PathReconstruction { .. } => AlgorithmErrorKind::InvariantViolation,
+            DijkstraError::InvalidSearchResult { .. } => {
+                AlgorithmErrorKind::InvalidResult
+            },
+            DijkstraError::PathReconstruction { .. } => {
+                AlgorithmErrorKind::InvariantViolation
+            },
         }
     }
 }
@@ -270,7 +282,7 @@ impl fmt::Display for DijkstraError {
         match self {
             DijkstraError::UnweightedGraph => {
                 write!(f, "Algorithm error (Dijkstra): graph must be weighted")
-            }
+            },
             DijkstraError::MissingStartNode { id, graph } => write!(
                 f,
                 "Algorithm error (Dijkstra): start node '{}' not found in graph {}",
@@ -281,11 +293,13 @@ impl fmt::Display for DijkstraError {
                 "Algorithm error (Dijkstra): end node '{}' not found in graph {}",
                 id, graph
             ),
-            DijkstraError::MissingNodeDuringProcessing { id, context } => write!(
-                f,
-                "Algorithm error (Dijkstra): node '{}' missing during distance processing ({})",
-                id, context
-            ),
+            DijkstraError::MissingNodeDuringProcessing { id, context } => {
+                write!(
+                    f,
+                    "Algorithm error (Dijkstra): node '{}' missing during distance processing ({})",
+                    id, context
+                )
+            },
             DijkstraError::InvalidEdgeWeight {
                 from,
                 to,

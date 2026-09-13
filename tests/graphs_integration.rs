@@ -119,7 +119,8 @@ fn two_dimensional_graph_supports_f32_coordinates_and_computes_edge_weight() {
     let b = TwoDimensionalNode::<f32>::new(3.0, 4.0, "B".to_string())
         .expect("node B construction should succeed");
 
-    let mut graph = TwoDimensionalCoordinateGraph::<f32>::new(vec![a.clone(), b.clone()]);
+    let mut graph =
+        TwoDimensionalCoordinateGraph::<f32>::new(vec![a.clone(), b.clone()]);
     assert!(graph.insert_edge(&a, &b, None).is_none());
 
     let start = graph
@@ -136,7 +137,8 @@ fn two_dimensional_graph_supports_f32_coordinates_and_computes_edge_weight() {
 }
 
 #[test]
-fn two_dimensional_graph_rejects_duplicate_coordinates_even_with_different_ids() {
+fn two_dimensional_graph_rejects_duplicate_coordinates_even_with_different_ids()
+{
     let mut graph = TwoDimensionalCoordinateGraph::<f32>::default();
 
     let first = TwoDimensionalNode::<f32>::new(7.0, 11.0, "N1".to_string())

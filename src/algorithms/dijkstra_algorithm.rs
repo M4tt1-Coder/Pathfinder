@@ -100,7 +100,9 @@ use crate::{
     algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
         DijkstraError,
-        dijkstra_error::{EdgeWeightViolation, MissingNodeContext, PathReconstructionError},
+        dijkstra_error::{
+            EdgeWeightViolation, MissingNodeContext, PathReconstructionError,
+        },
     },
     graph::{Graph, GraphNode, GraphWeight},
 };
@@ -203,13 +205,20 @@ impl<N: GraphNode, W: GraphWeight + Ord> Display for ShortestDistance<N, W> {
 /// assert_eq!(result.get_total_distance(), 2u16);
 /// ```
 #[derive(Debug)]
-pub struct Dijkstra<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display> {
+pub struct Dijkstra<
+    N: GraphNode,
+    W: GraphWeight + Ord,
+    G: Graph<Node = N, Weight = W> + Display,
+> {
     /// Graph instance processed by this algorithm implementation.
     graph: G,
 }
 
-impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display> Algorithm
-    for Dijkstra<N, W, G>
+impl<
+    N: GraphNode,
+    W: GraphWeight + Ord,
+    G: Graph<Node = N, Weight = W> + Display,
+> Algorithm for Dijkstra<N, W, G>
 {
     type AlgorithmSearchResult = DijkstraSearchResult<N, W>;
 
@@ -290,19 +299,21 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
             self.graph.is_directed(),
             self.graph.is_weighted()
         );
-        let start: &N = self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
-            DijkstraError::MissingStartNode {
-                id: start_node_id.to_string(),
-                graph: graph_label.clone(),
-            }
-        })?;
+        let start: &N =
+            self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
+                DijkstraError::MissingStartNode {
+                    id: start_node_id.to_string(),
+                    graph: graph_label.clone(),
+                }
+            })?;
 
-        let end: &N = self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
-            DijkstraError::MissingEndNode {
-                id: end_node_id.to_string(),
-                graph: graph_label,
-            }
-        })?;
+        let end: &N =
+            self.graph.get_node_by_id(end_node_id).ok_or_else(|| {
+                DijkstraError::MissingEndNode {
+                    id: end_node_id.to_string(),
+                    graph: graph_label,
+                }
+            })?;
 
         if start.get_id() == end.get_id() {
             return DijkstraSearchResult::new(vec![start.clone()], W::zero());
@@ -310,14 +321,13 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
 
         let distances = self.calculate_distances(start)?;
 
-        let end_distance =
-            distances
-                .get(end.get_id())
-                .ok_or_else(|| DijkstraError::PathReconstruction {
-                    source: PathReconstructionError::MissingDistanceEntry {
-                        node_id: end.get_id().to_string(),
-                    },
-                })?;
+        let end_distance = distances.get(end.get_id()).ok_or_else(|| {
+            DijkstraError::PathReconstruction {
+                source: PathReconstructionError::MissingDistanceEntry {
+                    node_id: end.get_id().to_string(),
+                },
+            }
+        })?;
 
         if end_distance.distance == W::max_value() {
             return Err(DijkstraError::NoPathFound {
@@ -349,13 +359,14 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 break;
             }
 
-            let distance = distances.get(current_node.get_id()).ok_or_else(|| {
-                DijkstraError::PathReconstruction {
-                    source: PathReconstructionError::MissingDistanceEntry {
-                        node_id: current_node.get_id().to_string(),
-                    },
-                }
-            })?;
+            let distance =
+                distances.get(current_node.get_id()).ok_or_else(|| {
+                    DijkstraError::PathReconstruction {
+                        source: PathReconstructionError::MissingDistanceEntry {
+                            node_id: current_node.get_id().to_string(),
+                        },
+                    }
+                })?;
 
             let prev = distance.previous_node.as_ref().ok_or_else(|| {
                 DijkstraError::PathReconstruction {
@@ -376,8 +387,11 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     }
 }
 
-impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Display>
-    Dijkstra<N, W, G>
+impl<
+    N: GraphNode,
+    W: GraphWeight + Ord,
+    G: Graph<Node = N, Weight = W> + Display,
+> Dijkstra<N, W, G>
 {
     /// Creates a new [`Dijkstra`] bound to a graph instance.
     ///
@@ -415,8 +429,12 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
     /// # Returns
     ///
     /// A map from node ID to internal [`ShortestDistance`] state.
-    fn setup_shortest_distance(&self, start: &N) -> HashMap<String, ShortestDistance<N, W>> {
-        let mut output: HashMap<String, ShortestDistance<N, W>> = HashMap::new();
+    fn setup_shortest_distance(
+        &self,
+        start: &N,
+    ) -> HashMap<String, ShortestDistance<N, W>> {
+        let mut output: HashMap<String, ShortestDistance<N, W>> =
+            HashMap::new();
         for n in self.graph.get_all_nodes() {
             if n.get_id() == start.get_id() {
                 // Start node begins with distance 0 and itself as predecessor sentinel.
@@ -477,11 +495,13 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 > match distances.get(position.get_id()) {
                     Some(distance_data) => distance_data.distance,
                     None => {
-                        return Err(DijkstraError::MissingNodeDuringProcessing {
-                            id: position.get_id().to_string(),
-                            context: MissingNodeContext::CurrentNode,
-                        });
-                    }
+                        return Err(
+                            DijkstraError::MissingNodeDuringProcessing {
+                                id: position.get_id().to_string(),
+                                context: MissingNodeContext::CurrentNode,
+                            },
+                        );
+                    },
                 }
             {
                 continue;
@@ -508,24 +528,26 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                 }
 
                 // Standard relaxation: candidate distance via the current node.
-                let updated_distance = distance.checked_add(weight).ok_or_else(|| {
-                    DijkstraError::DistanceOverflow {
+                let updated_distance = distance
+                    .checked_add(weight)
+                    .ok_or_else(|| DijkstraError::DistanceOverflow {
                         from: position.get_id().to_string(),
                         to: neighbour.get_id().to_string(),
                         current_distance: format!("{}", distance),
                         edge_weight: format!("{}", weight),
-                    }
-                })?;
+                    })?;
 
                 if updated_distance
                     < match distances.get(neighbour.get_id()) {
                         Some(distance_data) => distance_data.distance,
                         None => {
-                            return Err(DijkstraError::MissingNodeDuringProcessing {
-                                id: neighbour.get_id().to_string(),
-                                context: MissingNodeContext::NeighborNode,
-                            });
-                        }
+                            return Err(
+                                DijkstraError::MissingNodeDuringProcessing {
+                                    id: neighbour.get_id().to_string(),
+                                    context: MissingNodeContext::NeighborNode,
+                                },
+                            );
+                        },
                     }
                 {
                     // Persist better path and predecessor for later reconstruction.
@@ -537,7 +559,10 @@ impl<N: GraphNode, W: GraphWeight + Ord, G: Graph<Node = N, Weight = W> + Displa
                         });
 
                     // Re-enqueue neighbor with its improved tentative distance.
-                    queue.push(QueueItem::new(updated_distance, neighbour.clone()));
+                    queue.push(QueueItem::new(
+                        updated_distance,
+                        neighbour.clone(),
+                    ));
                 }
             }
         }
@@ -700,7 +725,9 @@ impl<N: GraphNode, W: GraphWeight> Display for DijkstraSearchResult<N, W> {
     }
 }
 
-impl<N: GraphNode + Debug, W: GraphWeight> SearchResult for DijkstraSearchResult<N, W> {
+impl<N: GraphNode + Debug, W: GraphWeight> SearchResult
+    for DijkstraSearchResult<N, W>
+{
     type Node = N;
 
     type Distance = W;

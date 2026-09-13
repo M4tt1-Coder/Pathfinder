@@ -37,7 +37,11 @@ use crate::graph::GraphWeight;
 /// This trait allows algorithms to stay generic over integer and floating-point
 /// types while still performing heuristic math in a predictable way.
 pub trait NumericDatatype:
-    GraphWeight + Sub<Output = Self> + Sized + Mul<Output = Self> + Div<Output = Self>
+    GraphWeight
+    + Sub<Output = Self>
+    + Sized
+    + Mul<Output = Self>
+    + Div<Output = Self>
 {
     /// Returns the absolute value of the numeric value.
     ///

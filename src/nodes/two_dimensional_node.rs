@@ -280,6 +280,7 @@ where
             .map_err(|_| ParseError::InvalidInteger)?;
 
         // Construct the node, returning error if construction fails
-        TwoDimensionalNode::new(x, y, id.to_string()).ok_or(ParseError::NodeConstructionFailed)
+        TwoDimensionalNode::new(x, y, id.to_string())
+            .ok_or(ParseError::NodeConstructionFailed)
     }
 }

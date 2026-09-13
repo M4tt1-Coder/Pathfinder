@@ -6,11 +6,17 @@ use shortest_path_finder::nodes::TwoDimensionalNode;
 use shortest_path_finder::{AStar, TwoDimensionalCoordinateGraph};
 
 fn main() {
-    let node_a = TwoDimensionalNode::new(0, 0, "A".to_string()).expect("node ID is non-empty");
-    let node_b = TwoDimensionalNode::new(2, 0, "B".to_string()).expect("node ID is non-empty");
-    let node_c = TwoDimensionalNode::new(4, 0, "C".to_string()).expect("node ID is non-empty");
-    let mut graph =
-        TwoDimensionalCoordinateGraph::new(vec![node_a.clone(), node_b.clone(), node_c.clone()]);
+    let node_a = TwoDimensionalNode::new(0, 0, "A".to_string())
+        .expect("node ID is non-empty");
+    let node_b = TwoDimensionalNode::new(2, 0, "B".to_string())
+        .expect("node ID is non-empty");
+    let node_c = TwoDimensionalNode::new(4, 0, "C".to_string())
+        .expect("node ID is non-empty");
+    let mut graph = TwoDimensionalCoordinateGraph::new(vec![
+        node_a.clone(),
+        node_b.clone(),
+        node_c.clone(),
+    ]);
 
     assert!(graph.insert_edge(&node_a, &node_b, None).is_none());
     assert!(graph.insert_edge(&node_b, &node_c, None).is_none());

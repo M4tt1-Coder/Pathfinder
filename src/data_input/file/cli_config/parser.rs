@@ -156,13 +156,28 @@ impl ParsedCliValues {
     /// # Errors
     ///
     /// Propagates duplicate-flag errors from [`ParsedCliValues::set_value`].
-    fn insert(&mut self, flag: KnownFlag, index: usize, value: &str) -> Result<(), CLIParseError> {
+    fn insert(
+        &mut self,
+        flag: KnownFlag,
+        index: usize,
+        value: &str,
+    ) -> Result<(), CLIParseError> {
         match flag {
-            KnownFlag::GraphFile => Self::set_value(&mut self.graph_file, flag, index, value),
-            KnownFlag::Start => Self::set_value(&mut self.start, flag, index, value),
-            KnownFlag::End => Self::set_value(&mut self.end, flag, index, value),
-            KnownFlag::Algo => Self::set_value(&mut self.algo, flag, index, value),
-            KnownFlag::Origin => Self::set_value(&mut self.origin, flag, index, value),
+            KnownFlag::GraphFile => {
+                Self::set_value(&mut self.graph_file, flag, index, value)
+            },
+            KnownFlag::Start => {
+                Self::set_value(&mut self.start, flag, index, value)
+            },
+            KnownFlag::End => {
+                Self::set_value(&mut self.end, flag, index, value)
+            },
+            KnownFlag::Algo => {
+                Self::set_value(&mut self.algo, flag, index, value)
+            },
+            KnownFlag::Origin => {
+                Self::set_value(&mut self.origin, flag, index, value)
+            },
         }
     }
 
@@ -227,11 +242,14 @@ pub enum CliParseOutcome {
 /// - [`CLIParseError::MissingValueForFlag`] when a flag has no usable value,
 /// - [`CLIParseError::DuplicateFlag`] when a known flag appears multiple times,
 /// - [`CLIParseError::UnexpectedEndOfOptions`] when `--` appears where a flag is expected.
-pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, CLIParseError> {
+pub fn parse_cli_values(
+    args: &[String],
+) -> Result<CliParseOutcome, CLIParseError> {
     let mut parsed = ParsedCliValues::default();
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     // Skip argv[0] when it looks like the executable name.
-    let mut index = if args.first().is_some_and(|value| value.starts_with("--")) {
+    let mut index = if args.first().is_some_and(|value| value.starts_with("--"))
+    {
         0
     } else {
         1
@@ -272,7 +290,7 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, CLIParseErro
                     flag: token.clone(),
                     index: display_index,
                 });
-            }
+            },
         };
 
         // Validate that the flag is followed by a usable value.
@@ -289,17 +307,19 @@ pub fn parse_cli_values(args: &[String]) -> Result<CliParseOutcome, CLIParseErro
                             flag: flag.as_str().to_string(),
                             index: display_index,
                         });
-                    }
+                    },
                 };
                 (escaped_value, escaped_index + 1)
-            }
-            Some(value) if !value.is_empty() && !value.starts_with("--") => (value, index + 2),
+            },
+            Some(value) if !value.is_empty() && !value.starts_with("--") => {
+                (value, index + 2)
+            },
             _ => {
                 return Err(CLIParseError::MissingValueForFlag {
                     flag: flag.as_str().to_string(),
                     index: display_index,
                 });
-            }
+            },
         };
 
         parsed.insert(flag, display_index, value)?;

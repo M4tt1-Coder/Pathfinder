@@ -37,7 +37,9 @@ fn main() {
         ])
     ]
 )]
-fn create_file_input_graph_result_with_directed_graph(dir_graph: &DirectedGraph) {
+fn create_file_input_graph_result_with_directed_graph(
+    dir_graph: &DirectedGraph,
+) {
     let _result = FileInputGraphResult::DirectedGraph(dir_graph.clone());
 }
 
@@ -51,7 +53,9 @@ fn create_file_input_graph_result_with_directed_graph(dir_graph: &DirectedGraph)
         ])
     ]
 )]
-fn create_file_input_graph_result_with_undirected_graph(undir_graph: &UndirectedGraph) {
+fn create_file_input_graph_result_with_undirected_graph(
+    undir_graph: &UndirectedGraph,
+) {
     let _result = FileInputGraphResult::UndirectedGraph(undir_graph.clone());
 }
 
@@ -68,7 +72,8 @@ fn create_file_input_graph_result_with_undirected_graph(undir_graph: &Undirected
 fn create_file_input_graph_result_with_2d_coordinate_graph(
     coord_graph: &TwoDimensionalCoordinateGraph,
 ) {
-    let _result = FileInputGraphResult::TwoDimensionalGraph(coord_graph.clone());
+    let _result =
+        FileInputGraphResult::TwoDimensionalGraph(coord_graph.clone());
 }
 
 // ----- Benchmarks of the 'ParseError' enum -----

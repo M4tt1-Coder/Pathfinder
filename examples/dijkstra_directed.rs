@@ -9,7 +9,11 @@ fn main() {
     let node_a = DefaultNode::new("A".to_string());
     let node_b = DefaultNode::new("B".to_string());
     let node_c = DefaultNode::new("C".to_string());
-    let mut graph = DirectedGraph::new(vec![node_a.clone(), node_b.clone(), node_c.clone()]);
+    let mut graph = DirectedGraph::new(vec![
+        node_a.clone(),
+        node_b.clone(),
+        node_c.clone(),
+    ]);
 
     assert!(graph.insert_edge(&node_a, &node_b, Some(4)).is_none());
     assert!(graph.insert_edge(&node_b, &node_c, Some(2)).is_none());

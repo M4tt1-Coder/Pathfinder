@@ -48,7 +48,8 @@ fn does_node_already_exist_in_undirected_graph(bencher: Bencher) {
             graph
         })
         .bench_refs(|dg| {
-            let _exists = dg.does_node_already_exist(&DefaultNode::new("A".to_string()));
+            let _exists =
+                dg.does_node_already_exist(&DefaultNode::new("A".to_string()));
         });
 }
 

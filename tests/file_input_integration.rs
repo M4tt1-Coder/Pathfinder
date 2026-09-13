@@ -27,7 +27,8 @@ fn count_undirected_edges<G: Graph>(graph: &G) -> usize {
 }
 
 fn write_temp_graph(contents: &str) -> NamedTempFile {
-    let mut file = NamedTempFile::new().expect("temp file creation should succeed");
+    let mut file =
+        NamedTempFile::new().expect("temp file creation should succeed");
     file.write_all(contents.as_bytes())
         .expect("temp file write should succeed");
     file.flush().expect("temp file flush should succeed");
@@ -39,7 +40,8 @@ fn parser_reads_directed_graph_from_file() {
     let file = write_temp_graph("D\nA->B:4\nB->C:2\nA->C:10\n");
     let path = file.path().to_string_lossy().into_owned();
 
-    let result = retrieve_graph_data_from_file(&path).expect("directed parsing should succeed");
+    let result = retrieve_graph_data_from_file(&path)
+        .expect("directed parsing should succeed");
 
     assert!(matches!(result, FileInputGraphResult::DirectedGraph { .. }));
 
@@ -47,7 +49,7 @@ fn parser_reads_directed_graph_from_file() {
         FileInputGraphResult::DirectedGraph(graph) => {
             assert_eq!(graph.get_all_nodes().len(), 3);
             assert_eq!(count_directed_edges(&graph), 3);
-        }
+        },
         _ => panic!("expected a directed graph result"),
     }
 }
@@ -57,7 +59,8 @@ fn parser_reads_undirected_graph_from_file() {
     let file = write_temp_graph("UN\nA-B:7\nB-C:3\nA-C:9\n");
     let path = file.path().to_string_lossy().into_owned();
 
-    let result = retrieve_graph_data_from_file(&path).expect("undirected parsing should succeed");
+    let result = retrieve_graph_data_from_file(&path)
+        .expect("undirected parsing should succeed");
 
     assert!(matches!(
         result,
@@ -68,7 +71,7 @@ fn parser_reads_undirected_graph_from_file() {
         FileInputGraphResult::UndirectedGraph(graph) => {
             assert_eq!(graph.get_all_nodes().len(), 3);
             assert_eq!(count_undirected_edges(&graph), 3);
-        }
+        },
         _ => panic!("expected an undirected graph result"),
     }
 }
@@ -78,8 +81,8 @@ fn parser_reads_two_dimensional_graph_from_file() {
     let file = write_temp_graph("TD\nA:0,0=>B:3,4\nB:3,4=>C:6,8\n");
     let path = file.path().to_string_lossy().into_owned();
 
-    let result =
-        retrieve_graph_data_from_file(&path).expect("two-dimensional parsing should succeed");
+    let result = retrieve_graph_data_from_file(&path)
+        .expect("two-dimensional parsing should succeed");
 
     assert!(matches!(
         result,
@@ -91,7 +94,7 @@ fn parser_reads_two_dimensional_graph_from_file() {
             assert_eq!(graph.get_all_nodes().len(), 3);
             assert!(!graph.is_directed());
             assert!(graph.is_weighted());
-        }
+        },
         _ => panic!("expected a two-dimensional graph result"),
     };
 }
@@ -149,7 +152,7 @@ fn parser_ignores_whitespace_only_lines() {
         FileInputGraphResult::DirectedGraph(graph) => {
             assert_eq!(graph.get_all_nodes().len(), 3);
             assert_eq!(count_directed_edges(&graph), 2);
-        }
+        },
         _ => panic!("expected a directed graph result"),
     };
 }

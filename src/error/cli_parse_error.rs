@@ -97,7 +97,7 @@ impl fmt::Display for CLIParseError {
             ),
             CLIParseError::MissingRequiredFlag { flag } => {
                 write!(f, "Missing required flag {}.", flag)
-            }
+            },
             CLIParseError::MissingValueForFlag { flag, index } => write!(
                 f,
                 "Missing value for flag {} at argument position {}.",
@@ -113,8 +113,12 @@ impl fmt::Display for CLIParseError {
                 flag, first_index, duplicate_index
             ),
             CLIParseError::UnknownFlag { flag, index } => {
-                write!(f, "Unknown flag {} at argument position {}.", flag, index)
-            }
+                write!(
+                    f,
+                    "Unknown flag {} at argument position {}.",
+                    flag, index
+                )
+            },
             CLIParseError::UnexpectedArgument { value, index } => write!(
                 f,
                 "Unexpected argument '{}' at position {}. Flags must start with '--'.",
@@ -138,7 +142,11 @@ impl fmt::Display for CLIParseError {
                 flag,
                 other,
                 reason,
-            } => write!(f, "Conflicting flags {} and {}: {}.", flag, other, reason),
+            } => write!(
+                f,
+                "Conflicting flags {} and {}: {}.",
+                flag, other, reason
+            ),
         }
     }
 }

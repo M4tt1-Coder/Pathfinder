@@ -21,7 +21,9 @@ fn unwrap_config(outcome: AppConfigOutcome) -> AppConfig {
 fn setup_config_parses_required_arguments_and_defaults() {
     let args = build_args(&["pathfinder", "--start", "A", "--end", "D"]);
 
-    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
 
     assert_eq!(config.file_path, "graph.txt");
     assert_eq!(config.start_node_id, "A");
@@ -44,7 +46,9 @@ fn setup_config_parses_optional_graph_file_and_algorithm() {
         "B",
     ]);
 
-    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
 
     assert_eq!(config.file_path, "test_files/directed_graph.txt");
     assert!(matches!(config.algorithm, Algorithms::AStar));
@@ -52,18 +56,27 @@ fn setup_config_parses_optional_graph_file_and_algorithm() {
 
 #[test]
 fn setup_config_requires_start_node() {
-    let args = build_args(&["pathfinder", "--graph-file", "graph.txt", "--end", "B"]);
+    let args =
+        build_args(&["pathfinder", "--graph-file", "graph.txt", "--end", "B"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected missing start error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected missing start error");
 
     assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--start" });
 }
 
 #[test]
 fn setup_config_requires_end_node() {
-    let args = build_args(&["pathfinder", "--graph-file", "graph.txt", "--start", "A"]);
+    let args = build_args(&[
+        "pathfinder",
+        "--graph-file",
+        "graph.txt",
+        "--start",
+        "A",
+    ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected missing end error");
+    let err =
+        AppConfig::setup_config(args).expect_err("expected missing end error");
 
     assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--end" });
 }
@@ -72,7 +85,8 @@ fn setup_config_requires_end_node() {
 fn setup_config_reports_missing_end_node_when_incomplete() {
     let args = build_args(&["pathfinder", "--start", "A"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected missing end error");
+    let err =
+        AppConfig::setup_config(args).expect_err("expected missing end error");
 
     assert_eq!(err, CLIParseError::MissingRequiredFlag { flag: "--end" });
 }
@@ -89,7 +103,9 @@ fn setup_config_parses_origin_from_origin_flag() {
         "B",
     ]);
 
-    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
 
     assert!(matches!(config.data_input, InputOrigin::CommandLine));
     assert!(matches!(config.algorithm, Algorithms::Dijkstra));
@@ -107,7 +123,9 @@ fn setup_config_keeps_legacy_origin_fallback_from_algo() {
         "B",
     ]);
 
-    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
 
     assert!(matches!(config.data_input, InputOrigin::CommandLine));
     assert!(matches!(config.algorithm, Algorithms::Dijkstra));
@@ -125,7 +143,8 @@ fn setup_config_rejects_invalid_origin_value() {
         "B",
     ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected invalid origin error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected invalid origin error");
 
     assert_eq!(
         err,
@@ -149,7 +168,8 @@ fn setup_config_rejects_invalid_algorithm_value() {
         "B",
     ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected invalid algorithm error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected invalid algorithm error");
 
     assert_eq!(
         err,
@@ -175,14 +195,16 @@ fn setup_config_rejects_conflicting_origin_and_graph_file() {
         "B",
     ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected conflict error");
+    let err =
+        AppConfig::setup_config(args).expect_err("expected conflict error");
 
     assert_eq!(
         err,
         CLIParseError::ConflictingFlags {
             flag: "--origin".to_string(),
             other: "--graph-file".to_string(),
-            reason: "command-line origin cannot be combined with --graph-file".to_string(),
+            reason: "command-line origin cannot be combined with --graph-file"
+                .to_string(),
         }
     );
 }
@@ -200,7 +222,8 @@ fn setup_config_returns_help_requested() {
 fn setup_config_returns_version_requested() {
     let args = build_args(&["pathfinder", "--version"]);
 
-    let outcome = AppConfig::setup_config(args).expect("expected version outcome");
+    let outcome =
+        AppConfig::setup_config(args).expect("expected version outcome");
 
     assert!(matches!(outcome, AppConfigOutcome::VersionRequested));
 }
@@ -209,7 +232,8 @@ fn setup_config_returns_version_requested() {
 fn setup_config_rejects_missing_value_for_flag() {
     let args = build_args(&["pathfinder", "--start", "--end", "B"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected missing value error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected missing value error");
 
     assert_eq!(
         err,
@@ -233,7 +257,9 @@ fn setup_config_accepts_double_dash_value_escape() {
         "B",
     ]);
 
-    let config = unwrap_config(AppConfig::setup_config(args).expect("expected valid config"));
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
 
     assert_eq!(config.file_path, "--strange");
 }
@@ -242,16 +268,26 @@ fn setup_config_accepts_double_dash_value_escape() {
 fn setup_config_rejects_unexpected_end_of_options() {
     let args = build_args(&["pathfinder", "--", "--start", "A", "--end", "B"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected end-of-options error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected end-of-options error");
 
     assert_eq!(err, CLIParseError::UnexpectedEndOfOptions { index: 2 });
 }
 
 #[test]
 fn setup_config_rejects_unknown_flag() {
-    let args = build_args(&["pathfinder", "--whoops", "x", "--start", "A", "--end", "B"]);
+    let args = build_args(&[
+        "pathfinder",
+        "--whoops",
+        "x",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected unknown flag error");
+    let err =
+        AppConfig::setup_config(args).expect_err("expected unknown flag error");
 
     assert_eq!(
         err,
@@ -264,9 +300,18 @@ fn setup_config_rejects_unknown_flag() {
 
 #[test]
 fn setup_config_rejects_duplicate_flag() {
-    let args = build_args(&["pathfinder", "--start", "A", "--start", "B", "--end", "C"]);
+    let args = build_args(&[
+        "pathfinder",
+        "--start",
+        "A",
+        "--start",
+        "B",
+        "--end",
+        "C",
+    ]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected duplicate flag error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected duplicate flag error");
 
     assert_eq!(
         err,
@@ -282,7 +327,8 @@ fn setup_config_rejects_duplicate_flag() {
 fn setup_config_rejects_unexpected_non_flag_token() {
     let args = build_args(&["pathfinder", "start", "A", "--end", "B"]);
 
-    let err = AppConfig::setup_config(args).expect_err("expected unexpected argument error");
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected unexpected argument error");
 
     assert_eq!(
         err,
