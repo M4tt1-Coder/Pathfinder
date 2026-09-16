@@ -44,3 +44,9 @@ repos:
         language: system
         pass_filenames: false
         stages: [manual] # run manually, not every commit
+
+      - id: rust-semver
+        name: cargo semver-checks
+        entry: cargo semver-checks check-release
+        language: system
+        pass_filenames: false

@@ -13,8 +13,7 @@
 - `src/data_input/file/file_input.rs`: graph file parsing/validation (`A-B:7` or `A->B:7` formats).
 - `src/graph/*`: graph traits and directed/undirected graph implementations.
 - `src/algorithms/dijkstra_algorithm.rs`: shortest path implementation.
-- `.github/workflows/rust.yml`: CI checks formatting, clippy, build, tests, and doctests.
-- `.github/workflows/rust-ci.yml`: baseline CI verification on pushes and PRs.
+- `.github/workflows/rust.yml`: CI checks formatting, clippy, build, tests, doctests, and semantic-version compatibility.
 - `.github/workflows/codeql.yml`: security scanning workflow.
 - `.github/workflows/release.yml`: release publishing workflow.
 
@@ -32,10 +31,10 @@
 ## Important behavior and caveats
 
 - Input file syntax is strict:
-   - First line header: `D`, `UN`, or `TD`
-   - Directed edge line: `A->B:7`
-   - Undirected edge line: `A-B:7`
-   - Two-dimensional edge line: `A:0,0=>B:4,2`
+  - First line header: `D`, `UN`, or `TD`
+  - Directed edge line: `A->B:7`
+  - Undirected edge line: `A-B:7`
+  - Two-dimensional edge line: `A:0,0=>B:4,2`
 - Graph type is inferred from the **first line** of the file; subsequent lines must stay consistent.
 - Runtime currently supports file input in `main`; `InputOrigin::CommandLine` is parsed but returns a structured unsupported-origin error in the CLI runtime.
 - In `AppConfig::retrieve_data_input`, `--origin` takes precedence and legacy `--algo file|cmd-line` values remain supported as fallback.
@@ -45,9 +44,11 @@
 - CI runs rustfmt, Clippy, workspace builds, unit/integration tests, and doctests via Cargo.
 - There are benchmark targets under `benches/`, but they are not part of standard CI gating.
 - No dedicated lint workflow is configured in GitHub Actions.
+- CI installs and runs `cargo-semver-checks` to detect public API compatibility regressions.
+- Local pre-commit users must install it with `cargo install cargo-semver-checks --locked`.
 - Always run all test suites before committing and before finishing a task:
-   - `cargo test --workspace --all-targets --locked`
-   - `cargo test --workspace --doc --locked`
+  - `cargo test --workspace --all-targets --locked`
+  - `cargo test --workspace --doc --locked`
 
 ## Rust documentation requirements
 
@@ -87,9 +88,9 @@
 - Follow `diary/README.md` as the source of truth for diary structure and content.
 - Use one file per entry named as `NNN-short-title.md` (three-digit incrementing id prefix).
 - Use the exact entry template from `diary/README.md`:
-   - `# NNN — Short Title`
-   - `**Date**`, `**Tool**`, `**Model**`, `**Iterations**`
-   - `## Prompt` with timestamped prompt text
+  - `# NNN — Short Title`
+  - `**Date**`, `**Tool**`, `**Model**`, `**Iterations**`
+  - `## Prompt` with timestamped prompt text
 - If a prompt has follow-up prompts, include each follow-up under `## Prompt` with its own timestamp, as specified in `diary/README.md`.
 
 ## Commit History requirement

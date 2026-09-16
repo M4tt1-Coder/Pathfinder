@@ -20,21 +20,21 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 
 ## High-value file map
 
-| Area                           | Path                                                                                                                           |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| CLI entrypoint                 | `src/main.rs`                                                                                                                  |
-| Argument parsing / defaults    | `src/data_input/file/cli_config/config.rs`                                                                                     |
-| Graph file parsing             | `src/data_input/file/file_input.rs`                                                                                            |
-| Graph traits & implementations | `src/graph/*`                                                                                                                  |
-| Algorithm trait & selection    | `src/algorithms/algorithm.rs`                                                                                                  |
-| Dijkstra                       | `src/algorithms/dijkstra_algorithm.rs`                                                                                         |
-| A*                             | `src/algorithms/a_star_algorithm/`                                                                                             |
-| Error types                    | `src/error/*`                                                                                                                  |
-| Node models                    | `src/nodes/*`                                                                                                                  |
-| Benchmarks                     | `benches/` (not CI-gated)                                                                                                      |
-| CI workflows                   | `.github/workflows/rust.yml`, `.github/workflows/rust-ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml` |
-| User docs                      | `README.md`                                                                                                                    |
-| AI diary                       | `diary/` — see [`diary/README.md`](diary/README.md)                                                                            |
+| Area                           | Path                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| CLI entrypoint                 | `src/main.rs`                                                                                 |
+| Argument parsing / defaults    | `src/data_input/file/cli_config/config.rs`                                                    |
+| Graph file parsing             | `src/data_input/file/file_input.rs`                                                           |
+| Graph traits & implementations | `src/graph/*`                                                                                 |
+| Algorithm trait & selection    | `src/algorithms/algorithm.rs`                                                                 |
+| Dijkstra                       | `src/algorithms/dijkstra_algorithm.rs`                                                        |
+| A*                             | `src/algorithms/a_star_algorithm/`                                                            |
+| Error types                    | `src/error/*`                                                                                 |
+| Node models                    | `src/nodes/*`                                                                                 |
+| Benchmarks                     | `benches/` (not CI-gated)                                                                     |
+| CI workflows                   | `.github/workflows/rust.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml` |
+| User docs                      | `README.md`                                                                                   |
+| AI diary                       | `diary/` — see [`diary/README.md`](diary/README.md)                                           |
 
 ---
 

@@ -29,6 +29,9 @@ jobs:
       - name: Cache cargo registry + index + build
         uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks --locked
+
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -46,3 +49,7 @@ jobs:
 
       - name: Run documentation tests
         run: cargo test --workspace --doc --all-features --locked --verbose
+
+      - name: Verify Semantic Versioning
+        run: cargo semver-checks check-release
+        continue-on-error: false

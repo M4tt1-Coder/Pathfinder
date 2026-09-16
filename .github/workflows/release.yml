@@ -63,6 +63,14 @@ jobs:
         if: steps.pr_check.outputs.should_release == 'true'
         uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-semver-checks
+        if: steps.pr_check.outputs.should_release == 'true'
+        run: cargo install cargo-semver-checks --locked
+
+      - name: Verify Semantic Versioning
+        if: steps.pr_check.outputs.should_release == 'true'
+        run: cargo semver-checks check-release
+
       - name: Read crate version
         if: steps.pr_check.outputs.should_release == 'true'
         id: version

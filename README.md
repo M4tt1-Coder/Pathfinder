@@ -204,14 +204,13 @@ Core stack and dependencies:
 
 Quality and automation:
 
-- Four GitHub Actions workflows:
-  - `rust.yml`: formatting, clippy, build, tests, and doctests
-	- `rust-ci.yml`: baseline verification on pushes to main and all pull requests
+- Three GitHub Actions workflows:
+  - `rust.yml`: formatting, clippy, build, tests, doctests, and semantic-version checks
   - `codeql.yml`: static analysis for security scanning
   - `release.yml`: automated publishing on merged PRs into main
-- Local pre-commit hooks for formatting, linting, tests, and optional cargo audit
+- Local pre-commit hooks for formatting, linting, tests, semantic-version checks, and optional cargo audit
 - Example programs are compiled explicitly with `cargo check --examples` in both
-	local pre-commit hooks and pull-request CI.
+  local pre-commit hooks and pull-request CI.
 
 ## Project structure
 
@@ -236,11 +235,11 @@ The snippets below are intentionally compact but mirror how I use the library in
 
 The repository includes small binaries that can be run directly with Cargo:
 
-| Example | Graph | Algorithm | Command |
-| --- | --- | --- | --- |
-| `dijkstra_directed` | Directed | Dijkstra | `cargo run --example dijkstra_directed` |
-| `dijkstra_undirected` | Undirected | Dijkstra | `cargo run --example dijkstra_undirected` |
-| `a_star_coordinate` | Two-dimensional coordinate | A* | `cargo run --example a_star_coordinate` |
+| Example               | Graph                      | Algorithm | Command                                   |
+| --------------------- | -------------------------- | --------- | ----------------------------------------- |
+| `dijkstra_directed`   | Directed                   | Dijkstra  | `cargo run --example dijkstra_directed`   |
+| `dijkstra_undirected` | Undirected                 | Dijkstra  | `cargo run --example dijkstra_undirected` |
+| `a_star_coordinate`   | Two-dimensional coordinate | A*        | `cargo run --example a_star_coordinate`   |
 
 Each example constructs its graph in memory, runs a shortest-path search, and prints the path and total distance.
 
@@ -555,6 +554,12 @@ cargo test --all-features
 ```
 
 If you use pre-commit in your environment, install and run hooks.
+
+Install the semver checker before running the hooks:
+
+```sh
+cargo install cargo-semver-checks --locked
+```
 
 Example command to install hooks:
 
