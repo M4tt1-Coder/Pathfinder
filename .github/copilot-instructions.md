@@ -50,6 +50,13 @@
   - `cargo test --workspace --all-targets --locked`
   - `cargo test --workspace --doc --locked`
 
+## Changes log requirement
+
+- Always create a brief changes-log entry alongside the diary entry for every prompt handled by Copilot.
+- Store entries under `changes-log/<branch_name>/`, using the same three-digit number as the matching diary entry.
+- Follow `changes-log/README.md` for the entry template and content requirements.
+- Summarize the changes, affected files or areas, and validation performed; do not duplicate the full prompt.
+
 ## Rust documentation requirements
 
 - Whenever Rust code is modified, update the corresponding documentation in the same change.

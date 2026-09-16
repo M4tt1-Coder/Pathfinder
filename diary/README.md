@@ -30,6 +30,10 @@ numbered markdown files (`NNN-short-title.md`). Diary entries are required for
 AI-assisted prompts that modify repository artifacts, whether or not a commit
 is created.
 
+Every diary entry must have a paired brief overview in
+`changes-log/<branch_name>/` with the same numeric prefix. See
+[`changes-log/README.md`](../changes-log/README.md) for the changes-log format.
+
 ## Entry Template
 
 ```markdown

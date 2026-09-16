@@ -401,6 +401,10 @@ cargo test --workspace --all-targets --locked --verbose
 cargo test --workspace --doc --locked --verbose
 ```
 
+AI-assisted changes are documented in paired entries under `diary/` and
+`changes-log/`. The diary records the prompt; the changes log briefly records
+the resulting changes, affected areas, and validation.
+
 ## Benchmarking
 
 Run the algorithm benchmark target to compare all currently implemented runtime

@@ -9,6 +9,7 @@ Before starting any task in this repository:
 
 1. **Read** `AGENTS.md` at the repo root.
 2. **Follow** its workflow, validation commands, documentation requirements, and project conventions.
-3. **Re-read** relevant sections if the task touches CLI, parsing, algorithms, graphs, errors, README, or the AI diary.
+3. **Create** the required paired diary and changes-log entries described by `AGENTS.md`.
+4. **Re-read** relevant sections if the task touches CLI, parsing, algorithms, graphs, errors, README, the AI diary, or the changes log.
 
 `AGENTS.md` is the source of truth for how to work in this codebase. Do not skip it.

@@ -138,6 +138,20 @@ Include the diary entry in one of the commits for that prompt (preferably the fi
 
 ---
 
+## Changes log (required for AI-assisted work)
+
+Alongside every AI diary entry, create a brief changes-log entry describing
+what the prompt changed. Follow [`changes-log/README.md`](changes-log/README.md)
+for the format and store the entry under the matching
+`changes-log/<branch_name>/` directory using the same three-digit number as
+the diary entry.
+
+Each changes-log entry must summarize the changes made, identify the affected
+files or areas, and record validation performed. Keep it concise and do not
+duplicate the full prompt from the diary.
+
+---
+
 ## Commit guidelines
 
 - **One prompt → one or more focused commits** for the resulting changes.
