@@ -44,6 +44,7 @@ Source: adapted from [`.github/copilot-instructions.md`](.github/copilot-instruc
 2. **Validate before finishing** — run the same checks as CI (see below).
 3. **Keep changes minimal** — match existing naming, types, and patterns in the surrounding code.
 4. **Sync docs in the same change** — Rust doc comments, `README.md`, and diary entries are part of the deliverable, not optional polish.
+5. **Keep coverage above the gate** — total line coverage must remain at least 85% using the stable `cargo-llvm-cov` command documented below.
 
 ### Module-local change guide
 
@@ -67,9 +68,15 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo build --workspace --all-targets --locked --verbose
 cargo test --workspace --all-targets --locked --verbose
 cargo test --workspace --doc --locked --verbose
+cargo llvm-cov --workspace --all-features --all-targets --summary-only --fail-under-lines 85
 ```
 
 Benchmarks exist under `benches/` but are not part of standard CI gating.
+
+Coverage is measured with `cargo-llvm-cov` on the stable toolchain. Install it
+locally with `cargo install cargo-llvm-cov --locked`; CI installs it with
+`taiki-e/install-action@cargo-llvm-cov`. The required total line coverage is
+85% or higher. Branch coverage is not enabled because it requires nightly Rust.
 
 ---
 

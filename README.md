@@ -208,7 +208,8 @@ Quality and automation:
   - `rust.yml`: formatting, clippy, build, tests, doctests, and semantic-version checks
   - `codeql.yml`: static analysis for security scanning
   - `release.yml`: automated publishing on merged PRs into main
-- Local pre-commit hooks for formatting, linting, tests, semantic-version checks, and optional cargo audit
+- Local pre-commit hooks for formatting, linting, tests, line coverage, semantic-version checks, and optional cargo audit
+- `cargo-llvm-cov` enforces at least 85% total line coverage in pre-commit and pull-request CI
 - Example programs are compiled explicitly with `cargo check --examples` in both
   local pre-commit hooks and pull-request CI.
 
@@ -401,6 +402,12 @@ cargo test --workspace --all-targets --locked --verbose
 cargo test --workspace --doc --locked --verbose
 ```
 
+The stable-toolchain coverage gate requires at least 85% total line coverage:
+
+```sh
+cargo llvm-cov --workspace --all-features --all-targets --summary-only --fail-under-lines 85
+```
+
 AI-assisted changes are documented in paired entries under `diary/` and
 `changes-log/`. The diary records the prompt; the changes log briefly records
 the resulting changes, affected areas, and validation.
@@ -563,6 +570,12 @@ Install the semver checker before running the hooks:
 
 ```sh
 cargo install cargo-semver-checks --locked
+```
+
+Install the coverage tool before running the hooks:
+
+```sh
+cargo install cargo-llvm-cov --locked
 ```
 
 Example command to install hooks:

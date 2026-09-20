@@ -46,9 +46,13 @@
 - No dedicated lint workflow is configured in GitHub Actions.
 - CI installs and runs `cargo-semver-checks` to detect public API compatibility regressions.
 - Local pre-commit users must install it with `cargo install cargo-semver-checks --locked`.
+- CI and pre-commit install and run `cargo-llvm-cov` with the stable toolchain.
+- The required gate is at least 85% total line coverage; use `cargo llvm-cov --workspace --all-features --all-targets --summary-only --fail-under-lines 85`.
+- Local users must install it with `cargo install cargo-llvm-cov --locked` before running pre-commit.
 - Always run all test suites before committing and before finishing a task:
   - `cargo test --workspace --all-targets --locked`
   - `cargo test --workspace --doc --locked`
+  - `cargo llvm-cov --workspace --all-features --all-targets --summary-only --fail-under-lines 85`
 
 ## Changes log requirement
 

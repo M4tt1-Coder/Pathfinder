@@ -13,9 +13,9 @@ repos:
         language: system
         pass_filenames: false
 
-      - id: rust-test
-        name: cargo test
-        entry: cargo test --all-features
+      - id: rust-coverage
+        name: cargo llvm-cov (85% line coverage)
+        entry: bash -c 'output=$(cargo llvm-cov --workspace --all-features --all-targets --fail-under-lines 85 2>&1) || { echo "$output"; exit 1; }'
         language: system
         pass_filenames: false
 
