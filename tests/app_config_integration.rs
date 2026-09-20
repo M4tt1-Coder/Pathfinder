@@ -9,7 +9,7 @@ use shortest_path_finder::{
     error::CLIParseError,
 };
 
-// TODO: !! Look for further test cases for the app config!! Add these missing test cases:
+// TODO: (TEST) !! Look for further test cases for the app config!! Add these missing test cases:
 // - situation where too few arguments are provided (e.g., no start or end node)
 
 fn build_args(parts: &[&str]) -> Vec<String> {

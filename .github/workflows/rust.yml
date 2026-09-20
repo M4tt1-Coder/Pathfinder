@@ -1,4 +1,4 @@
-name: Rust Baseline
+name: Rust CI
 
 permissions:
   contents: read
