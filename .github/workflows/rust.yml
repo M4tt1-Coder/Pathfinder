@@ -14,7 +14,7 @@ env:
 
 jobs:
   verify:
-    name: fmt / clippy / build / examples / test / coverage / doctest
+    name: fmt / clippy / build / examples / test / doctest
     runs-on: ubuntu-latest
 
     steps:
@@ -32,9 +32,6 @@ jobs:
       - name: Install cargo-semver-checks
         run: cargo install cargo-semver-checks --locked
 
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -50,12 +47,29 @@ jobs:
       - name: Run unit and integration tests
         run: cargo test --workspace --all-targets --locked --verbose
 
-      - name: Verify line coverage
-        run: cargo llvm-cov --workspace --all-features --all-targets --summary-only --fail-under-lines 85
-
       - name: Run documentation tests
         run: cargo test --workspace --doc --all-features --locked --verbose
 
       - name: Verify Semantic Versioning
         run: cargo semver-checks check-release
         continue-on-error: false
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry + index + build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Verify line and branch coverage
+        run: cargo llvm-cov --workspace --all-features --all-targets --branch --summary-only --fail-under-lines 85 --fail-under-branches 85
