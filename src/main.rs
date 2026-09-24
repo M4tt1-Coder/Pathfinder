@@ -82,8 +82,7 @@ use shortest_path_finder::{
 // information is stored and the algorithm is executed accordingly.
 
 // TODO: Review existing tests and manually look for edge cases that are not covered by the existing
-// tests and add tests for them + use a separate job in the 'Rust CI' to run coverage check using
-// the nightly toolchain and 'cargo-llvm-cov'
+// tests and add tests for them
 
 // TODO: Inspect benchmarks and cover edge cases, use bigger datasets (What about memory usage?)
 
