@@ -10,7 +10,8 @@ use shortest_path_finder::{
 };
 
 // TODO: (TEST) !! Look for further test cases for the app config!! Add these missing test cases:
-// - situation where too few arguments are provided (e.g., no start or end node)
+// - situation where too few arguments are provided (e.g., no start or end node);
+// CLIParseError::TooFewArguments
 
 fn build_args(parts: &[&str]) -> Vec<String> {
     parts.iter().map(|part| (*part).to_string()).collect()

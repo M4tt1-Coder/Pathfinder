@@ -23,9 +23,11 @@ pub enum CLIParseError {
     /// Fewer than the minimum expected argument count was supplied.
     TooFewArguments {
         /// Number of arguments actually provided.
-        provided: usize,
+        provided_num: usize,
         /// Minimum number of arguments required by the parser.
-        minimum: usize,
+        minimum_num: usize,
+        /// Example of the required arguments to run the application.
+        required_args: String,
     },
     /// A required flag is missing from the argument list.
     MissingRequiredFlag {
@@ -90,10 +92,14 @@ pub enum CLIParseError {
 impl fmt::Display for CLIParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CLIParseError::TooFewArguments { provided, minimum } => write!(
+            CLIParseError::TooFewArguments {
+                provided_num,
+                minimum_num,
+                required_args,
+            } => write!(
                 f,
-                "Not enough arguments passed (provided {}, minimum {}).",
-                provided, minimum
+                "Not enough arguments passed (provided {}, minimum {}). Your args: {}",
+                provided_num, minimum_num, required_args
             ),
             CLIParseError::MissingRequiredFlag { flag } => {
                 write!(f, "Missing required flag {}.", flag)

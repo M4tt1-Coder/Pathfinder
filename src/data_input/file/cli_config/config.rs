@@ -70,6 +70,10 @@ use crate::{
     error::CLIParseError,
 };
 
+// TODO: AppConfig currently only supports file-based input -> after implementing command-line
+// input for graph data: adjust the AppConfig to support both origins to the same level (should be possible to load data from both origins -> AppConfig::setup_config should be able setup the app for both origins; fields of AppConfig need to be updated);
+// add integration tests for InputOrigin::CommandLine and update the CLI help text.
+
 /// Declares where graph data should be read from.
 ///
 /// # Variants
@@ -381,12 +385,16 @@ impl AppConfig {
         let file_path = parsed
             .graph_file_value()
             .unwrap_or_else(|| DEFAULT_GRAPH_FILE.to_string());
+
         let algorithm_token = parsed.algorithm_value();
+
         let (data_input, used_legacy_origin) = AppConfig::retrieve_data_input(
             &parsed,
             algorithm_token.as_deref(),
         )?;
+
         AppConfig::validate_flag_combinations(&parsed, &data_input)?;
+
         let algorithm = AppConfig::retrieve_algorithm(
             algorithm_token.as_deref(),
             used_legacy_origin,
@@ -395,6 +403,7 @@ impl AppConfig {
         let start_node_id = parsed
             .start_value()
             .ok_or(CLIParseError::MissingRequiredFlag { flag: "--start" })?;
+
         let end_node_id = parsed
             .end_value()
             .ok_or(CLIParseError::MissingRequiredFlag { flag: "--end" })?;

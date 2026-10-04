@@ -37,6 +37,9 @@ pub const VALID_ORIGINS: [&str; 2] = ["file", "cmd-line"];
 /// Allowed algorithm values for `--algo`.
 pub const VALID_ALGORITHMS: [&str; 2] = ["Dijkstra", "AStar"];
 
+/// App needs at least 4 arguments ('--start <value> --end <value>') to process a shortest path.
+pub const MIN_NUM_REQUIRED_ARGS: usize = 4;
+
 /// Internal representation of supported CLI flags.
 ///
 /// This enum centralizes known flags so parser logic can map raw tokens to a
@@ -245,6 +248,15 @@ pub enum CliParseOutcome {
 pub fn parse_cli_values(
     args: &[String],
 ) -> Result<CliParseOutcome, CLIParseError> {
+    // make sure the minimum required arguments are provided when calling the binary
+    if args.len() - 1 < 4 {
+        return Err(CLIParseError::TooFewArguments {
+            provided_num: args.len() - 1,
+            minimum_num: MIN_NUM_REQUIRED_ARGS,
+            required_args: args.join(" "), // !!!! Remove the first argument (bin name)
+        });
+    };
+
     let mut parsed = ParsedCliValues::default();
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     // Skip argv[0] when it looks like the executable name.
@@ -297,7 +309,8 @@ pub fn parse_cli_values(
         let maybe_value = args.get(index + 1);
         let (value, next_index) = match maybe_value {
             Some(value) if value == END_OF_OPTIONS => {
-                // Support `--flag -- --value` to accept values that start with `--`.
+                // Support `--flag -- <value>` to accept values that start with `--` but have at
+                // least one empty space between the value itself and the end of options.
                 let escaped_index = index + 2;
                 let escaped_value = args.get(escaped_index);
                 let escaped_value = match escaped_value {
