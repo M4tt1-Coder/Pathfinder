@@ -253,7 +253,7 @@ pub fn parse_cli_values(
         return Err(CLIParseError::TooFewArguments {
             provided_num: args.len() - 1,
             minimum_num: MIN_NUM_REQUIRED_ARGS,
-            required_args: args.join(" "), // !!!! Remove the first argument (bin name)
+            required_args: String::from("--start <node_id> --end <node_id>"),
         });
     };
 

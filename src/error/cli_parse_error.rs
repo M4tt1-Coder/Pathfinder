@@ -98,7 +98,7 @@ impl fmt::Display for CLIParseError {
                 required_args,
             } => write!(
                 f,
-                "Not enough arguments passed (provided {}, minimum {}). Your args: {}",
+                "Not enough arguments passed (provided: {}, minimum: {}). Required arguments: {}",
                 provided_num, minimum_num, required_args
             ),
             CLIParseError::MissingRequiredFlag { flag } => {
