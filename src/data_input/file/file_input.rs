@@ -113,7 +113,7 @@ use crate::{
     {DirectedGraph, TwoDimensionalCoordinateGraph, UndirectedGraph},
 };
 
-// TODO: Add feature that users can choose different coordinate types for the
+// TODO: (Feature) Add feature that users can choose different coordinate types for the
 // two-dimensional graph input. This would require changes in the parsing logic and the expected
 // syntax for two-dimensional edges. For example, we could allow users to specify the coordinate
 // type in the header line (e.g., `TD<i32>`) and then parse the coordinates accordingly in

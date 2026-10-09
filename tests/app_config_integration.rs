@@ -22,6 +22,23 @@ fn unwrap_config(outcome: AppConfigOutcome) -> AppConfig {
 }
 
 #[test]
+fn setup_config_receives_less_than_number_of_required_arguments() {
+    let args = build_args(&["pathfinder", "--start", "A"]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected too few arguments error");
+
+    assert_eq!(
+        err,
+        CLIParseError::TooFewArguments {
+            provided_num: 2,
+            minimum_num: 4,
+            required_args: "--start <node_id> --end <node_id>".to_string()
+        }
+    );
+}
+
+#[test]
 fn setup_config_parses_required_arguments_and_defaults() {
     let args = build_args(&["pathfinder", "--start", "A", "--end", "D"]);
 
@@ -87,7 +104,13 @@ fn setup_config_requires_end_node() {
 
 #[test]
 fn setup_config_reports_missing_end_node_when_incomplete() {
-    let args = build_args(&["pathfinder", "--start", "A"]);
+    let args = build_args(&[
+        "pathfinder",
+        "--start",
+        "A",
+        "--graph-file",
+        "graph.txt",
+    ]);
 
     let err =
         AppConfig::setup_config(args).expect_err("expected missing end error");
@@ -234,7 +257,14 @@ fn setup_config_returns_version_requested() {
 
 #[test]
 fn setup_config_rejects_missing_value_for_flag() {
-    let args = build_args(&["pathfinder", "--start", "--end", "B"]);
+    let args = build_args(&[
+        "pathfinder",
+        "--graph-file",
+        "test.txt",
+        "--start",
+        "--end",
+        "B",
+    ]);
 
     let err = AppConfig::setup_config(args)
         .expect_err("expected missing value error");
@@ -243,7 +273,7 @@ fn setup_config_rejects_missing_value_for_flag() {
         err,
         CLIParseError::MissingValueForFlag {
             flag: "--start".to_string(),
-            index: 2,
+            index: 4,
         }
     );
 }

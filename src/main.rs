@@ -67,24 +67,24 @@ use shortest_path_finder::{
     error::algorithm_error::AlgorithmError,
 };
 
-// TODO: Add a visualization function where the user can see how the algorithm is working step by
+// TODO: (Feature) Add a visualization function where the user can see how the algorithm is working step by
 // step (e.g. which nodes are being visited, which nodes are in the priority queue, ...). This can
 // be done by adding a 'visualize' method to the 'Algorithm' trait and then implementing it for each
 // algorithm. The user can then call this method after calling the 'shortest_path' method to see the
 // visualization of the algorithm's execution.
 
-// TODO: Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
+// TODO: (Feature) Think of placing individual logic into features and then enabling them in the 'Cargo.toml'
 // file (e.g. 'file_input', 'cmd_line_input', 'dijkstra_algorithm', 'a_star_algorithm', ...). This
 // way, the user can choose which features to include in their project and which not (e.g. if they
 // don't need the 'A*' algorithm, they can exclude it from their project and save some space).
 
-// TODO: Feature that graphs can be selected to be none weighted -> each edge has weight of one.
+// TODO: (Feature) Functionality that graphs can be selected to be none weighted -> each edge has weight of one.
 // information is stored and the algorithm is executed accordingly.
 
-// TODO: Review existing tests and manually look for edge cases that are not covered by the existing
+// TODO: (Test Coverage) Review existing tests and manually look for edge cases that are not covered by the existing
 // tests and add tests for them
 
-// TODO: Inspect benchmarks and cover edge cases, use bigger datasets (What about memory usage?)
+// TODO: (Benchmarks) Inspect benchmarks and cover edge cases, use bigger datasets (What about memory usage?)
 
 /// Runs the Pathfinder CLI application lifecycle.
 ///

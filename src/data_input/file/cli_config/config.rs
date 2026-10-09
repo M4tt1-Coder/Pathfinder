@@ -70,7 +70,7 @@ use crate::{
     error::CLIParseError,
 };
 
-// TODO: AppConfig currently only supports file-based input -> after implementing command-line
+// TODO: (Rework) AppConfig currently only supports file-based input -> after implementing command-line
 // input for graph data: adjust the AppConfig to support both origins to the same level (should be possible to load data from both origins -> AppConfig::setup_config should be able setup the app for both origins; fields of AppConfig need to be updated);
 // add integration tests for InputOrigin::CommandLine and update the CLI help text.
 

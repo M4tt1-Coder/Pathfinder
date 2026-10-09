@@ -226,6 +226,16 @@ pub enum CliParseOutcome {
     VersionRequested,
 }
 
+// TODO: (Rework) Rework and fully understand the parser for the CLI arguments:
+//  - properly include the RULE that atleaset 4 arguments are required for the binary to run (start and end
+//  node ids)
+//  - think of what to do with the '--help' and '--version' flags -> if one of them is present, the
+//      parser should short-circuit and return a special enum variant
+//      - how do they conflict with the minimum required arguments? Should the parser check for them
+//      first and short-circuit if they are present?
+//  - short options for the flags (e.g. -g for --graph-file, -s for --start, etc.) should be
+//  supported
+
 /// Parses raw CLI arguments into validated key-value pairs.
 ///
 /// # Behavior
@@ -248,16 +258,8 @@ pub enum CliParseOutcome {
 pub fn parse_cli_values(
     args: &[String],
 ) -> Result<CliParseOutcome, CLIParseError> {
-    // make sure the minimum required arguments are provided when calling the binary
-    if args.len() - 1 < 4 {
-        return Err(CLIParseError::TooFewArguments {
-            provided_num: args.len() - 1,
-            minimum_num: MIN_NUM_REQUIRED_ARGS,
-            required_args: String::from("--start <node_id> --end <node_id>"),
-        });
-    };
-
     let mut parsed = ParsedCliValues::default();
+
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
     // Skip argv[0] when it looks like the executable name.
     let mut index = if args.first().is_some_and(|value| value.starts_with("--"))
@@ -270,9 +272,13 @@ pub fn parse_cli_values(
     // Process tokens in pairs: flag followed by value.
     while index < args.len() {
         let token = &args[index];
+
+        // Short-circuit for help/version requests before validating the rest of the arguments.
+        // Help and version flags are mutually exclusive with other options, so we can return early
         if is_help_flag(token) {
             return Ok(CliParseOutcome::HelpRequested);
         }
+
         if is_version_flag(token) {
             return Ok(CliParseOutcome::VersionRequested);
         }
@@ -339,6 +345,15 @@ pub fn parse_cli_values(
         // Advance by one full pair (`--flag` + `value`), or escape value if used.
         index = next_index;
     }
+
+    // make sure the minimum required arguments are provided when calling the binary
+    if args.len() - 1 < 4 {
+        return Err(CLIParseError::TooFewArguments {
+            provided_num: args.len() - 1,
+            minimum_num: MIN_NUM_REQUIRED_ARGS,
+            required_args: String::from("--start <node_id> --end <node_id>"),
+        });
+    };
 
     Ok(CliParseOutcome::Values(parsed))
 }
