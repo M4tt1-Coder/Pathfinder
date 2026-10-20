@@ -9,9 +9,7 @@ use shortest_path_finder::{
     error::CLIParseError,
 };
 
-// TODO: (TEST) !! Look for further test cases for the app config!! Add these missing test cases:
-// - situation where too few arguments are provided (e.g., no start or end node);
-// CLIParseError::TooFewArguments
+// TODO: ====> Next ... (TEST) !! Look for further test cases for the app config!! Add these missing test cases:
 
 fn build_args(parts: &[&str]) -> Vec<String> {
     parts.iter().map(|part| (*part).to_string()).collect()
@@ -22,7 +20,162 @@ fn unwrap_config(outcome: AppConfigOutcome) -> AppConfig {
 }
 
 #[test]
-fn setup_config_receives_less_than_number_of_required_arguments() {
+fn setup_config_legacy_algo_file_origin_defaults_to_dijkstra() {
+    let args = build_args(&[
+        "pathfinder",
+        "--algo",
+        "file",
+        "--graph-file",
+        "graph.txt",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
+
+    assert!(matches!(config.data_input, InputOrigin::File));
+    assert!(matches!(config.algorithm, Algorithms::Dijkstra));
+}
+
+#[test]
+fn setup_config_legacy_algo_cmd_line_origin_defaults_to_dijkstra() {
+    let args = build_args(&[
+        "pathfinder",
+        "--algo",
+        "cmd-line",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let config = unwrap_config(
+        AppConfig::setup_config(args)
+            .expect("valid config; should default to dijkstra as algorithm"),
+    );
+
+    assert!(matches!(config.data_input, InputOrigin::CommandLine));
+    assert!(matches!(config.algorithm, Algorithms::Dijkstra));
+}
+
+#[test]
+fn setup_config_with_end_of_options_flag_rejects_version() {
+    let args = build_args(&["pathfinder", "--", "-V"]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected error due to unexpected end of options");
+
+    assert!(matches!(
+        err,
+        CLIParseError::UnexpectedEndOfOptions { index: 2 }
+    ));
+}
+
+#[test]
+fn setup_config_with_help_and_unknown_flag_short_circuits() {
+    let args = build_args(&["pathfinder", "--help", "--unknown"]);
+
+    let outcome = AppConfig::setup_config(args)
+        .expect("expected help to short-circuit parsing");
+
+    assert!(matches!(outcome, AppConfigOutcome::HelpRequested));
+}
+
+#[test]
+fn setup_config_rejects_duplicate_start_flag() {
+    let args = build_args(&[
+        "pathfinder",
+        "--start",
+        "A",
+        "--end",
+        "B",
+        "--start",
+        "C",
+    ]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected error due to duplicate start flag");
+
+    let _expected_error = CLIParseError::DuplicateFlag {
+        flag: "--start".to_string(),
+        first_index: 2,
+        duplicate_index: 6,
+    };
+
+    assert!(matches!(err, _expected_error));
+}
+
+#[test]
+fn setup_config_rejects_missing_value_for_graph_file_flag() {
+    let args = build_args(&["pathfinder", "--graph-file", "--"]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected error due to missing value for graph file flag");
+
+    assert_eq!(
+        err,
+        CLIParseError::MissingValueForFlag {
+            flag: "--graph-file".to_string(),
+            index: 2,
+        }
+    );
+}
+
+#[test]
+fn setup_config_rejects_unknown_short_flag() {
+    let args = build_args(&[
+        "pathfinder",
+        "--x",
+        "value",
+        "--start",
+        "A",
+        "--end",
+        "B",
+    ]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected error due to unknown short flag");
+
+    assert_eq!(
+        err,
+        CLIParseError::UnknownFlag {
+            flag: "--x".to_string(),
+            index: 2,
+        }
+    );
+}
+
+#[test]
+fn setup_config_rejects_conflicting_origin_and_algo_flags() {
+    let args = build_args(&[
+        "pathfinder",
+        "--origin",
+        "file",
+        "--algo",
+        "cmd-line",
+        "--start",
+        "A",
+    ]);
+
+    let err = AppConfig::setup_config(args)
+        .expect_err("expected error due to conflicting origin and algo flags");
+
+    assert_eq!(
+        err,
+        CLIParseError::InvalidFlagValue {
+            flag: "--algo".to_string(),
+            value: "cmd-line".to_string(),
+            expected: "Dijkstra | AStar".to_string(),
+        }
+    );
+}
+
+#[test]
+fn setup_config_receives_less_arguments_than_number_of_required_arguments() {
     let args = build_args(&["pathfinder", "--start", "A"]);
 
     let err = AppConfig::setup_config(args)

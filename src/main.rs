@@ -82,7 +82,7 @@ use shortest_path_finder::{
 // information is stored and the algorithm is executed accordingly.
 
 // TODO: (Test Coverage) Review existing tests and manually look for edge cases that are not covered by the existing
-// tests and add tests for them
+// tests and add tests for them => at the end make sure that all documentation is updated
 
 // TODO: (Benchmarks) Inspect benchmarks and cover edge cases, use bigger datasets (What about memory usage?)
 

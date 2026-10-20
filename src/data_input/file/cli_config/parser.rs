@@ -226,14 +226,7 @@ pub enum CliParseOutcome {
     VersionRequested,
 }
 
-// TODO: (Rework) Rework and fully understand the parser for the CLI arguments:
-//  - properly include the RULE that atleaset 4 arguments are required for the binary to run (start and end
-//  node ids)
-//  - think of what to do with the '--help' and '--version' flags -> if one of them is present, the
-//      parser should short-circuit and return a special enum variant
-//      - how do they conflict with the minimum required arguments? Should the parser check for them
-//      first and short-circuit if they are present?
-//  - short options for the flags (e.g. -g for --graph-file, -s for --start, etc.) should be
+// TODO: (Feature) short options for the flags (e.g. -g for --graph-file, -s for --start, etc.) should be
 //  supported
 
 /// Parses raw CLI arguments into validated key-value pairs.
