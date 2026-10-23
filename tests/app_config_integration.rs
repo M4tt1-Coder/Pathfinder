@@ -3,20 +3,37 @@
 //! These tests focus on realistic user-facing argument combinations and
 //! validate defaults, optional flags, and required field handling.
 
+mod common;
+
 use shortest_path_finder::{
     algorithms::Algorithms,
     data_input::file::cli_config::{AppConfig, AppConfigOutcome, InputOrigin},
     error::CLIParseError,
 };
 
-// TODO: ====> Next ... (TEST) !! Look for further test cases for the app config!! Add these missing test cases:
+use crate::common::app_config::{build_args, unwrap_config};
 
-fn build_args(parts: &[&str]) -> Vec<String> {
-    parts.iter().map(|part| (*part).to_string()).collect()
-}
+// TODO: ====> Next ... (TEST) !! Look for further integration tests for the app config!! Add these missing test cases:
+// - directly tests the help test by calling AppConfig::help_text() and checking the output
+// - InputOrigin from &str isn't tested directly -> InputOriginParseError is never tested directly
+// - InputOrigin::as_str() isn't tested directly
+// - an InputOrigin::from_str() test that checks the error case (invalid string) and the valid cases
+// (file, cmd-line) and checks that the correct InputOrigin is returned
+// - AppConfigOutcome::into_config() isn't tested directly (only indirectly through unwrap_config())
+// - public function version_text() isn't tested directly
+// - KnownFlag::as_str() not all branches are tested / executed
 
-fn unwrap_config(outcome: AppConfigOutcome) -> AppConfig {
-    outcome.into_config().expect("expected config")
+#[test]
+fn setup_config_accepts_cli_call_with_no_leading_binary_name_argument() {
+    let args = build_args(&["--start", "A", "--end", "B"]);
+
+    let config = unwrap_config(
+        AppConfig::setup_config(args).expect("expected valid config"),
+    );
+
+    assert_eq!(config.start_node_id, "A");
+    assert_eq!(config.end_node_id, "B");
+    assert!(matches!(config.algorithm, Algorithms::Dijkstra));
 }
 
 #[test]
