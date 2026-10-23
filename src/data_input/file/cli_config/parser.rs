@@ -253,12 +253,19 @@ pub fn parse_cli_values(
 ) -> Result<CliParseOutcome, CLIParseError> {
     let mut parsed = ParsedCliValues::default();
 
+    let mut number_of_args = args.len();
+
     // Allow both `["--start", "A", ...]` and `["pathfinder", "--start", "A", ...]` forms.
-    // Skip argv[0] when it looks like the executable name.
+    // Skip argv[0] when it looks like the executable name. Also effects the "minimum required
+    // arguments" check at the end of this function: binary name is not counted as a required
+    // argument, so the minimum number of args is 4 instead of 5.
     let mut index = if args.first().is_some_and(|value| value.starts_with("--"))
     {
         0
     } else {
+        // Skip the first argument (executable name) when it doesn't look like a flag and subtracy
+        // one from the number of args to check against the minimum required arguments.
+        number_of_args -= 1;
         1
     };
 
@@ -340,9 +347,9 @@ pub fn parse_cli_values(
     }
 
     // make sure the minimum required arguments are provided when calling the binary
-    if args.len() - 1 < 4 {
+    if number_of_args < MIN_NUM_REQUIRED_ARGS {
         return Err(CLIParseError::TooFewArguments {
-            provided_num: args.len() - 1,
+            provided_num: number_of_args,
             minimum_num: MIN_NUM_REQUIRED_ARGS,
             required_args: String::from("--start <node_id> --end <node_id>"),
         });
