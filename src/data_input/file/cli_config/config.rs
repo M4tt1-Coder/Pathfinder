@@ -431,19 +431,19 @@ impl AppConfig {
     pub fn help_text() -> String {
         format!(
             "Usage: {app} [--origin <file|cmd-line>] [--graph-file <path_to_file>] \
-[--algo <algorithm_name>] --start <node> --end <node>\n\n\
-Options:\n\
-  --graph-file <path>         Graph input file (default: graph.txt)\n\
-  --start <node>              Start node identifier (required)\n\
-  --end <node>                Destination node identifier (required)\n\
-  --algo <name>               Algorithm to run (Dijkstra | AStar)\n\
-  --origin <file|cmd-line>    Input origin (default: file)\n\
-  --help, -h                  Show this help message and exit\n\
-  --version, -V               Show version information and exit\n\n\
-Notes:\n\
-  Use `--` between a flag and its value to allow values starting with `--`.\n\
-  Legacy: when --origin is absent, --algo file|cmd-line sets the input origin.\n\
-  Command-line origin is parsed but not implemented in the CLI runtime yet.\n",
+            [--algo <algorithm_name>] --start <node> --end <node>\n\n\
+            Options:\n\
+            --graph-file <path>         Graph input file (default: graph.txt)\n\
+            --start <node>              Start node identifier (required)\n\
+            --end <node>                Destination node identifier (required)\n\
+            --algo <name>               Algorithm to run (Dijkstra | AStar)\n\
+            --origin <file|cmd-line>    Input origin (default: file)\n\
+            --help, -h                  Show this help message and exit\n\
+            --version, -V               Show version information and exit\n\n\
+            Notes:\n\
+            Use `--` between a flag and its value to allow values starting with `--`.\n\
+            Legacy: when --origin is absent, --algo file|cmd-line sets the input origin.\n\
+            Command-line origin is parsed but not implemented in the CLI runtime yet.\n",
             app = APP_NAME
         )
     }
@@ -547,5 +547,99 @@ Notes:\n\
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn setup_config_outputs_correct_version_text() {
+        let version_text = AppConfig::version_text();
+        assert!(version_text.starts_with(APP_NAME));
+        assert!(version_text.contains(env!("CARGO_PKG_VERSION")));
+    }
+
+    #[test]
+    fn app_config_outcome_into_config_returns_none_for_non_config_variants() {
+        let help_outcome = AppConfigOutcome::HelpRequested;
+        assert!(help_outcome.into_config().is_none());
+
+        let version_outcome = AppConfigOutcome::VersionRequested;
+        assert!(version_outcome.into_config().is_none());
+    }
+
+    #[test]
+    fn app_config_outcome_into_config_returns_some_for_config_variant() {
+        let config = AppConfig {
+            file_path: "graph.txt".to_string(),
+            start_node_id: "A".to_string(),
+            end_node_id: "B".to_string(),
+            algorithm: Algorithms::Dijkstra,
+            data_input: InputOrigin::File,
+        };
+
+        let outcome = AppConfigOutcome::Config(config);
+
+        let config = outcome.into_config().unwrap();
+
+        assert_eq!(config.file_path, "graph.txt");
+        assert_eq!(config.start_node_id, "A");
+        assert_eq!(config.end_node_id, "B");
+        assert!(matches!(config.algorithm, Algorithms::Dijkstra));
+        assert!(matches!(config.data_input, InputOrigin::File));
+    }
+
+    #[test]
+    fn input_origin_try_from_returns_correct_variants() {
+        assert_eq!(InputOrigin::try_from("file").unwrap(), InputOrigin::File);
+        assert_eq!(
+            InputOrigin::try_from("cmd-line").unwrap(),
+            InputOrigin::CommandLine
+        );
+    }
+
+    #[test]
+    fn input_origin_try_from_returns_error_for_invalid_value() {
+        let err = InputOrigin::try_from("invalid")
+            .expect_err("invalid origin should fail");
+        assert_eq!(err.value, "invalid");
+    }
+
+    #[test]
+    fn input_origin_as_str_returns_correct_strings() {
+        assert_eq!(InputOrigin::File.as_str(), "file");
+        assert_eq!(InputOrigin::CommandLine.as_str(), "cmd-line");
+    }
+
+    #[test]
+    fn input_origin_display_returns_correct_strings() {
+        assert_eq!(format!("{}", InputOrigin::File), "file");
+        assert_eq!(format!("{}", InputOrigin::CommandLine), "cmd-line");
+    }
+
+    #[test]
+    fn input_origin_parse_error_display_returns_correct_message() {
+        let err = InputOriginParseError {
+            value: "invalid".to_string(),
+        };
+        assert_eq!(format!("{}", err), "Unknown input origin 'invalid'");
+    }
+
+    #[test]
+    fn help_text_contains_correct_usage_information() {
+        let help_text = AppConfig::help_text();
+        assert!(help_text.contains(format!("Usage: {APP_NAME} [--origin <file|cmd-line>] [--graph-file <path_to_file>] \
+            [--algo <algorithm_name>] --start <node> --end <node>").as_str()));
+        assert!(help_text.contains("--graph-file"));
+        assert!(help_text.contains("--start"));
+        assert!(help_text.contains(
+            "--end <node>                Destination node identifier"
+        ));
+        assert!(help_text.contains("--algo"));
+        assert!(help_text.contains("--origin"));
+        assert!(help_text.contains("--help"));
+        assert!(help_text.contains("--version"));
     }
 }

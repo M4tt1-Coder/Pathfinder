@@ -13,15 +13,7 @@ use shortest_path_finder::{
 
 use crate::common::app_config::{build_args, unwrap_config};
 
-// TODO: ====> Next ... (TEST) !! Look for further integration tests for the app config!! Add these missing test cases:
-// - directly tests the help test by calling AppConfig::help_text() and checking the output
-// - InputOrigin from &str isn't tested directly -> InputOriginParseError is never tested directly
-// - InputOrigin::as_str() isn't tested directly
-// - an InputOrigin::from_str() test that checks the error case (invalid string) and the valid cases
-// (file, cmd-line) and checks that the correct InputOrigin is returned
-// - AppConfigOutcome::into_config() isn't tested directly (only indirectly through unwrap_config())
-// - public function version_text() isn't tested directly
-// - KnownFlag::as_str() not all branches are tested / executed
+// TODO: ====> Next ... (TEST) !! Look for further integration tests for the app config!
 
 #[test]
 fn setup_config_accepts_cli_call_with_no_leading_binary_name_argument() {

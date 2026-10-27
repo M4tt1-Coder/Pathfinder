@@ -357,3 +357,17 @@ pub fn parse_cli_values(
 
     Ok(CliParseOutcome::Values(parsed))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn know_flag_returns_flags_as_str() {
+        assert_eq!(KnownFlag::GraphFile.as_str(), "--graph-file");
+        assert_eq!(KnownFlag::Start.as_str(), "--start");
+        assert_eq!(KnownFlag::End.as_str(), "--end");
+        assert_eq!(KnownFlag::Algo.as_str(), "--algo");
+        assert_eq!(KnownFlag::Origin.as_str(), "--origin");
+    }
+}
