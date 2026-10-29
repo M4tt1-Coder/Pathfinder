@@ -13,8 +13,6 @@ use shortest_path_finder::{
 
 use crate::common::app_config::{build_args, unwrap_config};
 
-// TODO: ====> Next ... (TEST) !! Look for further integration tests for the app config!
-
 #[test]
 fn setup_config_accepts_cli_call_with_no_leading_binary_name_argument() {
     let args = build_args(&["--start", "A", "--end", "B"]);
