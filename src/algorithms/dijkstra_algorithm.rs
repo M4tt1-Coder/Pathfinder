@@ -299,6 +299,7 @@ impl<
             self.graph.is_directed(),
             self.graph.is_weighted()
         );
+
         let start: &N =
             self.graph.get_node_by_id(start_node_id).ok_or_else(|| {
                 DijkstraError::MissingStartNode {
@@ -352,7 +353,9 @@ impl<
                     },
                 });
             }
+
             remaining_steps -= 1;
+
             path.push(current_node.clone());
 
             if current_node.get_id() == start.get_id() {
@@ -435,6 +438,7 @@ impl<
     ) -> HashMap<String, ShortestDistance<N, W>> {
         let mut output: HashMap<String, ShortestDistance<N, W>> =
             HashMap::new();
+
         for n in self.graph.get_all_nodes() {
             if n.get_id() == start.get_id() {
                 // Start node begins with distance 0 and itself as predecessor sentinel.
@@ -453,6 +457,7 @@ impl<
                 );
             }
         }
+
         output
     }
 
