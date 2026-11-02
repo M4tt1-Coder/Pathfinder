@@ -709,6 +709,12 @@ impl<N: GraphNode, W: GraphWeight> DijkstraSearchResult<N, W> {
             });
         }
 
+        if distance < W::zero() {
+            return Err(DijkstraError::InvalidSearchResult {
+                reason: "total distance cannot be negative".to_string(),
+            });
+        }
+
         Ok(Self { path, distance })
     }
 }
