@@ -127,6 +127,9 @@ impl std::fmt::Display for GraphInsertionError {
 
 impl std::error::Error for GraphInsertionError {}
 
+// TODO: (FEATURE) Separate the graph trait into an 'UnweightedGraph' trait and a 'WeightedGraph'
+// trait, with a common base trait 'Graph' for shared behavior
+
 /// Trait describing the behavior of a graph data structure.
 ///
 /// A graph implementation can be directed or undirected, weighted or unweighted,
