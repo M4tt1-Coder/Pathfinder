@@ -5,7 +5,7 @@
 //! This module contributes two things:
 //! - [`GraphWeightType`], an enum used by parsing code when weight types differ by
 //!   graph format.
-//! - Implementations of [`crate::graph::GraphWeight`] for `u16`, `f32`,
+//! - Implementations of [`crate::graph::GraphWeight`] for `u16`, `f32`, `i8`,
 //!   and `i32`.
 //!
 //! # Design Notes
@@ -42,6 +42,7 @@ use crate::graph::GraphWeight;
 /// - `U16(u16)`: Represents an unsigned 16-bit integer weight.
 /// - `F32(f32)`: Represents a 32-bit floating point weight.
 /// - `I32(i32)`: Represents a signed 32-bit integer weight.
+/// - `I8(i8)`: Represents a signed 8-bit integer weight.
 /// - `NotNecessary`: Marker used when a graph derives weights internally.
 ///
 /// # Conversion
@@ -67,6 +68,8 @@ pub enum GraphWeightType {
     F32(f32),
     /// Represents a signed 32-bit integer weight.
     I32(i32),
+    /// Represents a signed 8-bit integer weight.
+    I8(i8),
     /// Indicates that no weight is necessary for the graph (e.g., unweighted graphs).
     NotNecessary,
 }
@@ -123,5 +126,22 @@ impl GraphWeight for i32 {
     /// Returns the checked sum for `i32` weights.
     fn checked_add(self, other: Self) -> Option<Self> {
         i32::checked_add(self, other)
+    }
+}
+
+impl GraphWeight for i8 {
+    /// Returns the additive identity for `i8` weights (0).
+    fn zero() -> Self {
+        0
+    }
+
+    /// Returns the maximum possible value for `i8` weights.
+    fn max_value() -> Self {
+        i8::MAX
+    }
+
+    /// Returns the checked sum for `i8` weights.
+    fn checked_add(self, other: Self) -> Option<Self> {
+        i8::checked_add(self, other)
     }
 }
