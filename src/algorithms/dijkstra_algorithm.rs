@@ -226,6 +226,9 @@ impl<
 
     type NodeOfUsedGraph = N;
 
+    // TODO: Extract the path reconstruction logic into a separate function to reduce complexity and improve testability.
+    // -> add (unit-) tests for the path reconstruction logic
+
     /// Computes a shortest path between two node IDs using Dijkstra.
     ///
     /// # Parameters
@@ -513,6 +516,8 @@ impl<
             }
 
             for (neighbour, weight) in self.graph.neighbors(&position) {
+                // TODO: Add an explicit function to the GraphWeight trait to check for non-finite
+                // values, rather than relying on checked_add => use it here
                 if W::zero().checked_add(weight).is_none() {
                     return Err(DijkstraError::InvalidEdgeWeight {
                         from: position.get_id().to_string(),
@@ -749,5 +754,21 @@ impl<N: GraphNode + Debug, W: GraphWeight> SearchResult
 
     fn get_total_distance(&self) -> Self::Distance {
         self.distance
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::nodes::DefaultNode;
+
+    use super::*;
+
+    #[test]
+    fn dijkstra_algorithm_shortest_distance_formats_as_string() {
+        let node_a = DefaultNode::new("A".to_string());
+        let distance = ShortestDistance::new(Some(node_a.clone()), 5u16);
+        let output = format!("{}", distance);
+        assert!(output.contains("PrevNode: Some(DefaultNode { id: \"A\" })"));
+        assert!(output.contains("Distance: 5"));
     }
 }

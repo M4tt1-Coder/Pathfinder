@@ -35,7 +35,11 @@
 //! assert_eq!(result.get_total_distance(), 2);
 //! ```
 
+#[path = "common/dijkstra.rs"]
+mod dijkstra;
+
 use shortest_path_finder::{
+    Dijkstra, DirectedGraph, UndirectedGraph,
     algorithms::{Algorithm, SearchResult},
     error::algorithm_error::{
         AlgorithmErrorKind, DijkstraError,
@@ -44,12 +48,105 @@ use shortest_path_finder::{
         },
     },
     graph::{Graph, GraphNode},
-    nodes::DefaultNode,
-    {Dijkstra, DirectedGraph, UndirectedGraph},
 };
 
-fn node(id: &str) -> DefaultNode {
-    DefaultNode::new(id.to_string())
+use crate::dijkstra::{TestDirectedGraph, node};
+
+// TODO: (TEST) Resolve the test coverage of the Dijkstra module to 100%
+// - Dijkstra is never called on an unweighted graph -> UnweightedGraph error
+//  -> need to implement a test data structure for an unweighted graph
+//
+// (ASK AI later for help => doesn't seem that case will ever happen, since before calling
+// 'calculate_distances' it is checked if the end note is part of the graph and in
+// 'setup_shortest_distances' all nodes are added to the distances map, so the end node will always
+// be part of the distances map)
+// - after letting the Dijkstra algorithm run, the end node could be missing in the calculated
+// distances map -> PathReconstructionError MissingDistanceEntry
+//
+//  (currently not reachable, in Dijkstra path reconstruction should be moved to a separate function
+//  to be able to test all included outcomes)
+// - no graph with a predecessor loop is tested -> PathReconstructionError PredecessorLoop
+// - in case the calculate_distances function outputs an entry without an set predecessor, the path
+// reconstruction will fail -> PathReconstructionError MissingPredecessor
+// - a node has no set distance in the distances map -> PathReconstructionError MissingDistanceEntry
+//
+//   (before starting the relaxation loop a HashMap is prepared by setup_shortest_distance including
+//   al nodes currently present in the graph, therefore this case could never happen)
+// - in relaxation loop the entry of the current node is missing in the distances map ->
+// MissingNodeDuringProcessing error
+//
+// (Question is how to cause a wrong addition? The given circumstances around the usage of
+// 'checked_add' can't lead to a wrong addition; line 519)
+// - an invalid edge weight is used in the graph -> InvalidEdgeWeight error
+//
+// - a edge weight can be negative -> InvalidEdgeWeight error
+// - in distances map doesn't contain an entry of a neighbor node -> MissingNodeDuringProcessing
+// error
+// - a DijkstraSearchResult is never created with an empty path -> InvalidSearchResult error
+// - a single node path is never created with a distance greater than 0 -> InvalidSearchResult error
+// - DijkstraSearchResult is never created with a distance smaller than 0 -> InvalidSearchResult
+// error
+// - DijkstraSearchResult is never formatted as a string -> Display trait
+
+#[test]
+fn dijkstra_executed_on_graph_with_negative_edge_weight() {
+    let mut graph = TestDirectedGraph::default();
+    graph.insert_node(node("A"));
+    graph.insert_node(node("B"));
+    let node_a = node("A");
+    let node_b = node("B");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(-1)).is_none());
+    let dijkstra = Dijkstra::new(graph);
+    let err = dijkstra
+        .shortest_path("A", "B")
+        .expect_err("negative edge weight should surface as a Dijkstra error");
+
+    assert!(matches!(
+        err,
+        DijkstraError::InvalidEdgeWeight { from, to, weight, reason }
+            if from == "A" && to == "B" && weight == "-1" && matches!(reason, EdgeWeightViolation::Negative)
+    ));
+}
+
+// #[test]
+// fn dijkstra_called_on_graph_with_an_invalid_edge_weight() {
+//     let mut graph = DirectedGraph::default();
+//     graph.insert_node(node("A"));
+//     graph.insert_node(node("B"));
+//     let node_a = node("A");
+//     let node_b = node("B");
+//     assert!(graph.insert_edge(&node_a, &node_b, Some(0 - 1)).is_none());
+//
+//     let dijkstra = Dijkstra::new(graph);
+//     let err = dijkstra
+//         .shortest_path("A", "B")
+//         .expect_err("invalid edge weight should surface as a Dijkstra error");
+//
+//     assert!(matches!(
+//         err,
+//         DijkstraError::InvalidEdgeWeight { from, to, weight, .. }
+//             if from == "A" && to == "B" && weight == "65536"
+//     ));
+// }
+
+#[test]
+fn dijkstra_called_with_none_existing_end_node_in_graph() {
+    let mut graph = DirectedGraph::default();
+    graph.insert_node(node("A"));
+    graph.insert_node(node("B"));
+    let node_a = node("A");
+    let node_b = node("B");
+    assert!(graph.insert_edge(&node_a, &node_b, Some(4)).is_none());
+
+    let dijkstra = Dijkstra::new(graph);
+    let err = dijkstra
+        .shortest_path("A", "C")
+        .expect_err("end node is not part of the graph");
+
+    assert!(matches!(
+        err,
+        DijkstraError::MissingEndNode { id, .. } if id == "C"
+    ));
 }
 
 #[test]

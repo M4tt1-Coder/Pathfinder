@@ -127,6 +127,8 @@ impl Graph for UndirectedGraph {
         to: &Self::Node,
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
+        // TODO: (Refactor) If the source or destination node or both does / don't not exist -> don't have to check for edge
+        // existence
         if self.does_edge_already_exist(from, to) {
             return Some(UndirectedGraphInsertionError::EdgeAlreadyExists {
                 from_id: from.get_id().to_string(),

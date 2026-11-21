@@ -120,6 +120,8 @@ impl Graph for DirectedGraph {
         to: &Self::Node,
         weight: Option<Self::Weight>,
     ) -> Option<Self::InsertionError> {
+        // TODO: (Refactor) If the source or destination node or both does / don't not exist -> don't have to check for edge
+        // existence
         if self.does_edge_already_exist(from, to) {
             return Some(DirectedGraphInsertionError::EdgeAlreadyExists {
                 from: from.get_id().to_string(),
@@ -137,6 +139,7 @@ impl Graph for DirectedGraph {
                 );
             },
         };
+
         let to_index = match self.node_index_for_id(to.get_id()) {
             Some(index) => index,
             None => {
