@@ -3,7 +3,8 @@
 //! These tests focus on realistic user-facing argument combinations and
 //! validate defaults, optional flags, and required field handling.
 
-mod common;
+#[path = "common/app_config.rs"]
+mod app_config;
 
 use shortest_path_finder::{
     algorithms::Algorithms,
@@ -11,7 +12,7 @@ use shortest_path_finder::{
     error::CLIParseError,
 };
 
-use crate::common::app_config::{build_args, unwrap_config};
+use crate::app_config::{build_args, unwrap_config};
 
 #[test]
 fn setup_config_accepts_cli_call_with_no_leading_binary_name_argument() {
