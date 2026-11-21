@@ -14,10 +14,10 @@ categories = ["algorithms", "data-structures"]
 exclude = ["target", "tests", "test_files", ".github", ".gitignore", ".cursor", ".git", "AGENTS.md", "SECURITY.md", "Student_Rust_Exercise.md", "diary", ".vscode", ".pre-commit-config.yaml"]
 
 [dependencies]
-env_logger = "^0.11.11"
-log = "^0.4.34"
-regex = { version = "^1.13.1", features = [ "logging" ] }
-uuid = { version = "^1.26.1", features = [ 'v4' ] }
+env_logger = "^0.11.12"
+log = "^0.4.35"
+regex = { version = "^1.13.2", features = [ "logging" ] }
+uuid = { version = "^1.29.3", features = [ 'v4' ] }
 strum = "0.28.0"
 strum_macros = "0.28.0"
 once_cell = "1.21.4"
