@@ -771,4 +771,60 @@ mod tests {
         assert!(output.contains("PrevNode: Some(DefaultNode { id: \"A\" })"));
         assert!(output.contains("Distance: 5"));
     }
+
+    #[test]
+    fn dijkstra_search_result_formats_as_string() {
+        let node_a = DefaultNode::new("A".to_string());
+        let node_b = DefaultNode::new("B".to_string());
+        let path = vec![node_a.clone(), node_b.clone()];
+        let result = DijkstraSearchResult::new(path, 10u16).unwrap();
+        let output = format!("{}", result);
+        let expected_path_string =
+            format!("{} -> {}", node_a.get_id(), node_b.get_id());
+        assert!(output.contains("Path:"));
+        assert!(output.contains(&expected_path_string));
+        assert!(output.contains("Distance: 10"));
+    }
+
+    #[test]
+    fn dijkstra_search_result_invalid_path_empty() {
+        let invalid_path: Vec<DefaultNode> = vec![];
+        let result = DijkstraSearchResult::new(invalid_path, 0u16);
+        assert!(result.is_err());
+        if let Err(err) = result {
+            assert!(
+                err.to_string()
+                    .contains("path must contain at least one node")
+            );
+        }
+    }
+
+    #[test]
+    fn dijkstra_search_result_invalid_path_single_node_nonzero_distance() {
+        let node_a = DefaultNode::new("A".to_string());
+        let path = vec![node_a];
+        let result = DijkstraSearchResult::new(path, 5u16);
+        assert!(result.is_err());
+        if let Err(err) = result {
+            assert!(
+                err.to_string()
+                    .contains("single-node path must have zero distance")
+            );
+        }
+    }
+
+    #[test]
+    fn dijkstra_search_result_invalid_path_negative_distance() {
+        let node_a = DefaultNode::new("A".to_string());
+        let node_b = DefaultNode::new("B".to_string());
+        let path = vec![node_a, node_b];
+        let result = DijkstraSearchResult::new(path, -1i8);
+        assert!(result.is_err());
+        if let Err(err) = result {
+            assert!(
+                err.to_string()
+                    .contains("total distance cannot be negative")
+            );
+        }
+    }
 }

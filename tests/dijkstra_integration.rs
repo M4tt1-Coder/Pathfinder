@@ -53,10 +53,7 @@ use shortest_path_finder::{
 use crate::dijkstra::{TestDirectedGraph, node};
 
 // TODO: (TEST) Resolve the test coverage of the Dijkstra module to 100%
-// - Dijkstra is never called on an unweighted graph -> UnweightedGraph error
-//  -> need to implement a test data structure for an unweighted graph
-//
-// (ASK AI later for help => doesn't seem that case will ever happen, since before calling
+// (doesn't seem that case will ever happen, since before calling
 // 'calculate_distances' it is checked if the end note is part of the graph and in
 // 'setup_shortest_distances' all nodes are added to the distances map, so the end node will always
 // be part of the distances map)
@@ -74,22 +71,15 @@ use crate::dijkstra::{TestDirectedGraph, node};
 //   al nodes currently present in the graph, therefore this case could never happen)
 // - in relaxation loop the entry of the current node is missing in the distances map ->
 // MissingNodeDuringProcessing error
+// - in distances map doesn't contain an entry of a neighbor node -> MissingNodeDuringProcessing
+// error
 //
 // (Question is how to cause a wrong addition? The given circumstances around the usage of
 // 'checked_add' can't lead to a wrong addition; line 519)
 // - an invalid edge weight is used in the graph -> InvalidEdgeWeight error
-//
-// - a edge weight can be negative -> InvalidEdgeWeight error
-// - in distances map doesn't contain an entry of a neighbor node -> MissingNodeDuringProcessing
-// error
-// - a DijkstraSearchResult is never created with an empty path -> InvalidSearchResult error
-// - a single node path is never created with a distance greater than 0 -> InvalidSearchResult error
-// - DijkstraSearchResult is never created with a distance smaller than 0 -> InvalidSearchResult
-// error
-// - DijkstraSearchResult is never formatted as a string -> Display trait
 
 #[test]
-fn dijkstra_executed_on_graph_with_negative_edge_weight() {
+fn dijkstra_executed_on_graph_with_negative_edge_weight_with_error() {
     let mut graph = TestDirectedGraph::default();
     graph.insert_node(node("A"));
     graph.insert_node(node("B"));
