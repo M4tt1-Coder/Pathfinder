@@ -226,7 +226,7 @@ impl<
 
     type NodeOfUsedGraph = N;
 
-    // TODO: Extract the path reconstruction logic into a separate function to reduce complexity and improve testability.
+    // TODO: (REFACTOR) Extract the path reconstruction logic into a separate function to reduce complexity and improve testability.
     // -> add (unit-) tests for the path reconstruction logic
 
     /// Computes a shortest path between two node IDs using Dijkstra.
@@ -516,7 +516,7 @@ impl<
             }
 
             for (neighbour, weight) in self.graph.neighbors(&position) {
-                // TODO: Add an explicit function to the GraphWeight trait to check for non-finite
+                // TODO: (REFACTOR) Add an explicit function to the GraphWeight trait to check for non-finite
                 // values, rather than relying on checked_add => use it here
                 if W::zero().checked_add(weight).is_none() {
                     return Err(DijkstraError::InvalidEdgeWeight {
@@ -628,7 +628,8 @@ impl<N: GraphNode, W: GraphWeight + Ord + Eq> Ord for QueueItem<N, W> {
     /// distance first. The implementation compensates by skipping stale entries
     /// when popped, which preserves correctness for this algorithm.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.distance.cmp(&other.distance)
+        self.distance.cmp(&other.distance).reverse() // Reverse to yield smallest distance first
+        // when popped.
     }
 }
 
