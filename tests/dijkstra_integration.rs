@@ -53,6 +53,7 @@ use shortest_path_finder::{
 use crate::dijkstra::{TestDirectedGraph, TestUnweightedGraph, node};
 
 // TODO: (TEST) Resolve the test coverage of the Dijkstra module to 100%
+//
 // (doesn't seem that case will ever happen, since before calling
 // 'calculate_distances' it is checked if the end note is part of the graph and in
 // 'setup_shortest_distances' all nodes are added to the distances map, so the end node will always
