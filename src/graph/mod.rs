@@ -129,6 +129,11 @@ impl std::error::Error for GraphInsertionError {}
 
 // TODO: (FEATURE) Separate the graph trait into an 'UnweightedGraph' trait and a 'WeightedGraph'
 // trait, with a common base trait 'Graph' for shared behavior
+// -> Update previous usages of graphs to use the new traits and ensure they work with both weighted and
+// unweighted graphs (tests(dijkstra integration tests), algorithms, etc.)
+// -> Unweighted graphs can be interpreted as weighted graphs with a default weight of 1, but the
+// algorithms should be able to handle both cases correctlyi OR really have no weight at all and
+// just count the number of edges in the path
 
 /// Trait describing the behavior of a graph data structure.
 ///

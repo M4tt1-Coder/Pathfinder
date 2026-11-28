@@ -50,7 +50,7 @@ use shortest_path_finder::{
     graph::{Graph, GraphNode},
 };
 
-use crate::dijkstra::{TestDirectedGraph, node};
+use crate::dijkstra::{TestDirectedGraph, TestUnweightedGraph, node};
 
 // TODO: (TEST) Resolve the test coverage of the Dijkstra module to 100%
 // (doesn't seem that case will ever happen, since before calling
@@ -77,6 +77,49 @@ use crate::dijkstra::{TestDirectedGraph, node};
 // (Question is how to cause a wrong addition? The given circumstances around the usage of
 // 'checked_add' can't lead to a wrong addition; line 519)
 // - an invalid edge weight is used in the graph -> InvalidEdgeWeight error
+
+#[test]
+fn shorter_path_found_after_node_is_processed() {
+    let mut graph = DirectedGraph::default();
+
+    for id in ["A", "B", "C"] {
+        graph.insert_node(node(id));
+    }
+
+    let node_a = node("A");
+    let node_b = node("B");
+    let node_c = node("C");
+
+    assert!(graph.insert_edge(&node_a, &node_b, Some(5)).is_none());
+    assert!(graph.insert_edge(&node_a, &node_c, Some(1)).is_none());
+    assert!(graph.insert_edge(&node_c, &node_b, Some(1)).is_none());
+
+    let dijkstra = Dijkstra::new(graph);
+    let result = dijkstra.shortest_path("A", "B").expect("path should exist");
+
+    let path_ids: Vec<&str> =
+        result.get_path().iter().map(|n| n.get_id()).collect();
+
+    assert_eq!(path_ids, vec!["A", "C", "B"]);
+    assert_eq!(result.get_total_distance(), 2);
+}
+
+#[test]
+fn dijkstra_called_on_unweighted_graph() {
+    let mut graph = TestUnweightedGraph::default();
+    graph.insert_node(node("A"));
+    graph.insert_node(node("B"));
+    let node_a = node("A");
+    let node_b = node("B");
+    assert!(graph.insert_edge(&node_a, &node_b, None).is_none());
+
+    let dijkstra = Dijkstra::new(graph);
+    let err = dijkstra
+        .shortest_path("A", "B")
+        .expect_err("unweighted graph should surface as a Dijkstra error");
+
+    assert!(matches!(err, DijkstraError::UnweightedGraph));
+}
 
 #[test]
 fn dijkstra_executed_on_graph_with_negative_edge_weight_with_error() {
